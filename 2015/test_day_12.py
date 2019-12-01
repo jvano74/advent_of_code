@@ -66,7 +66,10 @@ def trim_right_to_bracket(string):
             cnt -= 1
         if cnt == 1:
             break
+        if pos == 0:
+            raise RecursionError('Could not search back far enough...')
         pos -= 1
+
     return ''.join(string_array)
 
 
@@ -119,7 +122,7 @@ def test_submission2():
 
 
 # ===== SOLUTION FROM REDDIT =====
-# Still not sure where my more manual solution above is going astray...
+# Okay, I now see where my manual solution was going astray...
 
 def sum_object(obj):
     if type(obj) is int:
