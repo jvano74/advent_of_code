@@ -29,7 +29,7 @@ def find_fuel(mass):
 
     What is the sum of the fuel requirements for all of the modules on your spacecraft?
     """
-    return int(mass/3)-2
+    return mass//3-2
 
 def test_find_fuel():
     assert find_fuel(12) == 2
@@ -82,7 +82,7 @@ def test_find_total_fuel():
     assert find_total_fuel(100756) == 50346
 
 def test_submission():
-    assert sum([find_fuel(int(m)) for m in open('input_day_01.txt')]) == 3263320
+    assert sum([find_fuel(int(m)) for m in open('.\input_day_01.txt')]) == 3263320
 
 def test_submission2():
-    assert sum([find_total_fuel(int(m)) for m in open('input_day_01.txt')]) == 4892135
+    assert sum([find_total_fuel(int(m)) for m in open('.\input_day_01.txt')]) == 4892135
