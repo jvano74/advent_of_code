@@ -106,20 +106,15 @@ class Maze:
                     if (key, new_key) not in data:
                         continue
                     doors, new_dist = data[(key, new_key)]
-
                     if len(doors - key_hx) > 0:
-                        # this might be where I'm missing capturing all the frontier?
                         continue
-
                     new_key_hx = set(key_hx)
                     new_key_hx.add(new_key)
                     new_robots = set(robots)
                     new_robots.remove(key)
                     new_robots.add(new_key)
-
                     if len(new_key_hx) == len(self.keys) + len(robots):
                         lengths.append(dist + new_dist - len(self.keys))
-
                     frontier.put((dist + new_dist, new_robots, new_key_hx))
             truncations.add(sig)
         return min(lengths)
