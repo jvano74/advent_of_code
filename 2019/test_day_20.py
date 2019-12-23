@@ -23,7 +23,7 @@ class Maze:
         raw_portals = {}
         for j, row in enumerate(grid):
             for i, c in enumerate(row):
-                if c == '#' or c == ' ':
+                if c == '#' or c == ' ' or c == 'h' or c == 'e':
                     continue
                 if c == '.':
                     self.tiles.add(Pos(i, j))
