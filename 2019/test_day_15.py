@@ -166,6 +166,7 @@ class Robot:
         self.loc = Point(0, 0)
         self.min = Point(0, 0)
         self.max = Point(0, 0)
+        self.goal = None
         self.grid = defaultdict(int)
         self.grid[self.loc] = self.OPEN
         self.boundary = self.neighbors(self.loc, self.UNKNOWN)
@@ -190,48 +191,18 @@ class Robot:
                     visited.add(nn)
         raise LookupError(f'Not {end} not part of {start}')
 
-    def explore(self):
-        way_back = []
-        followed = []
+    def explore(self, everything=None):
         while self.boundary:
-            # self.draw()
-            next = self.boundary.pop()
-            #print(self.loc,'to',next)
-            if self.loc == Point(-16, 20) and next == Point(-21, 18):
-                print(self.loc, 'to', next)
-                print('Something is odd')
-                print()
-                print()
-                self.draw()
-                print()
-                print()
-                assert True
-                return 0
-            path = self.shortest_path(next, self.loc)
-            print('path',path)
+            next_unknown = self.boundary.pop()
+            path = self.shortest_path(next_unknown, self.loc)
             cmds = self.path_to_commands(path)
             for c in cmds:
                 result = self.move(c)
-
-        return 0
-
-    def path_and_return(self, path):
-        way_back = []
-        followed = []
-        for c in path:
-            result = self.move(c)
-            if result == 1:
-                followed.append(c)
-                way_back.append(self.INVERSE[c])
-        end_pt = self.loc
-        while way_back:
-            back_step = way_back.pop()
-            result = self.move(back_step)
-            if result == -1:
-                raise MemoryError
-            if result == -2:
-                raise MemoryError
-        return end_pt, followed
+                if result == 0 and not everything:
+                    return 0
+        if everything:
+            return 0
+        return -1
 
     def move(self, command):
         self.program.input.append(command)
@@ -258,7 +229,8 @@ class Robot:
             return 1
         elif status == 2:
             self.loc = new_loc
-            self.grid[new_loc] = self.GOAL
+            self.grid[new_loc] = self.OPEN
+            self.goal = new_loc
             if new_loc in self.boundary:
                 self.boundary.remove(new_loc)
             self.boundary.union(self.neighbors(self.loc, self.UNKNOWN))
@@ -270,7 +242,9 @@ class Robot:
         print()
         for y in range(self.max.y, self.min.y-1, -1):
             for x in range(self.min.x, self.max.x + 1):
-                if Point(x, y) == self.loc:
+                if self.goal == Point(x, y):
+                    print('X', end='')
+                elif Point(x, y) == self.loc:
                     print('@', end='')
                 elif x == 0 and y == 0:
                     print('0', end='')
@@ -282,13 +256,25 @@ class Robot:
                     print('?', end='')
                 else:
                     print(' ', end='')
-                if self.grid[Point(x, y)] == self.GOAL:
-                    print('X', end='')
             print(':',y)
         for x in range(self.min.x, self.max.x + 1):
             print(x % 10 if x > 0 else -x % 10, end='')
         print()
         print()
+
+    def flood(self):
+        count = 0
+        o2 = set(self.goal)
+        next_o2 = self.neighbors(self.goal)
+        boundary = set(next_o2)
+        while boundary:
+            count += 1
+            o2 = o2.union(next_o2)
+            next_o2 = set()
+            for pt in boundary:
+                next_o2 = next_o2.union(self.neighbors(pt)) - o2
+            boundary = set(next_o2)
+        return count
 
 
 with open('input_day_15.txt') as fp:
@@ -297,11 +283,14 @@ SRC = [int(d) for d in raw.split(',')]
 REPAIR = Program(SRC)
 
 
-def test_submission1():
+def test_submission():
     robot = Robot(REPAIR)
-    while robot.explore() != 0:
-        pass
+    if robot.explore() == 0:
+        print(robot.goal)
+        assert len(robot.shortest_path(Point(0,0), robot.goal)) - 1 == 296
+    robot.explore(True)
     robot.draw()
+    assert robot.flood() == 302
     assert True
 
 
