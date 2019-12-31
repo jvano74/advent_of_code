@@ -132,8 +132,8 @@ with open('input_day_21.txt') as fp:
 SRC = [int(d) for d in raw.split(',')]
 DROID = Program(SRC)
 
-SS = """NOT A T
-OR T J
+# LOGIC (NOT A or NOT B or NOT C) and D
+SS = """NOT A J
 NOT B T
 OR T J
 NOT C T
@@ -142,13 +142,16 @@ AND D J
 WALK
 """
 
-SS2 = """NOT A T
-OR T J
-NOT B T
-OR T J
-NOT C T
-OR T J
-AND D J
+# LOGIC (NOT A or NOT B or NOT C) and ( D and (E or H) )
+SS2 = """OR E T
+OR H T
+AND D T
+NOT A J
+NOT J J
+AND B J
+AND C J
+NOT J J
+AND T J
 RUN
 """
 
