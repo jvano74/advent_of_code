@@ -136,9 +136,15 @@ with open('input_day_17.txt') as fp:
 SRC = [int(d) for d in raw.split(',')]
 ASCII = Program(SRC)
 
+SRC2 = SRC[:]
+SRC2[0] = 2
+ASCII2 = Program(SRC2)
+
 
 class Image:
     DELTAS = [Point(0, 1), Point(1, 0), Point(0, -1), Point(-1, 0)]
+    RIGHT = {Point(0, 1): Point(1, 0), Point(1, 0): Point(0, -1), Point(0, -1): Point(-1, 0), Point(-1, 0): Point(0, 1)}
+    LEFT = {Point(0, 1): Point(-1, 0), Point(1, 0): Point(0, 1), Point(0, -1): Point(1, 0), Point(-1, 0): Point(0, -1)}
 
     def __init__(self, raw):
         self.scaffold = set()
@@ -146,7 +152,7 @@ class Image:
         for y, scan_row in enumerate(raw.split('\n')):
             for x, c in enumerate(scan_row):
                 if c == "#":
-                    self.scaffold.add(Point(y, x))
+                    self.scaffold.add(Point(x, -y))
         self.find_intersections()
 
     def find_intersections(self):
@@ -155,7 +161,32 @@ class Image:
                 self.intersection.add(pt)
 
     def alignment_sum(self):
-        return sum([pt.x * pt.y for pt in self.intersection])
+        return -sum([pt.x * pt.y for pt in self.intersection])
+
+    def find_path(self, loc: Point, dir) -> str:
+        path = []
+        distance = 0
+        while True:
+            left_dir = self.LEFT[dir]
+            right_dir = self.RIGHT[dir]
+            while Point(loc.x + dir.x, loc.y + dir.y) in self.scaffold:
+                loc = Point(loc.x + dir.x, loc.y + dir.y)
+                distance += 1
+            if distance > 0:
+                path.append(str(distance))
+                distance = 0
+            if Point(loc.x + left_dir.x, loc.y + left_dir.y) in self.scaffold:
+                dir = left_dir
+                loc = Point(loc.x + left_dir.x, loc.y + left_dir.y)
+                path.append('L')
+                distance = 1
+            elif Point(loc.x + right_dir.x, loc.y + right_dir.y) in self.scaffold:
+                dir = right_dir
+                loc = Point(loc.x + right_dir.x, loc.y + right_dir.y)
+                path.append('R')
+                distance = 1
+            else:
+                return ','.join(path)
 
 
 def test_submission():
@@ -167,6 +198,38 @@ def test_submission():
     print('Output:')
     print(monitor)
     assert image.alignment_sum() == 8520
+    assert image.find_path(Point(0, -16), Point(0, 1)) == \
+        'R,6,L,8,R,8,' \
+        'R,6,L,8,R,8,' \
+        'R,4,R,6,R,6,R,4,R,4,' \
+        'L,8,R,6,L,10,L,10,' \
+        'R,4,R,6,R,6,R,4,R,4,' \
+        'L,8,R,6,L,10,L,10,' \
+        'R,4,R,6,R,6,R,4,R,4,' \
+        'L,8,R,6,L,10,L,10,' \
+        'R,6,L,8,R,8,' \
+        'L,8,R,6,L,10,L,10'
+    # so sequence to program for bot is
+    # Main A,A,B,C,B,C,B,C,A,C
+    # A 'R,6,L,8,R,8,'
+    # B 'R,4,R,6,R,6,R,4,R,4,'
+    # C 'L,8,R,6,L,10,L,10'
+
+def test_submission2():
+    BOTMOVES = ['A,A,B,C,B,C,B,C,A,C.',
+                'R,6,L,8,R,8.',
+                'R,4,R,6,R,6,R,4,R,4.',
+                'L,8,R,6,L,10,L,10.',
+                'n.']
+    ASCII_BOTMOVES = [10 if c == '.' else ord(c) for ins in BOTMOVES for c in ins]
+    ASCII2.run(ASCII_BOTMOVES)
+    assert ASCII2.input == []
+
+    print(''.join([chr(c) if c < 255 else str(c) for c in ASCII2.output]))
+
+    for c in ASCII2.output:
+        if c > 255:
+            assert c == 926819
 
 
 def test_program():
