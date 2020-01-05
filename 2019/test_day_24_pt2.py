@@ -5,6 +5,10 @@ from collections import defaultdict
 class Point(NamedTuple):
     x: int
     y: int
+
+
+class HyperPoint(NamedTuple):
+    pt: Point
     z: int
 
 
@@ -178,49 +182,85 @@ class Puzzle2:
                '#.###']
 
 class InfiniteBoard:
-    DELTAS = [Point(0, 1, 0), Point(1, 0, 0), Point(0, -1, 0), Point(-1, 0, 0)]
+    DELTAS = [Point(0, 1), Point(1, 0), Point(0, -1), Point(-1, 0)]
 
     def __init__(self, raw: List):
         self.state = set()
-        self.fold = set()
+        self.fold = None
+        self.edge_lookup = defaultdict(list)
         self.y_max = len(raw)
         self.x_max = len(raw[0])
-        self.generation = 0
 
         for y, line in enumerate(raw):
             for x, c in enumerate(line):
                 if c == '#':
-                    self.state.add(Point(x, y, 0))
+                    self.state.add(HyperPoint(Point(x, y), 0))
                 elif c == '?':
-                    self.fold.add(Point(x, y, 0))
+                    self.fold = Point(x, y)
+
+        self.edge_lookup[Point(0, 1)].extend([Point(x, 0) for x in range(self.x_max)])
+        self.edge_lookup[Point(0, -1)].extend([Point(x, self.y_max - 1) for x in range(self.x_max)])
+
+        self.edge_lookup[Point(1, 0)].extend([Point(0, y) for y in range(self.y_max)])
+        self.edge_lookup[Point(-1, 0)].extend([Point(self.x_max - 1, y) for y in range(self.y_max)])
 
     def show(self):
         z_min = z_max = 0
-        for pt in self.state:
-            z_min = min(z_min, pt.z)
-            z_max = max(z_max, pt.z)
+        for hyper_pt in self.state:
+            z_min = min(z_min, hyper_pt.z)
+            z_max = max(z_max, hyper_pt.z)
         for z in range(z_min, z_max + 1):
             print(f'Level {z}')
             for y in range(self.y_max):
                 for x in range(self.x_max):
-                    if Point(x, y, z) in self.state:
+                    hyper_pt = HyperPoint(Point(x, y), z)
+                    if hyper_pt in self.state:
                         print('#', end='')
-                    elif Point(x, y, z) in self.fold:
+                    elif hyper_pt.pt == self.fold:
                         print('?', end='')
                     else:
                         print('.', end='')
                 print()
 
-    def neighbors(self, cell):
+    def old_neighbors(self, cell):
         result = []
         for d in self.DELTAS:
-            result.append(Point(cell.x + d.x, cell.y + d.y, cell.z + d.z))
+            result.append(HyperPoint(Point(cell.pt.x + d.x, cell.pt.y + d.y), cell.z))
         return result
+
+    def hyper_neighbors(self, cell):
+        result = []
+        for d in self.DELTAS:
+            potential = Point(cell.pt.x + d.x, cell.pt.y + d.y)
+            if potential == self.fold:
+                result.extend([HyperPoint(pt, cell.z + 1) for pt in self.edge_lookup[d]])
+            elif self.past_edge(potential):
+                result.append(self.edge_neighbor(potential, cell.z))
+            else:
+                result.append(HyperPoint(potential, cell.z))
+        return result
+
+    def past_edge(self, pt: Point):
+        if pt.x < 0 or pt.x >= self.x_max or pt.y < 0 or pt.y >= self.y_max:
+            return True
+        return False
+
+    def edge_neighbor(self, pt: Point, z: int):
+        f = self.fold
+        if pt.x < 0:
+            return HyperPoint(Point(f.x - 1, f.y), z - 1)
+        if pt.x >= self.x_max:
+            return HyperPoint(Point(f.x + 1, f.y), z - 1)
+        if pt.y < 0:
+            return HyperPoint(Point(f.x, f.y - 1), z - 1)
+        if pt.y >= self.y_max:
+            return HyperPoint(Point(f.x, f.y + 1), z - 1)
+        raise IndexError
 
     def step(self):
         neighbor_count = defaultdict(int)
         for cell in self.state:
-            for nbh in self.neighbors(cell):
+            for nbh in self.hyper_neighbors(cell):
                 neighbor_count[nbh] += 1
         next_state = set()
         for pt, cnt in neighbor_count.items():
@@ -240,30 +280,13 @@ def test_example_board():
         print('Initial')
         example_board.show()
     assert len(example_board.state) == 8
-    example_board.step()
+    for _ in range(10):
+        example_board.step()
     if show:
         print()
-        print('After 1 min')
+        print('After 10 min')
         example_board.show()
-    assert len(example_board.state) == 23
-    example_board.step()
-    if show:
-        print()
-        print('After 2 min')
-        example_board.show()
-    # #assert len(example_board.state) == 1
-    # example_board.step()
-    # if show:
-    #     print()
-    #     print('After 3 min')
-    #     example_board.show()
-    # #assert len(example_board.state) == 1
-    # example_board.step()
-    # if show:
-    #     print()
-    #     print('After 4 min')
-    #     example_board.show()
-    # #assert len(example_board.state) == 1
+    assert len(example_board.state) == 99
 
 
 def test_submission():
