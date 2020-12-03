@@ -64,7 +64,7 @@ def test_ans():
     assert ans('()())')[1] == 4
 
 def test_sub():
-    fp = open('./input_day_1.txt','r')
+    fp = open('./input_day_01.txt','r')
     if fp.mode == 'r':
         submission_input = fp.read()
     assert ans(submission_input) == (280,1796)

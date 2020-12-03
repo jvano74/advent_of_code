@@ -25,7 +25,7 @@ def test_wrapping_paper_needed():
     assert wrapping_paper_needed('2x3x4') == 58
 
 def test_wrapping_paper_sub():
-    with open('./input_day_2.txt','r') as fp:
+    with open('./input_day_02.txt','r') as fp:
         total = 0
         line = fp.readline()
         while line:
@@ -61,7 +61,7 @@ def test_ribbon_needed():
     assert ribbon_needed('1x1x10') == 14
 
 def test_ribbon_needed_sub():
-    with open('./input_day_2.txt','r') as fp:
+    with open('./input_day_02.txt','r') as fp:
         total = 0
         line = fp.readline()
         while line:
