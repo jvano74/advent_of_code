@@ -44,7 +44,7 @@ class Solution:
     """
 
 
-with open('input_day_16.txt') as fp:
+with open('day_16_input.txt') as fp:
     raw = fp.read()
 MY_AUNTS = raw.split('\n')
 

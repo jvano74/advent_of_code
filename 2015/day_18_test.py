@@ -149,7 +149,7 @@ def test_board():
 
 
 def test_submission():
-    with open('input_day_18.txt') as fp:
+    with open('day_18_input.txt') as fp:
         raw = fp.read()
     SUBMISSION = raw.split('\n')
     board = Board(SUBMISSION)

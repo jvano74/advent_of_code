@@ -130,7 +130,7 @@ def test_sample():
     assert table.max_happiness()[0] == -330
 
 
-with open('input_day_13.txt') as fp:
+with open('day_13_input.txt') as fp:
     SUBMISSION = fp.read()
 
 

@@ -44,7 +44,7 @@ class Solution:
     """
 
 
-with open('input_day_19a.txt') as fp:
+with open('day_19_input_a.txt') as fp:
     raw = fp.read()
 SUBMISSION = raw.split('\n')
 
