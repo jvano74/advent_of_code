@@ -87,6 +87,7 @@ class Problem:
     In your grid of 100x100 lights, given your initial configuration, how many lights are on after 100 steps?
     """
 
+
 class Board:
     DELTAS = [Point(0, 1), Point(1, 1), Point(1, 0), Point(1, -1),
               Point(0, -1), Point(-1, -1), Point(-1, 0), Point(-1, 1)]
@@ -99,7 +100,7 @@ class Board:
         for y, line in enumerate(raw):
             for x, c in enumerate(line):
                 if c == '#':
-                    self.state[Point(x,y)] = 1
+                    self.state[Point(x, y)] = 1
         if self.broken:
             self.set_broken()
 
@@ -134,31 +135,36 @@ class Board:
             self.set_broken()
         return len(self.state)
 
-TEST = ['.#.#.#',
-        '...##.',
-        '#....#',
-        '..#...',
-        '#.#..#',
-        '####..']
+
+SAMPLE = ['.#.#.#',
+          '...##.',
+          '#....#',
+          '..#...',
+          '#.#..#',
+          '####..']
+
+
+with open('day_18_input.txt') as fp:
+    raw = fp.read()
+    SUBMISSION = raw.split('\n')
+
 
 def test_board():
-    test_board = Board(TEST)
+    sample_board = Board(SAMPLE)
+    num_on = 0
     for _ in range(4):
-        num_on = test_board.step()
+        num_on = sample_board.step()
     assert num_on == 4
 
 
 def test_submission():
-    with open('day_18_input.txt') as fp:
-        raw = fp.read()
-    SUBMISSION = raw.split('\n')
     board = Board(SUBMISSION)
+    num_on = 0
     for _ in range(100):
         num_on = board.step()
     assert num_on == 1061
-    broken_board = Board(SUBMISSION,broken=True)
+
+    broken_board = Board(SUBMISSION, broken=True)
     for _ in range(100):
         num_on = broken_board.step()
-        assert num_on == 1006
-
-
+    assert num_on == 1006
