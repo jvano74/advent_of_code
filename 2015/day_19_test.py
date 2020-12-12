@@ -44,17 +44,10 @@ class Solution:
     """
 
 
-with open('day_19_input_a.txt') as fp:
+with open('day_19_input.txt') as fp:
     raw = fp.read()
-SUBMISSION = raw.split('\n')
-
-
-STARTING = 'ORnPBPMgArCaCaCaSiThCaCaSiThCaCaPBSiRnFArRnFArCaCaSiThCaCaSiThCaCaCaCaCaCaSiRnFYFArSiRnMgAr' \
-           'CaSiRnPTiTiBFYPBFArSiRnCaSiRnTiRnFArSiAlArPTiBPTiRnCaSiAlArCaPTiTiBPMgYFArPTiRnFArSiRnCaCa' \
-           'FArRnCaFArCaSiRnSiRnMgArFYCaSiRnMgArCaCaSiThPRnFArPBCaSiRnMgArCaCaSiThCaSiRnTiMgArFArSiThSi' \
-           'ThCaCaSiRnMgArCaCaSiRnFArTiBPTiRnCaSiAlArCaPTiRnFArPBPBCaCaSiThCaPBSiThPRnFArSiThCaSiThCaSi' \
-           'ThCaPTiBSiRnFYFArCaCaPRnFArPBCaCaPBSiRnTiRnFArCaPRnFArSiRnCaCaCaSiThCaRnCaFArYCaSiRnFArBCaCa' \
-           'CaSiThFArPBFArCaSiRnFArRnCaCaCaFArSiRnFArTiRnPMgArF'
+    reactions, STARTING = raw.split('\n\n')
+    SUBMISSION = reactions.split('\n')
 
 
 def build_formulary(formulary_text):
