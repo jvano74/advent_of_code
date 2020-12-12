@@ -195,6 +195,7 @@ class Mission:
             print(out)
             status, out = self.run_command()
             if status == 0:
+                print(out)
                 print('GAME OVER MAN!')
                 print(self.command_history)
                 if not self.allow_reset:
