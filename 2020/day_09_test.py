@@ -1,4 +1,4 @@
-class Pussle:
+class Puzzle:
     """
     --- Day 9: Encoding Error ---
     With your neighbor happily enjoying their video game, you turn your attention to an open data port on the
