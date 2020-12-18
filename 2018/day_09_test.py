@@ -86,6 +86,7 @@ class MarbleGame:
 
     def play(self, print_game_stage=False):
         # clear scores before playing
+        marble = 0
         self.player_scores = [0 for _ in self.player_scores]
         self.player_scores_details = defaultdict(list)
         for player, marble in enumerate(self.remaining_marbles):
@@ -134,7 +135,7 @@ def test_marble_game():
         print(sample_game.player_scores_details)
     # my game
     print('\n=== MY GAME ===')
-    #game = MarbleGame(INPUT[0], INPUT[1])
+    # game = MarbleGame(INPUT[0], INPUT[1])
     game = MarbleGame(416, 71975)
     assert game.play() == 439341
     print(game.player_scores)
