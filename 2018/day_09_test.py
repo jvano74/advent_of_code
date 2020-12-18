@@ -1,3 +1,6 @@
+from collections import deque, defaultdict
+
+
 class MarbleGame:
     """
     --- Day 9: Marble Mania ---
@@ -75,21 +78,27 @@ class MarbleGame:
     """
     def __init__(self, num_players, num_marbles):
         self.num_players = num_players
-        self.player_scores = [0 for _ in range(num_players)]
         self.ring = [0]
         self.current_marble_position = 0
         self.remaining_marbles = range(1, num_marbles + 1)
+        self.player_scores = [0 for _ in range(num_players)]
+        self.player_scores_details = defaultdict(list)
 
     def play(self, print_game_stage=False):
+        # clear scores before playing
+        self.player_scores = [0 for _ in self.player_scores]
+        self.player_scores_details = defaultdict(list)
         for player, marble in enumerate(self.remaining_marbles):
             if marble % 23 == 0:
                 self.player_scores[player % self.num_players] += marble
+                self.player_scores_details[player % self.num_players].append(marble)
                 second_marble_position = (self.current_marble_position - 7)
                 second_marble_position %= len(self.ring)
                 second_marble = self.ring.pop(second_marble_position)
                 if print_game_stage:
                     print(f'SCORING {marble} and second marble {second_marble} from {second_marble_position}')
                 self.player_scores[player % self.num_players] += second_marble
+                self.player_scores_details[player % self.num_players].append(second_marble)
                 self.current_marble_position = second_marble_position
             else:
                 self.current_marble_position += 1
@@ -107,7 +116,7 @@ class MarbleGame:
 
 INPUT = [416, 71975]  # 416 players; last marble is worth 71975 points
 SAMPLES = [
-    [9, 25, False,32],
+    [9, 25, False, 32],
     [10, 1618, False, 8317],
     [13, 7999, False, 146373],
     [17, 1104, False, 2764],
@@ -121,10 +130,42 @@ def test_marble_game():
         print(f'=== GAME {test_case[0]}, {test_case[1]} ===')
         sample_game = MarbleGame(test_case[0], test_case[1])
         assert sample_game.play(test_case[2]) == test_case[3]
+        print(sample_game.player_scores)
+        print(sample_game.player_scores_details)
     # my game
     print('\n=== MY GAME ===')
-    game = MarbleGame(INPUT[0], INPUT[1])
+    #game = MarbleGame(INPUT[0], INPUT[1])
+    game = MarbleGame(416, 71975)
     assert game.play() == 439341
+    print(game.player_scores)
+    print(game.player_scores_details)
+
     # 524 is too low - was using wrong input >:(INPUT[0] and INPUT[0]?)
-    #game2 = MarbleGame(INPUT[0], INPUT[1]*100)
-    #assert game2.play() == 439341
+    # game2 = MarbleGame(INPUT[0], INPUT[1]*100)
+    # game2 = MarbleGame(416, 71975*100)
+    # 416 =       13 * 2*2*2*2*2
+    # 7197500 = 2879 * 2*2 * 5*5*5*5
+
+
+def play_game(max_players, last_marble):
+    """
+    from https://www.reddit.com/r/adventofcode/comments/a4i97s/2018_day_9_solutions/
+    """
+    scores = defaultdict(int)
+    circle = deque([0])
+
+    for marble in range(1, last_marble + 1):
+        if marble % 23 == 0:
+            circle.rotate(7)
+            scores[marble % max_players] += marble + circle.pop()
+            circle.rotate(-1)
+        else:
+            circle.rotate(-1)
+            circle.append(marble)
+
+    return max(scores.values()) if scores else 0
+
+
+def test_play_game():
+    max_players, last_marble = (416, 71975*100)
+    assert play_game(max_players, last_marble) == 1
