@@ -19,7 +19,9 @@ class Puzzle2:
 
     Then, you remember: Eris is an old Plutonian settlement! Clearly, the bugs are coming from recursively-folded space.
 
-    This 5x5 grid is only one level in an infinite number of recursion levels. The tile in the middle of the grid is actually another 5x5 grid, the grid in your scan is contained as the middle tile of a larger 5x5 grid, and so on. Two levels of grids look like this:
+    This 5x5 grid is only one level in an infinite number of recursion levels. The tile in the middle of the grid is
+    actually another 5x5 grid, the grid in your scan is contained as the middle tile of a larger 5x5 grid, and so on.
+    Two levels of grids look like this:
 
          |     |         |     |
          |     |         |     |
@@ -46,11 +48,15 @@ class Puzzle2:
          |     |         |     |
          |     |         |     |
          |     |         |     |
-    (To save space, some of the tiles are not drawn to scale.) Remember, this is only a small part of the infinitely recursive grid; there is a 5x5 grid that contains this diagram, and a 5x5 grid that contains that one, and so on. Also, the ? in the diagram contains another 5x5 grid, which itself contains another 5x5 grid, and so on.
+    (To save space, some of the tiles are not drawn to scale.) Remember, this is only a small part of the infinitely
+    recursive grid; there is a 5x5 grid that contains this diagram, and a 5x5 grid that contains that one, and so on.
+    Also, the ? in the diagram contains another 5x5 grid, which itself contains another 5x5 grid, and so on.
 
-    The scan you took (your puzzle input) shows where the bugs are on a single level of this structure. The middle tile of your scan is empty to accommodate the recursive grids within it. Initially, no other levels contain bugs.
+    The scan you took (your puzzle input) shows where the bugs are on a single level of this structure. The middle
+    tile of your scan is empty to accommodate the recursive grids within it. Initially, no other levels contain bugs.
 
-    Tiles still count as adjacent if they are directly up, down, left, or right of a given tile. Some tiles have adjacent tiles at a recursion level above or below its own level. For example:
+    Tiles still count as adjacent if they are directly up, down, left, or right of a given tile. Some tiles have
+    adjacent tiles at a recursion level above or below its own level. For example:
 
          |     |         |     |
       1  |  2  |    3    |  4  |  5
@@ -77,6 +83,7 @@ class Puzzle2:
          |     |         |     |
      21  | 22  |    23   |  24 |  25
          |     |         |     |
+
     Tile 19 has four adjacent tiles: 14, 18, 20, and 24.
     Tile G has four adjacent tiles: B, F, H, and L.
     Tile D has four adjacent tiles: 8, C, E, and I.
@@ -92,7 +99,10 @@ class Puzzle2:
     #.?##
     ..#..
     #....
-    The center tile is drawn as ? to indicate the next recursive grid. Call this level 0; the grid within this one is level 1, and the grid that contains this one is level -1. Then, after ten minutes, the grid at each level would look like this:
+
+    The center tile is drawn as ? to indicate the next recursive grid. Call this level 0; the grid within this one
+    is level 1, and the grid that contains this one is level -1. Then, after ten minutes, the grid at each level
+    would look like this:
 
     Depth -5:
     ..#..
@@ -180,6 +190,7 @@ class Puzzle2:
                '..?##',
                '...#.',
                '#.###']
+
 
 class InfiniteBoard:
     DELTAS = [Point(0, 1), Point(1, 0), Point(0, -1), Point(-1, 0)]
