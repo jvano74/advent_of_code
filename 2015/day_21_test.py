@@ -117,12 +117,12 @@ class Stats(NamedTuple):
 
 
 class Player:
-    def __init__(self, items, enemy, hp=100):
+    def __init__(self, enemy, items, hp=100):
         self.items = items
         self.enemy = enemy
         self.stats = Stats('Player', hp, items.damage, items.armor)
 
-    def combat_round(self, print_combat=False):
+    def run_combat(self, print_combat=False):
         while True:
             self.enemy = self.stats.attacks(self.enemy, print_combat)
             if self.enemy.hp <= 0:
@@ -138,8 +138,8 @@ class Player:
 
 def test_player():
     print()
-    player1 = Player(Item('Total Items', 0, 5, 5), Stats('Sample Boss', 12, 7, 2), 8)
-    assert player1.combat_round(print_combat=True) == 'You won'
+    player1 = Player(Stats('Sample Boss', 12, 7, 2), Item('Total Items', 0, 5, 5), 8)
+    assert player1.run_combat(print_combat=True) == 'You won'
 
 
 # Real game values
@@ -189,10 +189,10 @@ def find_solution(win=True):
     if not win:
         possible_gear = reversed(possible_gear)
     for gear in possible_gear:
-        player1 = Player(gear, INPUT_BOSS)
-        if win and player1.combat_round() == 'You won':
+        player1 = Player(INPUT_BOSS, gear)
+        if win and player1.run_combat() == 'You won':
             return player1.items
-        elif not win and player1.combat_round() != 'You won':
+        elif not win and player1.run_combat() != 'You won':
             return player1.items
 
 
