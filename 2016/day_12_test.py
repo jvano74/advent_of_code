@@ -1,3 +1,7 @@
+from collections import defaultdict
+import re
+
+
 class Puzzle:
     """
      --- Day 12: Leonardo's Monorail ---
@@ -36,11 +40,18 @@ class Puzzle:
     dec a
     jnz a 2
     dec a
+
     The above code would set register a to 41, increase its value by 2, decrease its value by 1, and then skip the
     last dec a (because a is not zero, so the jnz a 2 skips it), leaving register a at 42. When you move past the
     last instruction, the program halts.
 
     After executing the assembunny code in your puzzle input, what value is left in register a?
+
+    --- Part Two ---
+    As you head down the fire escape to the monorail, you notice it didn't start; register c needs to be initialized
+    to the position of the ignition key.
+
+    If you instead initialize register c to be 1, what value is now left in register a?
     """
     pass
 
@@ -68,3 +79,57 @@ INPUT = ['cpy 1 a',
          'jnz d -2',
          'dec c',
          'jnz c -5']
+
+
+class Processor:
+
+    def __init__(self, program):
+        self.program = program
+        self.execution = 0
+        self.registers = defaultdict(int)
+
+    def step(self):
+        if 0 <= self.execution < len(self.program):
+            cmd, argv = self.program[self.execution].split(' ', 1)
+            argv = argv.split(' ')
+            values = [int(v) if re.match(r'^-?\d+$', v) else self.registers[v] for v in argv]
+
+            if cmd == 'jnz':
+                if values[0] != 0:
+                    self.execution += values[1]
+                else:
+                    self.execution += 1
+                return 0
+
+            self.execution += 1
+            if cmd == 'cpy':
+                self.registers[argv[1]] = values[0]
+            elif cmd == 'inc':
+                self.registers[argv[0]] += 1
+            elif cmd == 'dec':
+                self.registers[argv[0]] -= 1
+            return 0
+        return 1
+
+    def run(self):
+        while self.step() == 0:
+            pass
+        return self.registers['a']
+
+
+def test_processor():
+    sample_processor = Processor(['cpy 41 a', 'inc a', 'inc a', 'dec a', 'jnz a 2', 'dec a'])
+    assert sample_processor.run() == 42
+
+
+def test_puzzle_processor():
+    puzzle_processor = Processor(INPUT)
+    result = puzzle_processor.run()
+    assert result == 318009
+
+
+def test_puzzle2_processor():
+    puzzle_processor = Processor(INPUT)
+    puzzle_processor.registers['c'] = 1
+    result = puzzle_processor.run()
+    assert result == 9227663
