@@ -40,6 +40,16 @@ class Puzzle:
 
     However, your situation has more than two discs; you've noted their positions in your puzzle input. What is the
     first time you can press the button to get a capsule?
+
+    --- Part Two ---
+    After getting the first capsule (it contained a star! what great fortune!), the machine detects your success and
+    begins to rearrange itself.
+
+    When it's done, the discs are back in their original configuration as if it were time=0 again, but a new disc
+    with 11 positions and starting at position 0 has appeared exactly one second below the previously-bottom disc.
+
+    With this new disc, and counting again starting from time=0 with the configuration in your puzzle input, what is
+    the first time you can press the button to get another capsule?
     """
     pass
 
@@ -51,3 +61,36 @@ INPUT = ['Disc #1 has 7 positions; at time=0, it is at position 0.',
          'Disc #5 has 17 positions; at time=0, it is at position 0.',
          'Disc #6 has 19 positions; at time=0, it is at position 7.']
 
+INPUT_PARSED = [(1, 7, 0),
+                (2, 13, 0),
+                (3, 3, 2),
+                (4, 5, 2),
+                (5, 17, 0),
+                (6, 19, 7)]
+
+
+def disk_drop(disks, t):
+    return all([(disk_pos + t + disk_off) % disk_mod == 0 for disk_pos, disk_mod, disk_off in disks])
+
+
+def test_disk_drop():
+    assert disk_drop([(1, 5, 4), (2, 2, 1)], 5)
+
+
+def test_puzzle_disk_drop():
+    t = 0
+    while not disk_drop(INPUT_PARSED, t):
+        t += 1
+    assert t == 121834
+
+
+def test_puzzle_disk_drop2():
+    # note there are more efficient ways to determine this
+    # e.g. increase t by multiples of first disks
+    # but this worked quickly enough...
+    t = 0
+    INPUT_PARSED2 = INPUT_PARSED.copy()
+    INPUT_PARSED2.append((7, 11, 0))
+    while not disk_drop(INPUT_PARSED2, t):
+        t += 1
+    assert t == 3208099
