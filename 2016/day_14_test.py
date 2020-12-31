@@ -1,3 +1,8 @@
+import hashlib
+import re
+from collections import deque
+
+
 class Puzzle:
     """
     --- Day 14: One-Time Pad ---
@@ -38,6 +43,89 @@ class Puzzle:
     Given the actual salt in your puzzle input, what index produces your 64th one-time pad key?
 
     Your puzzle input is ahsbgdzn.
+
+    --- Part Two ---
+    Of course, in order to make this process even more secure, you've also implemented key stretching.
+
+    Key stretching forces attackers to spend more time generating hashes. Unfortunately, it forces everyone else to
+    spend more time, too.
+
+    To implement key stretching, whenever you generate a hash, before you use it, you first find the MD5 hash of
+    that hash, then the MD5 hash of that hash, and so on, a total of 2016 additional hashings. Always use lowercase
+    hexadecimal representations of hashes.
+
+    For example, to find the stretched hash for index 0 and salt abc:
+
+    Find the MD5 hash of abc0: 577571be4de9dcce85a041ba0410f29f.
+    Then, find the MD5 hash of that hash: eec80a0c92dc8a0777c619d9bb51e910.
+    Then, find the MD5 hash of that hash: 16062ce768787384c81fe17a7a60c7e3.
+    ...repeat many times...
+    Then, find the MD5 hash of that hash: a107ff634856bb300138cac6568c0f24.
+    So, the stretched hash for index 0 in this situation is a107ff.... In the end, you find the original hash
+    (one use of MD5), then find the hash-of-the-previous-hash 2016 times, for a total of 2017 uses of MD5.
+
+    The rest of the process remains the same, but now the keys are entirely different. Again for salt abc:
+
+    The first triple (222, at index 5) has no matching 22222 in the next thousand hashes.
+    The second triple (eee, at index 10) hash a matching eeeee at index 89, and so it is the first key.
+    Eventually, index 22551 produces the 64th key (triple fff with matching fffff at index 22859.
+    Given the actual salt in your puzzle input and using 2016 extra MD5 calls of key stretching, what index now
+    produces your 64th one-time pad key?
     """
     pass
 
+
+def get_key(salt, stretched=False):
+    hi = 0
+    hashes = deque()
+    while True:
+        while len(hashes) <= 1000:
+            h = hashlib.md5(f'{salt}{hi}'.encode('utf-8')).hexdigest()
+            if stretched:
+                for _ in range(2016):
+                    h = hashlib.md5(f'{h}'.encode('utf-8')).hexdigest()
+            hashes.append((hi, h))
+            hi += 1
+        index, hash_val = hashes.popleft()
+        triples = re.findall(r'(.)\1{2,}', hash_val)
+        if len(triples) == 0:
+            continue
+        char_to_match = triples[0]
+        for _, later_val in hashes:
+            if re.match(rf'.*({char_to_match}){{5}}', later_val):
+                yield index, hash_val
+                break
+
+
+def test_get_key():
+    pad = get_key('abc')
+    index, _ = next(pad)
+    assert index == 39
+    index, _ = next(pad)
+    assert index == 92
+    for _ in range(62):
+        index, _ = next(pad)
+    assert index == 22728
+
+
+def test_puzzle():
+    pad = get_key('ahsbgdzn')
+    for _ in range(64):
+        index, _ = next(pad)
+    assert index == 23890
+
+
+def test_get_key2():
+    pad = get_key('abc', stretched=True)
+    index, _ = next(pad)
+    assert index == 10
+    for _ in range(63):
+        index, _ = next(pad)
+    assert index == 22551
+
+
+def test_puzzle2():
+    pad = get_key('ahsbgdzn', stretched=True)
+    for _ in range(64):
+        index, _ = next(pad)
+    assert index == 22696
