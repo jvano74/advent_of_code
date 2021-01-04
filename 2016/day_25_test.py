@@ -48,7 +48,7 @@ class Puzzle:
     You look toward the sky in desperation... suddenly noticing that a lone star has been installed at the top of
     the antenna! Only 49 more to go.
 
-    You don't have enough stars to transmit the signal, though. You need 4 more.
+    You have enough stars to transmit the signal.
     """
     pass
 
