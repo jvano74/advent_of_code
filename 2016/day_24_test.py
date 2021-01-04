@@ -61,10 +61,6 @@ with open('day_24_input.txt') as fp:
     INPUTS = [line.strip() for line in fp]
 
 
-with open('day_24_simplified_input.txt') as fp:
-    S_INPUTS = [line.strip() for line in fp]
-
-
 class Pt(NamedTuple):
     x: int
     y: int
@@ -271,7 +267,6 @@ def test_sample_get_goals():
 
 def test_puzzle_get_goals():
     puzzle_maze = Maze(INPUTS)
-    # puzzle_maze = Maze(S_INPUTS)
     check_stats = False
     print_puzzle = False
 
