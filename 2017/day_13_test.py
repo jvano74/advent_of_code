@@ -182,7 +182,158 @@ class Puzzle:
 
     Given the details of the firewall you've recorded, if you leave immediately, what is the severity of your
     whole trip?
+
+    --- Part Two ---
+    Now, you need to pass through the firewall without being caught - easier said than done.
+
+    You can't control the speed of the packet, but you can delay it any number of picoseconds. For each picosecond
+    you delay the packet before beginning your trip, all security scanners move one step. You're not in the firewall
+    during this time; you don't enter layer 0 until you stop delaying the packet.
+
+    In the example above, if you delay 10 picoseconds (picoseconds 0 - 9), you won't get caught:
+
+    State after delaying:
+     0   1   2   3   4   5   6
+    [ ] [S] ... ... [ ] ... [ ]
+    [ ] [ ]         [ ]     [ ]
+    [S]             [S]     [S]
+                    [ ]     [ ]
+
+    Picosecond 10:
+     0   1   2   3   4   5   6
+    ( ) [S] ... ... [ ] ... [ ]
+    [ ] [ ]         [ ]     [ ]
+    [S]             [S]     [S]
+                    [ ]     [ ]
+
+     0   1   2   3   4   5   6
+    ( ) [ ] ... ... [ ] ... [ ]
+    [S] [S]         [S]     [S]
+    [ ]             [ ]     [ ]
+                    [ ]     [ ]
+
+
+    Picosecond 11:
+     0   1   2   3   4   5   6
+    [ ] ( ) ... ... [ ] ... [ ]
+    [S] [S]         [S]     [S]
+    [ ]             [ ]     [ ]
+                    [ ]     [ ]
+
+     0   1   2   3   4   5   6
+    [S] (S) ... ... [S] ... [S]
+    [ ] [ ]         [ ]     [ ]
+    [ ]             [ ]     [ ]
+                    [ ]     [ ]
+
+
+    Picosecond 12:
+     0   1   2   3   4   5   6
+    [S] [S] (.) ... [S] ... [S]
+    [ ] [ ]         [ ]     [ ]
+    [ ]             [ ]     [ ]
+                    [ ]     [ ]
+
+     0   1   2   3   4   5   6
+    [ ] [ ] (.) ... [ ] ... [ ]
+    [S] [S]         [S]     [S]
+    [ ]             [ ]     [ ]
+                    [ ]     [ ]
+
+
+    Picosecond 13:
+     0   1   2   3   4   5   6
+    [ ] [ ] ... (.) [ ] ... [ ]
+    [S] [S]         [S]     [S]
+    [ ]             [ ]     [ ]
+                    [ ]     [ ]
+
+     0   1   2   3   4   5   6
+    [ ] [S] ... (.) [ ] ... [ ]
+    [ ] [ ]         [ ]     [ ]
+    [S]             [S]     [S]
+                    [ ]     [ ]
+
+
+    Picosecond 14:
+     0   1   2   3   4   5   6
+    [ ] [S] ... ... ( ) ... [ ]
+    [ ] [ ]         [ ]     [ ]
+    [S]             [S]     [S]
+                    [ ]     [ ]
+
+     0   1   2   3   4   5   6
+    [ ] [ ] ... ... ( ) ... [ ]
+    [S] [S]         [ ]     [ ]
+    [ ]             [ ]     [ ]
+                    [S]     [S]
+
+
+    Picosecond 15:
+     0   1   2   3   4   5   6
+    [ ] [ ] ... ... [ ] (.) [ ]
+    [S] [S]         [ ]     [ ]
+    [ ]             [ ]     [ ]
+                    [S]     [S]
+
+     0   1   2   3   4   5   6
+    [S] [S] ... ... [ ] (.) [ ]
+    [ ] [ ]         [ ]     [ ]
+    [ ]             [S]     [S]
+                    [ ]     [ ]
+
+
+    Picosecond 16:
+     0   1   2   3   4   5   6
+    [S] [S] ... ... [ ] ... ( )
+    [ ] [ ]         [ ]     [ ]
+    [ ]             [S]     [S]
+                    [ ]     [ ]
+
+     0   1   2   3   4   5   6
+    [ ] [ ] ... ... [ ] ... ( )
+    [S] [S]         [S]     [S]
+    [ ]             [ ]     [ ]
+                    [ ]     [ ]
+    B
+    ecause all smaller delays would get you caught, the fewest number of picoseconds you would need to delay to get
+    through safely is 10.
+
+    What is the fewest number of picoseconds that you need to delay the packet to pass through the firewall without
+    being caught?
     """
     pass
 
 
+SAMPLE = ['0: 3', '1: 2', '4: 4', '6: 4']
+
+with open('day_13_input.txt') as fp:
+    INPUTS = [line.strip() for line in fp]
+
+
+def parse_input(lines):
+    results = []
+    for ln in lines:
+        a, b = ln.split(': ')
+        results.append((int(a), 2 * int(b) - 2, int(b)))
+    return results
+
+
+def severity(arrangement, t=0, never_caught=False):
+    severity_sum = 0
+    for loc, mod, scan_range in arrangement:
+        if (loc + t) % mod == 0:
+            if never_caught:
+                return 1
+            severity_sum += loc * scan_range
+    return severity_sum
+
+
+def test_severity():
+    assert severity(parse_input(SAMPLE)) == 24
+    assert severity(parse_input(INPUTS)) == 1612
+    t = 0
+    puzzle_arrangement = parse_input(INPUTS)
+    while severity(puzzle_arrangement, t, never_caught=True) > 0:
+        t = t+1
+    assert t == 3907994
