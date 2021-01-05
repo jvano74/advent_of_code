@@ -89,6 +89,84 @@ class Puzzle:
     generation produces 325.
 
     After 20 generations, what is the sum of the numbers of all pots which contain a plant?
+
+   --- Part Two ---
+    You realize that 20 generations aren't enough. After all, these plants will need to last another 1500 years to
+    even reach your timeline, not to mention your future.
+
+    After fifty billion (50000000000) generations, what is the sum of the numbers of all pots which contain a plant?
     """
     pass
+
+
+SAMPLE_INITIAL = '#..#.#..##......###...###'
+SAMPLE_RULES = ['...## => #', '..#.. => #', '.#... => #', '.#.#. => #', '.#.## => #',
+                '.##.. => #', '.#### => #', '#.#.# => #', '#.### => #', '##.#. => #',
+                '##.## => #', '###.. => #', '###.# => #', '####. => #']
+
+
+with open('day_12_input.txt') as fp:
+    RAW_INITIAL, RAW_RULES = fp.read().split('\n\n')
+    INPUT_INITIAL = RAW_INITIAL.strip().split('initial state: ')[1]
+    INPUT_RULES = [line.strip() for line in RAW_RULES.split('\n')]
+
+
+def parse_initial(line, raw_rules):
+    alive = set()
+    rules = set()
+    for i, c in enumerate(line):
+        if c == '#':
+            alive.add(i)
+    for rule in raw_rules:
+        pattern, result = rule.split(' => ')
+        if result == '#':
+            rules.add(pattern)
+    return alive, rules
+
+
+def get_next_gen(current_gen, rules):
+    next_gen = set()
+    for i in range(min(current_gen) - 3, max(current_gen) + 3):
+        rule_key = ''.join('#' if i+j in current_gen else '.' for j in range(5))
+        if rule_key in rules:
+            next_gen.add(i + 2)
+    return next_gen
+
+
+def test_next_gen():
+    generation, rules = parse_initial(SAMPLE_INITIAL, SAMPLE_RULES)
+    assert generation == {0, 3, 5, 8, 9, 16, 17, 18, 22, 23, 24}
+    generation = get_next_gen(generation, rules)
+    assert generation == {0, 4, 9, 15, 18, 21, 24}
+    for _ in range(19):
+        generation = get_next_gen(generation, rules)
+    assert sum(generation) == 325
+
+
+def test_puzzle_next_gen():
+    initial_generation, rules = parse_initial(INPUT_INITIAL, INPUT_RULES)
+    generation = initial_generation.copy()
+    print()
+    pot_range = range(-5, 180)
+    slope = 62
+    base = 6855
+    g0 = 100
+    total = sum(generation)
+    for g in range(1, 200):
+        # last_total = total
+        generation = get_next_gen(generation, rules)
+        # total = sum(generation)
+        # pots = ''.join('#' if i in generation else '.' for i in pot_range)
+        # guess = slope*(g - g0) + base
+        # print(f"{g}:{total}={guess} d={total-last_total}:{pots}")
+        if g == 20:
+            part1_generation = generation.copy()
+    assert sum(part1_generation) == 2571
+
+    # skip long calculation
+    # generation = initial_generation.copy()
+    # for _ in range(50_000_000_000):
+    #    generation = get_next_gen(generation, rules)
+    # assert sum(generation) == 2571
+    assert slope*(50_000_000_000 - g0) + base == 3100000000655
 
