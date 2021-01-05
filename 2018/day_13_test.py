@@ -315,7 +315,7 @@ class Track:
             x_max = self.x_max
         result = []
         for y in range(y_min, y_max + 1):
-            line = [f'{y}'.rjust(3,'0')]
+            line = [f'{y}'.rjust(3, '0')]
             for x in range(x_min, x_max + 1):
                 pt = Pt(x, y)
                 c = self.track[pt] if pt in self.track else ' '
