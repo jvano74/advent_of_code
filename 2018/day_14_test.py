@@ -58,5 +58,73 @@ class Puzzle:
     What are the scores of the ten recipes immediately after the number of recipes in your puzzle input?
 
     Your puzzle input is 793061.
+
+    --- Part Two ---
+    As it turns out, you got the Elves' plan backwards. They actually want to know how many recipes appear on the
+    scoreboard to the left of the first recipes whose scores are the digits from your puzzle input.
+
+    51589 first appears after 9 recipes.
+    01245 first appears after 5 recipes.
+    92510 first appears after 18 recipes.
+    59414 first appears after 2018 recipes.
+
+    How many recipes appear on the scoreboard to the left of the score sequence in your puzzle input?
     """
     pass
+
+
+def coco_score(elf_1_repipe, elf_2_repipe):
+    recipe_book = [elf_1_repipe, elf_2_repipe]
+    elf_1 = 0
+    elf_2 = 1
+    loc = 0
+    while True:
+        recipe_book_len = len(recipe_book)
+        if loc < recipe_book_len:
+            yield recipe_book[loc]
+            loc += 1
+        elf_1 = elf_1 % recipe_book_len
+        elf_2 = elf_2 % recipe_book_len
+        total = recipe_book[elf_1] + recipe_book[elf_2]
+        if total >= 10:
+            recipe_book.append(1)
+            total = total % 10
+        recipe_book.append(total)
+        elf_1 += 1 + recipe_book[elf_1]
+        elf_2 += 1 + recipe_book[elf_2]
+
+
+def extract_range(generator, start, length):
+    result = []
+    for _ in range(start):
+        next(generator)
+    for _ in range(length):
+        result.append(f'{next(generator)}')
+    return ''.join(result)
+
+
+def match_sequence(generator, sequence):
+    count = 0
+    test = ''
+    slen = len(sequence)
+    while len(test) < slen:
+        test = f'{test}{next(generator)}'
+        count += 1
+    while test != sequence:
+        test = f'{test[1:]}{next(generator)}'
+        count += 1
+    return count - slen
+
+
+def test_coco_score():
+    cook_off = coco_score(3, 7)
+    expected = [3, 7, 1, 0, 1, 0, 1, 2, 4, 5, 1, 5, 8, 9, 1, 6, 7, 7, 9, 2]
+    assert all(v == next(cook_off) for v in expected)
+    assert extract_range(coco_score(3, 7), 9, 10) == '5158916779'
+    assert match_sequence(coco_score(3, 7), '51589') == 9
+    assert match_sequence(coco_score(3, 7), '01245') == 5
+    assert match_sequence(coco_score(3, 7), '92510') == 18
+    assert match_sequence(coco_score(3, 7), '59414') == 2018
+    # puzzle
+    assert extract_range(coco_score(3, 7), 793061, 10) == '4138145721'
+    assert match_sequence(coco_score(3, 7), '793061') == 20276284
