@@ -251,7 +251,7 @@ class Sky:
 
     def num_of_components(self):
         component = 0
-        pt_as_component = {p: 0 for p in self.positions }
+        pt_as_component = {p: 0 for p in self.positions}
         for p in self.positions:
             if pt_as_component[p] == 0:
                 component += 1
@@ -266,9 +266,9 @@ class Sky:
         return component, pt_as_component
 
 
-
 with open('day_10_sample.txt') as fp:
     SAMPLE = [line.strip() for line in fp]
+
 
 with open('day_10_input.txt') as fp:
     INPUT = [line.strip() for line in fp]
@@ -296,9 +296,9 @@ def test_part1():
     time = times[0][1]
     sample.view_at_time(time)
     answer = '\n'.join(sample.look_up())
-    #sz, overlay = sample.num_of_components()
-    #print(f'at time {time} has size {sz}')
-    #answer = '\n'.join(sample.look_up(overlay))
+    # sz, overlay = sample.num_of_components()
+    # print(f'at time {time} has size {sz}')
+    # answer = '\n'.join(sample.look_up(overlay))
     answer = f'\n{answer}'
     print()
     print(answer)
