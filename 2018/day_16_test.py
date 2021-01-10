@@ -1,5 +1,7 @@
 import re
 import operator
+from collections import defaultdict
+from typing import NamedTuple
 
 
 class Puzzle:
@@ -102,6 +104,12 @@ class Puzzle:
     program (the second section of your puzzle input) - you can ignore it for now.
 
     Ignoring the opcode numbers, how many samples in your puzzle input behave like three or more opcodes?
+
+    --- Part Two ---
+    Using the samples you collected, work out the number of each opcode and execute the test program
+    (the second section of your puzzle input).
+
+    What value is contained in register 0 after executing the test program?
     """
     pass
 
@@ -109,217 +117,170 @@ class Puzzle:
 with open('day_16_input.txt') as fp:
     part_1_raw, part_2_raw = fp.read().split('\n\n\n\n')
     INPUT_PART_1 = [[ln.strip() for ln in ex.split('\n')] for ex in part_1_raw.split('\n\n')]
-    INPUT_PART_2 = [ln.strip() for ln in part_2_raw.split('\n')]
+    INPUT_PART_2 = [[int(d) for d in ln.strip().split(' ')] for ln in part_2_raw.split('\n')]
 
 
 def test_input():
     assert INPUT_PART_1[0] == ['Before: [0, 2, 0, 2]', '6 0 1 1', 'After:  [0, 1, 0, 2]']
     assert INPUT_PART_1[-1] == ['Before: [1, 2, 2, 1]', '9 3 1 3', 'After:  [1, 2, 2, 1]']
     assert len(INPUT_PART_1) == 811
-    assert INPUT_PART_2[0] == '2 0 1 1'
-    assert INPUT_PART_2[-1] == '12 2 0 0'
+    assert INPUT_PART_2[0] == [2, 0, 1, 1]
+    assert INPUT_PART_2[-1] == [12, 2, 0, 0]
 
 
-class Processor:
-    def __init__(self, code):
-        self.registers = [0, 0, 0, 0]
-        self.code = code
+class Observation(NamedTuple):
+    operation: list
+    register_before: list
+    register_after: list
 
-    def operation(self, op):
-        if op[0][0:3] == 'add':
-            # return self.addition(op)
-            return self.binary_operation(op, operator.add)
-        if op[0][0:3] == 'mul':
-            # return self.multiplication(op)
-            return self.binary_operation(op, operator.mul)
-        if op[0][0:3] == 'ban':
-            # return self.bitwise_and(op)
-            return self.binary_operation(op, operator.and_)
-        if op[0][0:3] == 'bor':
-            # return self.bitwise_or(op)
-            return self.binary_operation(op, operator.or_)
-        if op[0][0:3] == 'set':
-            return self.assignment(op)
-        if op[0][0:2] == 'gt':
-            # return self.greater_than(op)
-            return self.comparison_operation(op, operator.gt)
-        if op[0][0:2] == 'eq':
-            # return self.equality(op)
-            return self.comparison_operation(op, operator.eq)
-        return 1
-
-    def binary_operation(self, op, operation):
-        op[1] = self.registers[0]
-        # deal with any input registers
-        if op[0][3] == 'r':
-            op[2] = self.registers[1]
-
-        self.registers[op[3]] = operation(op[1], op[2])
-        return 0
-
-    def addition(self, op):
-        """
-        addr (add register)
-        addi (add immediate)
-        """
-        if op[0][0:3] != 'add':
-            return 1
-
-        op[1] = self.registers[0]
-        # deal with any input registers
-        if op[0][3] == 'r':
-            op[2] = self.registers[1]
-
-        self.registers[op[3]] = op[1] + op[2]
-        return 0
-
-    def multiplication(self, op):
-        """
-        mulr (multiply register)
-        muli (multiply immediate)
-        """
-        if op[0][0:3] != 'mul':
-            return 1
-
-        op[1] = self.registers[0]
-        # deal with any input registers
-        if op[0][3] == 'r':
-            op[2] = self.registers[1]
-
-        self.registers[op[3]] = op[1] * op[2]
-        return 0
-
-    def bitwise_and(self, op):
-        """
-        banr (bitwise AND register)
-        bani (bitwise AND immediate)
-        """
-        if op[0][0:3] != 'ban':
-            return 1
-
-        op[1] = self.registers[0]
-        # deal with any input registers
-        if op[0][3] == 'r':
-            op[2] = self.registers[1]
-
-        self.registers[op[3]] = op[1] & op[2]
-        return 0
-
-    def bitwise_or(self, op):
-        """
-        borr (bitwise OR register)
-        bori (bitwise OR immediate)
-        """
-        if op[0][0:3] != 'bor':
-            return 1
-
-        op[1] = self.registers[0]
-        # deal with any input registers
-        if op[0][3] == 'r':
-            op[2] = self.registers[1]
-
-        self.registers[op[3]] = op[1] | op[2]
-        return 0
-
-    def assignment(self, op):
-        """
-        setr (set register)
-        seti (set immediate)
-        """
-        if op[0][0:3] != 'set':
-            return 1
-
-        # deal with any input registers
-        if op[0][3] == 'r':
-            op[1] = self.registers[0]
-
-        self.registers[op[3]] = op[1]
-        return 0
-
-    def comparison_operation(self, op, operation):
-        # deal with any input registers
-        if op[0][2] == 'r':
-            op[1] = self.registers[0]
-        if op[0][3] == 'r':
-            op[2] = self.registers[1]
-
-        if operation(op[1], op[2]):
-            self.registers[op[3]] = 1
-        else:
-            self.registers[op[3]] = 0
-        return 0
-
-    def greater_than(self, op):
-        """
-        gtir (greater-than immediate/register)
-        gtri (greater-than register/immediate)
-        gtrr (greater-than register/register)
-        """
-        if op[0][0:2] != 'gt':
-            return 1
-
-        # deal with any input registers
-        if op[0][2] == 'r':
-            op[1] = self.registers[0]
-        if op[0][3] == 'r':
-            op[2] = self.registers[1]
-
-        if op[1] > op[2]:
-            self.registers[op[3]] = 1
-        else:
-            self.registers[op[3]] = 0
-        return 0
-
-    def equality(self, op):
-        """
-        eqir (equal immediate/register)
-        eqri (equal register/immediate)
-        eqrr (equal register/register)
-        """
-        if op[0][0:2] != 'eq':
-            return 1
-
-        # deal with any input registers
-        if op[0][2] == 'r':
-            op[1] = self.registers[0]
-        if op[0][3] == 'r':
-            op[2] = self.registers[1]
-
-        if op[1] == op[2]:
-            self.registers[op[3]] = 1
-        else:
-            self.registers[op[3]] = 0
-        return 0
-
-    def check_observation(self, observation):
+    @staticmethod
+    def raw(raw_observation):
         """
         Observation format:
         ['Before: [3, 2, 1, 1]', '9 2 1 2', 'After:  [3, 2, 2, 1]']
         """
-        raw_before, raw_operation, raw_after = observation
+        raw_before, raw_operation, raw_after = raw_observation
         before = [int(i) for i in re.findall(r'(\d+)', raw_before)]
         operation = [int(i) for i in re.findall(r'(\d+)', raw_operation)]
         after = [int(i) for i in re.findall(r'(\d+)', raw_after)]
+        return Observation(operation, before, after)
 
-        possible_match = 0
-        for op_code in ['addr', 'addi',
-                        'mulr', 'muli',
-                        'banr', 'bani',
-                        'borr', 'bori',
-                        'setr', 'seti',
-                        'gtir', 'gtri', 'gtrr',
-                        'eqir', 'eqri', 'eqrr']:
-            operation[0] = op_code
-            self.registers = before[:]
-            result = self.operation(operation)
+
+class Processor:
+    op_codes = ['addr', 'addi', 'mulr', 'muli', 'banr', 'bani', 'borr', 'bori',
+                'setr', 'seti',
+                'gtir', 'gtri', 'gtrr', 'eqir', 'eqri', 'eqrr']
+
+    binary_operations = {'add': operator.add, 'mul': operator.mul,
+                         'ban': operator.and_, 'bor': operator.or_}
+
+    comparison_operations = {'gt': operator.gt,
+                             'eq': operator.eq}
+
+    def __init__(self, code):
+        self.code = code
+        self.execution_pointer = 0
+        self.registers = [0, 0, 0, 0]
+        self.op_code_id_to_code = {}
+
+    def step(self):
+        if 0 <= self.execution_pointer < len(self.code):
+            op = self.code[self.execution_pointer]
+            result = self.operation(op)
+            self.execution_pointer += 1
+            return result
+        return 1, 'execution_pointer out of range'
+
+    def run(self, code):
+        self.code = code
+        self.execution_pointer = 0
+        self.registers = [0, 0, 0, 0]
+        while True:
+            result = self.step()
+            if result != 0:
+                return result
+
+    def operation(self, instruction):
+        op = instruction[0]
+        if op in self.op_code_id_to_code:
+            op = self.op_code_id_to_code[op]
+        op_io = instruction[1:]
+
+        base_inst = op[0:3]
+        if base_inst in self.binary_operations:
+            return self.binary_operation(op[3], op_io, self.binary_operations[base_inst])
+        if base_inst == 'set':
+            return self.assignment(op[3], op_io)
+
+        base_inst = op[0:2]
+        if base_inst in self.comparison_operations:
+            return self.comparison_operation(op[2:], op_io, self.comparison_operations[base_inst])
+
+        return 1
+
+    def binary_operation(self, op, op_io, operation):
+        op_io[0] = self.registers[op_io[0]]
+        # deal with any input registers
+        if op == 'r':
+            op_io[1] = self.registers[op_io[1]]
+        self.registers[op_io[2]] = operation(op_io[0], op_io[1])
+        return 0
+
+    def assignment(self, op, op_io):
+        # deal with any input registers
+        if op == 'r':
+            op_io[0] = self.registers[op_io[0]]
+        self.registers[op_io[2]] = op_io[0]
+        return 0
+
+    def comparison_operation(self, op, op_io, operation):
+        # deal with any input registers
+        if op[0] == 'r':
+            op_io[0] = self.registers[op_io[0]]
+        if op[1] == 'r':
+            op_io[1] = self.registers[op_io[1]]
+
+        if operation(op_io[0], op_io[1]):
+            self.registers[op_io[2]] = 1
+        else:
+            self.registers[op_io[2]] = 0
+        return 0
+
+    def check_observation(self, obs: Observation):
+        matching_op_codes = set()
+        unknown_ops = set(self.op_codes) - set(self.op_code_id_to_code.values())
+        for op_code in unknown_ops:
+            obs.operation[0] = op_code
+            self.registers = obs.register_before[:]
+            result = self.operation(obs.operation)
             if result != 0:
                 raise Exception('Unexpected operation')
-            if self.registers == after:
-                possible_match += 1
-        return possible_match
+            if self.registers == obs.register_after:
+                matching_op_codes.add(op_code)
+        return matching_op_codes
+
+    def decompile(self, raw_observations):
+        unresolved_observations = defaultdict(list)
+        for raw_observation in raw_observations:
+            observation = Observation.raw(raw_observation)
+            unresolved_observations[observation.operation[0]].append(observation)
+
+        pass_number = 0
+        possible_id_to_codes = {}
+        while len(unresolved_observations) > 0:
+            pass_number += 1
+            now_resolved_code_ids = set()
+            for op_code_id, observations in unresolved_observations.items():
+                for observation in observations:
+                    matching_op_codes = self.check_observation(observation)
+                    if op_code_id in possible_id_to_codes:
+                        matching_op_codes = possible_id_to_codes[op_code_id].intersection(matching_op_codes)
+
+                    if len(matching_op_codes) == 1:
+                        op_code = matching_op_codes.pop()
+                        self.op_code_id_to_code[op_code_id] = op_code
+                        now_resolved_code_ids.add(op_code_id)
+                        break  # op_code_id done, no need to review further observations
+                    else:
+                        possible_id_to_codes[op_code_id] = matching_op_codes  # update
+            for code_id in now_resolved_code_ids:
+                unresolved_observations.pop(code_id)
+
+        return pass_number
 
 
-def test_obsercations():
-    processor = Processor([])
-    more_than_2 = [1 for obs in INPUT_PART_1 if processor.check_observation(obs) > 2]
-    assert len(more_than_2) == 427  # 427 not right and 382, 192 and 170 too low
+SAMPLE_OBSERVATION = Observation(operation=[9, 2, 1, 2],
+                                 register_before=[3, 2, 1, 1],
+                                 register_after=[3, 2, 2, 1])
+
+
+def test_observations():
+    processor = Processor(INPUT_PART_2)
+    assert processor.check_observation(SAMPLE_OBSERVATION) == {'addi', 'mulr', 'seti'}
+
+    more_than_2 = [1 for obs in INPUT_PART_1 if len(processor.check_observation(Observation.raw(obs))) > 2]
+    assert sum(more_than_2) == 560
+    decompile_passes = processor.decompile(INPUT_PART_1)
+    assert decompile_passes == 5
+    processor.run(INPUT_PART_2)
+    assert processor.registers[0] == 622
