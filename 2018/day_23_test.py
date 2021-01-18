@@ -1,6 +1,8 @@
 from typing import NamedTuple
+from collections import defaultdict
 import numpy as np
 import re
+
 
 class Puzzle:
     """
@@ -201,6 +203,31 @@ class Region(NamedTuple):
         return True
 
     @staticmethod
+    def region_count(ranges):
+        delta = defaultdict(int)
+        for p in ranges:
+            delta[p.min] += 1
+            delta[p.max + 1] -= 1
+        in_region = {}
+        total = 0
+        prev_x = None
+        for x, v in sorted(delta.items()):
+            in_region[(prev_x, x)] = total
+            total += v
+            prev_x = x
+        in_region[(prev_x, None)] = total
+        return in_region
+
+    @staticmethod
+    def count_intersection(set_of_regions):
+        oppp = Region.region_count(r.ppp for r in set_of_regions)
+        oppm = Region.region_count(r.ppm for r in set_of_regions)
+        opmp = Region.region_count(r.pmp for r in set_of_regions)
+        opmm = Region.region_count(r.pmm for r in set_of_regions)
+
+        return oppp, oppm, opmp, opmm
+
+    @staticmethod
     def overlap(ranges):
         set_of_ranges = {p for p in ranges}
         new_min = max(p.min for p in set_of_ranges)
@@ -280,8 +307,20 @@ def test_parallelogram():
 
 class MaxIntersection:
     def __init__(self, bots):
+        self.bots = bots
         self.num_initial_regions = len(bots)
         self.initial_regions = [Bot(pt, r).region() for pt, r in bots.items()]
+
+    def points_in_range(self, pt):
+        return sum(1 for c, r in self.bots.items() if c.distance_from(pt) <= r)
+
+    def count_intersection(self):
+        regions = Region.count_intersection(self.initial_regions)
+        new_regions = []
+        for r in regions:
+            max_num = max(v for v in r.values())
+            new_regions.append({x: v for x, v in r.items() if v == max_num})
+        return new_regions
 
     def set_intersection_empty(self, region_ids):
         if len(region_ids) == 0:
@@ -315,10 +354,41 @@ SAMPLE = ['pos=<10,12,12>, r=2', 'pos=<12,14,12>, r=2',
           'pos=<50,50,50>, r=200', 'pos=<10,10,10>, r=5']
 
 
+def find_xyz(ppp, ppm, pmp, pmm):
+    """
+    ppp = x + y + z
+    ppm = x + y - z
+    pmp = x - y + z
+    pmm = x - y - z
+    """
+    z = (ppp - ppm)//2
+    y = (ppp - pmp)//2
+    x = (ppp + pmm)//2
+    return Pt(x, y, z)
+
+
 def test_build_intersections():
     max_intersection = MaxIntersection(parse_input(SAMPLE))
     interested_regions = max_intersection.build_intersections()
     assert interested_regions == {frozenset({0, 1, 2, 3, 4})}
+    assert max_intersection.count_intersection() == [{(36, 37): 5}, {(12, 13): 6}, {(12, 13): 6}, {(-12, -11): 6}]
+    assert find_xyz(36, 12, 12, -12) == (12, 12, 12)
+
     max_intersection = MaxIntersection(parse_input(INPUTS))
-    interested_regions = max_intersection.build_intersections()
-    assert interested_regions == ''
+    assert max_intersection.count_intersection() == [{(138697281, 138697284): 981},
+                                                     {(53546326, 53546328): 980},
+                                                     {(53739757, 53739759): 980},
+                                                     {(-31411197, -31411195): 982}]
+    pts = set()
+    for ppp in range(138697281, 138697284):
+        for ppm in range(53546326, 53546328):
+            for pmp in range(53739757, 53739759):
+                for pmm in range(-31411197, -31411195):
+                    pts.add(find_xyz(ppp, ppm, pmp, pmm))
+    assert {p: max_intersection.points_in_range(p) for p in pts} == {Pt(x=53643042, y=42478761, z=42575477): 972,
+                                                                     Pt(x=53643042, y=42478762, z=42575477): 976,
+                                                                     Pt(x=53643042, y=42478762, z=42575478): 973,
+                                                                     Pt(x=53643043, y=42478762, z=42575477): 972,
+                                                                     Pt(x=53643043, y=42478762, z=42575478): 975,
+                                                                     Pt(x=53643043, y=42478763, z=42575478): 968}
+    assert 53643042 + 42478762 + 42575477 == 138697281
