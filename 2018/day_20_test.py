@@ -198,28 +198,17 @@ class Pt(NamedTuple):
 
 
 class Maze:
-    def __init__(self, directions, use_broken=False):
+    def __init__(self, directions):
         self.map = defaultdict(set)
         self.distances = defaultdict(int)
+        self.follow_directions(Pt(0, 0), directions)
 
-        if use_broken:
-            self.follow_directions_broken(Pt(0, 0), directions)
-        else:
-            self.follow_directions(Pt(0, 0), directions)
-
-        self.min_y = None
-        self.max_y = None
-        self.min_x = None
-        self.max_x = None
-        self.get_map_dimensions()
-
-    DIRECTIONS = {'N': Pt(0, -1), 'S': Pt(0, 1), 'W': Pt(-1, 0), 'E': Pt(1, 0)}
-
-    def get_map_dimensions(self):
         self.min_y = min(pt.y for pt in self.map.keys())
         self.max_y = max(pt.y for pt in self.map.keys())
         self.min_x = min(pt.x for pt in self.map.keys())
         self.max_x = max(pt.x for pt in self.map.keys())
+
+    DIRECTIONS = {'N': Pt(0, -1), 'S': Pt(0, 1), 'W': Pt(-1, 0), 'E': Pt(1, 0)}
 
     def follow_directions(self, pt, directions):
         position_queue = []
@@ -250,24 +239,6 @@ class Maze:
                 for option in options:
                     pts = pts | option
                 options = options_queue.pop()
-
-    def follow_directions_broken(self, pt, directions):
-        position_queue = []
-        for c in directions:
-            if c in self.DIRECTIONS:
-                next_pt = pt + self.DIRECTIONS[c]
-                self.map[pt].add(next_pt)
-                self.map[next_pt].add(pt)  # doors work both ways
-                new_dist = self.distances[pt] + 1
-                self.distances[next_pt] = min(self.distances[next_pt], new_dist) \
-                    if self.distances[next_pt] != 0 else new_dist
-                pt = next_pt
-            elif c == '(':
-                position_queue.append(pt)
-            elif c == ')':
-                pt = position_queue.pop()  # This doesn't works by problem logic but it does give right answer
-            elif c == '|':
-                pt = position_queue[-1]
 
     def print_map(self):
         result = []
