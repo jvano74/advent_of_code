@@ -198,11 +198,14 @@ class Pt(NamedTuple):
 
 
 class Maze:
-    def __init__(self, directions):
+    def __init__(self, directions, use_broken=False):
         self.map = defaultdict(set)
         self.distances = defaultdict(int)
 
-        self.follow_directions(Pt(0, 0), directions)
+        if use_broken:
+            self.follow_directions_broken(Pt(0, 0), directions)
+        else:
+            self.follow_directions(Pt(0, 0), directions)
 
         self.min_y = None
         self.max_y = None
@@ -220,6 +223,36 @@ class Maze:
 
     def follow_directions(self, pt, directions):
         position_queue = []
+        options_queue = []
+        pts = {pt}
+        options = []
+        for c in directions:
+            if c in self.DIRECTIONS:
+                next_pts = set()
+                for pt in pts:
+                    next_pt = pt + self.DIRECTIONS[c]
+                    self.map[pt].add(next_pt)
+                    self.map[next_pt].add(pt)  # doors work both ways
+                    new_dist = self.distances[pt] + 1
+                    self.distances[next_pt] = min(self.distances[next_pt], new_dist) \
+                        if self.distances[next_pt] != 0 else new_dist
+                    next_pts.add(next_pt)
+                pts = next_pts
+            elif c == '(':
+                position_queue.append(pts)
+                options_queue.append(options)
+                options = []
+            elif c == '|':
+                options.append(pts)
+                pts = position_queue[-1]
+            elif c == ')':
+                _ = position_queue.pop()
+                for option in options:
+                    pts = pts | option
+                options = options_queue.pop()
+
+    def follow_directions_broken(self, pt, directions):
+        position_queue = []
         for c in directions:
             if c in self.DIRECTIONS:
                 next_pt = pt + self.DIRECTIONS[c]
@@ -232,69 +265,9 @@ class Maze:
             elif c == '(':
                 position_queue.append(pt)
             elif c == ')':
-                pt = position_queue.pop()  # TODO: I don't understand why this works???
+                pt = position_queue.pop()  # This doesn't works by problem logic but it does give right answer
             elif c == '|':
                 pt = position_queue[-1]
-
-    def overly_complex_follow_directions(self, pt, directions):
-        direction_queue = [(pt, directions)]
-        while len(direction_queue) > 0:
-            pt, directions = direction_queue.pop()
-            if directions.count('(') == 0:
-                head, rest = directions, ''
-            else:
-                head, rest = directions.split('(', 1)
-
-            for c in head:
-                if c in self.DIRECTIONS:
-                    next_pt = pt + self.DIRECTIONS[c]
-                    self.map[pt].add(next_pt)
-                    self.map[next_pt].add(pt)  # doors work both ways
-                    pt = next_pt
-
-            if len(rest) > 0:
-                depth = 1
-                pos = 0
-                opt_start = 0
-                options = []
-                while depth > 0:
-                    c = rest[pos]
-                    if c == '(':
-                        depth += 1
-                    elif c == ')':
-                        if depth == 1:
-                            options.append((opt_start, pos))
-                            opt_start = pos + 1
-                        depth -= 1
-                    elif depth == 1 and c == '|':
-                        options.append((opt_start, pos))
-                        opt_start = pos + 1
-                    pos += 1
-                for opt_start, opt_end in options:
-                    direction_queue.append((pt, f'{rest[opt_start:opt_end]}{rest[pos:]}'))
-
-    def find_shortest_path(self, start, end):
-        to_explore = PriorityQueue()
-        history = {start}
-        to_explore.put((0, start))
-        while not to_explore.empty():
-            dist, new_pt = to_explore.get()
-            if new_pt == end:
-                return dist
-            for p in self.map[new_pt]:
-                if p not in history:
-                    to_explore.put((dist + 1, p))
-                    history.add(p)
-        return -1
-
-    def find_farthest_room(self, start):
-        distances = []
-        for y in range(self.min_y, self.max_y + 1):
-            for x in range(self.min_x, self.max_x + 1):
-                pt = Pt(x, y)
-                if pt != start:
-                    distances.append(self.find_shortest_path(start, pt))
-        return max(distances)
 
     def print_map(self):
         result = []
@@ -327,6 +300,18 @@ class Maze:
 
 
 def test_sample_maze():
+    maze = Maze('^N(E|W)N$')
+    maze_map = maze.print_map()
+    # print()
+    # print('\n'.join(maze_map))
+    assert maze_map == ['#######',
+                        '#.#.#.#',
+                        '#-###-#',
+                        '#.|.|.#',
+                        '###-###',
+                        '#.#X#.#',
+                        '#######']
+
     maze = Maze('^ENWWW(NEEE|SSE(EE|N))$')
     maze_map = maze.print_map()
     # print()
@@ -340,7 +325,7 @@ def test_sample_maze():
                         '#-#-#####',
                         '#.|.|.|.#',
                         '#########']
-    assert maze.find_farthest_room(Pt(0, 0)) == 10
+    assert max(maze.distances.values()) == 10
 
     maze = Maze('^ENNWSWW(NEWS|)SSSEEN(WNSE|)EE(SWEN|)NNN$')
     maze_map = maze.print_map()
@@ -357,13 +342,29 @@ def test_sample_maze():
                         '#-###-###-#',
                         '#.|.|.#.|.#',
                         '###########']
-    assert maze.find_farthest_room(Pt(0, 0)) == 18
+    assert max(maze.distances.values()) == 18
 
     maze = Maze('^ESSWWN(E|NNENN(EESS(WNSE|)SSS|WWWSSSSE(SW|NNNE)))$')
-    assert maze.find_farthest_room(Pt(0, 0)) == 23
+    maze_map = maze.print_map()
+    print()
+    print('\n'.join(maze_map))
+    assert maze_map == ['#############',
+                        '#.|.|.|.|.|.#',
+                        '#-#####-###-#',
+                        '#.#.|.#.#.#.#',
+                        '#-#-###-#-#-#',
+                        '#.#.#.|.#.|.#',
+                        '#-#-#-#####-#',
+                        '#.#.#.#X|.#.#',
+                        '#-#-#-###-#-#',
+                        '#.|.#.|.#.#.#',
+                        '###-#-###-#-#',
+                        '#.|.#.|.|.#.#',
+                        '#############']
+    assert max(maze.distances.values()) == 23
 
     maze = Maze('^WSSEESWWWNW(S|NENNEEEENN(ESSSSW(NWSW|SSEN)|WSWWN(E|WWS(E|SS))))$')
-    assert maze.find_farthest_room(Pt(0, 0)) == 31
+    assert max(maze.distances.values()) == 31
 
 
 def test_puzzle_maze():
