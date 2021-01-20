@@ -404,10 +404,10 @@ class State(NamedTuple):
     equipped: str
 
     def move(self, delta):
-        return 1, State(self.loc + delta, self.equipped)
+        return 1, State(loc=(self.loc + delta), equipped=self.equipped)
 
-    def equip(self, new_item):
-        return 7, State(self.loc, new_item)
+    def change_equip(self, new_item):
+        return 7, State(loc=self.loc, equipped=new_item)
 
     def min_time_distance(self, other):
         min_additional_steps = self.loc.distance(other.loc)
@@ -513,7 +513,7 @@ class ExploreCave:
             result.append(''.join(line))
         return result
 
-    #                        Recap of types : . rock, = wet, | narrow
+    #    Recap of types : . rock, = wet, | narrow
     safe_states = {('T', '.'), ('T', '|'),  # T = torch
                    ('G', '.'), ('G', '='),  # G = climbing gear
                    ('N', '|'), ('N', '=')}  # N = neither
@@ -533,7 +533,7 @@ class ExploreCave:
         current_type = self.map[current_loc]
 
         new_gear = self.safe_gear_transitions[(current_type, current_equip)]
-        neighbors.append(state.equip(new_gear))
+        neighbors.append(state.change_equip(new_gear))
 
         for direction in [Pt(1, 0), Pt(-1, 0), Pt(0, 1), Pt(0, -1)]:
             potential_loc = current_loc + direction
@@ -560,13 +560,16 @@ class ExploreCave:
                 new_duration = duration + delta_t
                 if new_state in history:
                     pass  # already been here, no value returning
+                elif new_state in path:
+                    pass  # already been here, no value returning
                 elif max_time is not None and new_duration + target_state.min_time_distance(new_state) > max_time:
                     pass  # too far behind, not able to finish by max_time so prune
                 else:
                     new_path = path[:]
                     new_path.append(new_state)
                     boundary.put((new_duration, new_state, new_path))
-                    history.add(new_state)
+                    if delta_t == 1:  # if == 7 might get here faster via a different path
+                        history.add(new_state)
         return -1, []
 
 
@@ -595,27 +598,27 @@ def test_puzzle_cave():
 
     explore = ExploreCave(puzzle_cave.print_cave(cave_map_min, cave_map_max, as_map=True), target)
 
+    # note min time would be 9 + 758 = 767 w/o equipment changes but can't go that fast
+
     time, route = explore.navigate(search_area=Pt(x=10, y=800))
-    assert time == 1130
-    # with small grid size of 10, 800 was able to make it in 1130
-    # but this time is too high, if we expand the area we could speed up
+    assert time == 1107
+    # with limited grid size of 10, 800 we can get to target in 1107
+    # if we expand the area we may be able to speed up
 
-    # note min time would be 9 + 758 = 767 w/o equipment changes but can't make that
+    # using above time and adding a max_time to prune growth of search tree
+    time, route = explore.navigate(search_area=Pt(x=1200, y=1200), max_time=1107)
 
-    # using above time we can add a max_time to prune growth of search tree
-    # using a min additional time between current state and goal
-    time, route = explore.navigate(search_area=Pt(x=1200, y=1200), max_time=(1130 + 300))
-
-    route_max_x = max(s.loc.x for s in route)
-    route_max_y = max(s.loc.y for s in route)
-    print()
-    # print('\n'.join(puzzle_cave.print_cave(Pt(0, 0),
-    #                                       Pt(route_max_x + 1, route_max_y + 2),
-    #                                       route)))
+    # route_max_x = max(s.loc.x for s in route)
+    # route_max_y = max(s.loc.y for s in route)
+    # print()
+    # print('\n'.join(explore.print_cave(Pt(0, 0), Pt(route_max_x + 1, route_max_y + 2), route)))
+    # print()
+    # print(route)
     # equipment_changes = sum(1 if route[t-1].equipped != s.equipped else 0 for t, s in enumerate(route) if t > 0)
     # assert equipment_changes == 8
     # assert len(route) - 8 == (9 + 758) + 221
 
     assert route[-1] == State(loc=target, equipped='T')
-    assert time == 1043  # apparently 1043 is wrong (too high) so must be bug ???
-    # now min is 1046? how can adding neighbors make the path longer?
+    assert time == 1029  # finally the right answer...
+    # Main bug that was in code was adding points to history to prune visiting too soon - namely when adding
+    # a longer +7 min equipment changes this ended up pruning a shorter path to this point.
