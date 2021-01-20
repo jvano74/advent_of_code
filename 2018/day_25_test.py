@@ -114,9 +114,7 @@ class Puzzle:
 
     "Energy required: 49 stars."
 
-    You don't have enough stars to trigger the underflow, though. You need 10 more.
-
-    Although it hasn't changed, you can still get your puzzle input.
+    You have enough stars to Trigger the Underflow.
     """
     pass
 
