@@ -1,5 +1,4 @@
-import math
-from typing import NamedTuple, Callable
+from typing import NamedTuple, Callable, Tuple
 from collections import defaultdict
 
 
@@ -651,7 +650,7 @@ class Beacons:
         return False, dict()
 
     @staticmethod
-    def calculate_transform(base_beacon, beacon_to_add, mapping) -> Callable[[Pt], Pt]:
+    def calculate_transform(base_beacon, beacon_to_add, mapping) -> Tuple[Callable[[Pt], Pt], Pt]:
         rotations = [
             # z fixed
             lambda pt: Pt(pt.x, pt.y, pt.z),
@@ -695,6 +694,7 @@ class Beacons:
                 return lambda old_pt: rot_f(old_pt) + delta, delta
         raise NotImplemented()
 
+
 def test_sample_beacons():
     sample_beacons = Beacons(RAW_SAMPLE)
     assert len(sample_beacons.beacon) == 5
@@ -724,9 +724,9 @@ def test_normalize_beacons():
     assert len(sample_beacons.probes) == 79
     assert sample_beacons.scanner_max_mds() == 3621
 
+
 def test_normalize_my_beacons():
     my_beacons = Beacons(RAW_INPUT)
     my_beacons.normalize_beacons()
     assert len(my_beacons.probes) == 355
     assert my_beacons.scanner_max_mds() == 10842
-
