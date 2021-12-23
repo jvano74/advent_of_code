@@ -1,5 +1,4 @@
 from typing import NamedTuple
-# from collections import defaultdict
 
 
 class Puzzle:
@@ -208,6 +207,12 @@ how many cubes are on?
 with open('day_22_input.txt') as fp:
     INPUTS = [line.strip() for line in fp]
 
+SMALL_SAMPLE = '''on x=10..12,y=10..12,z=10..12
+on x=11..13,y=11..13,z=11..13
+off x=9..11,y=9..11,z=9..11
+on x=10..10,y=10..10,z=10..10'''.split('\n')
+
+
 SAMPLE = '''on x=-20..26,y=-36..17,z=-47..7
 on x=-20..33,y=-21..23,z=-26..28
 on x=-22..28,y=-29..23,z=-38..16
@@ -302,15 +307,137 @@ class Pt(NamedTuple):
         return max(abs(self.x), abs(self.y), abs(self.z))
 
 
+class Box(NamedTuple):
+    min_pt: Pt
+    max_pt: Pt
+
+    def size(self):
+        return (self.max_pt.x - self.min_pt.x) * \
+               (self.max_pt.y - self.min_pt.y) * \
+               (self.max_pt.z - self.min_pt.z)
+
+    def contains_pt(self, pt):
+        return self.min_pt.x <= pt.x < self.max_pt.x and \
+               self.min_pt.y <= pt.y < self.max_pt.y and \
+               self.min_pt.z <= pt.z < self.max_pt.z
+
+    def overlap(self, other):
+        if self.min_pt.x >= other.max_pt.x:
+            return False
+        if other.min_pt.x >= self.max_pt.x:
+            return False
+        if self.min_pt.y >= other.max_pt.y:
+            return False
+        if other.min_pt.y >= self.max_pt.y:
+            return False
+        if self.min_pt.z >= other.max_pt.z:
+            return False
+        if other.min_pt.z >= self.max_pt.z:
+            return False
+        return True
+
+    def union(self, other):
+        x_axis = list({self.min_pt.x, self.max_pt.x, other.min_pt.x, other.max_pt.x})
+        x_axis.sort()
+        y_axis = list({self.min_pt.y, self.max_pt.y, other.min_pt.y, other.max_pt.y})
+        y_axis.sort()
+        z_axis = list({self.min_pt.z, self.max_pt.z, other.min_pt.z, other.max_pt.z})
+        z_axis.sort()
+
+        extra_bits = []
+        x_last, y_last, z_last = None, None, None
+        for zi, z in enumerate(z_axis):
+            if zi == 0:
+                z_last = z
+                continue
+            for yi, y in enumerate(y_axis):
+                if yi == 0:
+                    y_last = y
+                    continue
+                for xi, x in enumerate(x_axis):
+                    if xi == 0:
+                        x_last = x
+                        continue
+                    min_pt = Pt(x_last, y_last, z_last)
+                    max_pt = Pt(x, y, z)
+                    if other.contains_pt(min_pt) and not self.contains_pt(min_pt):
+                        extra_bits.append(Box(min_pt, max_pt))
+                    x_last = x
+                y_last = y
+            z_last = z
+        return extra_bits
+
+
+def test_box_size():
+    assert Box(Pt(0, 3, 5), Pt(2, 4, 8)).size() == 6
+
+
+def test_box_contains_pt():
+    assert Box(Pt(-2, -2, -2), Pt(3, 3, 3)).contains_pt(Pt(0, 0, 0)) is True
+    assert Box(Pt(0, 3, 7), Pt(2, 4, 8)).contains_pt(Pt(1, 3, 7)) is True
+    assert Box(Pt(0, 3, 7), Pt(2, 4, 8)).contains_pt(Pt(2, 3, 7)) is False
+    assert Box(Pt(0, 3, 7), Pt(2, 4, 8)).contains_pt(Pt(-1, 3, 7)) is False
+
+
+def test_box_overlap():
+    assert Box(Pt(-2, -2, -2), Pt(3, 3, 3)).overlap(
+           Box(Pt(-1, -1, -1), Pt(2, 2, 2))) is True
+    assert Box(Pt(0, 3, 7), Pt(2, 4, 8)).overlap(
+           Box(Pt(1, 3, 7), Pt(4, 4, 8))) is True
+    assert Box(Pt(0, 3, 7), Pt(2, 4, 8)).overlap(
+           Box(Pt(1, 3, 3), Pt(4, 4, 4))) is False
+    assert Box(Pt(0, 3, 7), Pt(2, 4, 8)).overlap(
+           Box(Pt(2, 3, 3), Pt(4, 4, 4))) is False
+    assert Box(Pt(0, 3, 7), Pt(2, 4, 8)).overlap(
+           Box(Pt(-1, -3, -7), Pt(0, 0, 0))) is False
+
+
+def test_box_union():
+    assert Box(Pt(0, 3, 7), Pt(2, 4, 8)).union(
+           Box(Pt(1, 3, 7), Pt(4, 4, 8))) == [Box(Pt(2, 3, 7), Pt(4, 4, 8))]
+    assert Box(Pt(0, 3, 7), Pt(2, 4, 8)).union(
+           Box(Pt(1, 3, 3), Pt(4, 4, 4))) == [Box(Pt(1, 3, 3), Pt(2, 4, 4)), Box(Pt(2, 3, 3), Pt(4, 4, 4))]
+    assert Box(Pt(-2, -2, -2), Pt(3, 3, 3)).union(
+           Box(Pt(-1, -1, -1), Pt(2, 2, 2))) == []
+    assert Box(Pt(-1, -1, -1), Pt(2, 2, 2)).union(
+           Box(Pt(-2, -2, -2), Pt(3, 3, 3))) == [Box(Pt(-2, -2, -2), Pt(-1, -1, -1)),
+                                                 Box(Pt(-1, -2, -2), Pt(2, -1, -1)),
+                                                 Box(Pt(2, -2, -2), Pt(3, -1, -1)),
+                                                 Box(Pt(-2, -1, -2), Pt(-1, 2, -1)),
+                                                 Box(Pt(-1, -1, -2), Pt(2, 2, -1)),
+                                                 Box(Pt(2, -1, -2), Pt(3, 2, -1)),
+                                                 Box(Pt(-2, 2, -2), Pt(-1, 3, -1)),
+                                                 Box(Pt(-1, 2, -2), Pt(2, 3, -1)),
+                                                 Box(Pt(2, 2, -2), Pt(3, 3, -1)),
+                                                 Box(Pt(-2, -2, -1), Pt(-1, -1, 2)),
+                                                 Box(Pt(-1, -2, -1), Pt(2, -1, 2)),
+                                                 Box(Pt(2, -2, -1), Pt(3, -1, 2)),
+                                                 Box(Pt(-2, -1, -1), Pt(-1, 2, 2)),
+                                                 Box(Pt(2, -1, -1), Pt(3, 2, 2)),
+                                                 Box(Pt(-2, 2, -1), Pt(-1, 3, 2)),
+                                                 Box(Pt(-1, 2, -1), Pt(2, 3, 2)),
+                                                 Box(Pt(2, 2, -1), Pt(3, 3, 2)),
+                                                 Box(Pt(-2, -2, 2), Pt(-1, -1, 3)),
+                                                 Box(Pt(-1, -2, 2), Pt(2, -1, 3)),
+                                                 Box(Pt(2, -2, 2), Pt(3, -1, 3)),
+                                                 Box(Pt(-2, -1, 2), Pt(-1, 2, 3)),
+                                                 Box(Pt(-1, -1, 2), Pt(2, 2, 3)),
+                                                 Box(Pt(2, -1, 2), Pt(3, 2, 3)),
+                                                 Box(Pt(-2, 2, 2), Pt(-1, 3, 3)),
+                                                 Box(Pt(-1, 2, 2), Pt(2, 3, 3)),
+                                                 Box(Pt(2, 2, 2), Pt(3, 3, 3))]
+
+
 class Board:
     def __init__(self, initial_lines, max_range=None):
         self.instructions = []
-        self.x_grid = []
-        self.y_grid = []
-        self.z_grid = []
-        # self.grid_size = dict()
-        # self.grid = defaultdict(int)
         self.grid = dict()
+
+        if max_range is not None:
+            bounding_box = Box(Pt(-max_range, -max_range, -max_range),
+                               Pt(max_range + 1, max_range + 1, max_range + 1))
+        else:
+            bounding_box = None
 
         for line in initial_lines:
             state, region = line.split(' ')
@@ -320,92 +447,48 @@ class Board:
             y_range = [int(n) for n in raw_y[2:].split('..')]
             z_range = [int(n) for n in raw_z[2:].split('..')]
 
-            self.instructions.append((state, x_range, y_range, z_range))
-            self.x_grid.append(x_range[0])
-            self.x_grid.append(x_range[1] + 1)
-            self.y_grid.append(y_range[0])
-            self.y_grid.append(y_range[1] + 1)
-            self.z_grid.append(z_range[0])
-            self.z_grid.append(z_range[1] + 1)
+            self.instructions.append(
+                (state,
+                 Box(Pt(x_range[0], y_range[0], z_range[0]),
+                     Pt(x_range[1] + 1, y_range[1] + 1, z_range[1] + 1))
+                 ))
 
-        self.x_grid = sorted(set(self.x_grid))
-        self.y_grid = sorted(set(self.y_grid))
-        self.z_grid = sorted(set(self.z_grid))
-
-        # x_last, y_last, z_last = None, None, None
-        # for zn, z in enumerate(self.z_grid):
-        #     if zn == 0:
-        #         z_last = z
-        #         continue
-        #     dz = z - z_last
-        #     for yn, y in enumerate(self.y_grid):
-        #         if yn == 0:
-        #             y_last = y
-        #             continue
-        #         dy = y - y_last
-        #         for xn, x in enumerate(self.x_grid):
-        #             if xn == 0:
-        #                 x_last = x
-        #                 continue
-        #             dx = x - x_last
-        #             # self.grid_size[Pt(x_last, y_last, z_last)] = dx * dy * dz
-        #             self.grid_size[f'{x_last},{y_last},{z_last}'] = dx * dy * dz
-        #             x_last = x
-        #         y_last = y
-        #     z_last = z
-
-        for (state, x_range, y_range, z_range) in self.instructions:
-            if max_range is not None and any(abs(e) > max_range for e in x_range + y_range + z_range):
+        for (state, next_box) in self.instructions:
+            if bounding_box is not None and not bounding_box.overlap(next_box):
                 continue
-            # original - too much memory usage for 2nd part
-            # for z in range(z_range[0], z_range[1]+1):
-            #     for y in range(y_range[0], y_range[1]+1):
-            #         for x in range(x_range[0], x_range[1]+1):
-            #             self.grid[Pt(x, y, z)] = 1 if state == 'on' else 0
-            for z in [n for n in self.z_grid if z_range[0] <= n <= z_range[1]]:
-                for y in [n for n in self.y_grid if y_range[0] <= n <= y_range[1]]:
-                    for x in [n for n in self.x_grid if x_range[0] <= n <= x_range[1]]:
-                        self.grid[Pt(x, y, z)] = 1 if state == 'on' else 0
+
+            if state == 'on':
+                boxes_to_add = [next_box]
+                while len(boxes_to_add) > 0:
+                    inserting_box = boxes_to_add.pop()
+                    bits = None
+                    for pt, box in self.grid.items():
+                        if inserting_box.overlap(box):
+                            bits = box.union(inserting_box)
+                            boxes_to_add.extend(bits)
+                            break
+                    if bits is None:
+                        self.grid[inserting_box.min_pt] = inserting_box
+            elif state == 'off':
+                box_to_remove = next_box
+                next_pass = list(self.grid.items())
+                for pt, box in next_pass:
+                    if box_to_remove.overlap(box):
+                        new_bits = box_to_remove.union(box)
+                        del(self.grid[pt])
+                        for nb in new_bits:
+                            self.grid[nb.min_pt] = nb
 
     def total(self):
-        # return sum(self.grid_size[f'{pt.x},{pt.y},{pt.z}'] for pt in self.grid if self.grid[pt] == 1)
-        # x_last, y_last, z_last = None, None, None
-        # total = 0
-        # for zn, z in enumerate(self.z_grid):
-        #     if zn == 0:
-        #         z_last = z
-        #         continue
-        #     dz = z - z_last
-        #     for yn, y in enumerate(self.y_grid):
-        #         if yn == 0:
-        #             y_last = y
-        #             continue
-        #         dy = y - y_last
-        #         for xn, x in enumerate(self.x_grid):
-        #             if xn == 0:
-        #                 x_last = x
-        #                 continue
-        #             dx = x - x_last
-        #             pt = Pt(x_last, y_last, z_last)
-        #             if pt in self.grid and self.grid[pt] == 1:
-        #                 total += dx * dy * dz
-        #             x_last = x
-        #         y_last = y
-        #     z_last = z
         total = 0
-        for pt in self.grid:
-            if self.grid[pt] == 1:
-                xi = self.x_grid.index(pt.x)
-                yi = self.y_grid.index(pt.y)
-                zi = self.z_grid.index(pt.z)
-                dx = self.x_grid[xi + 1] - self.x_grid[xi]
-                dy = self.y_grid[yi + 1] - self.y_grid[yi]
-                dz = self.z_grid[zi + 1] - self.z_grid[zi]
-                total += dx * dy * dz
+        for box in self.grid.values():
+            total += box.size()
         return total
 
 
 def test_board():
+    small_board = Board(SMALL_SAMPLE, 50)
+    assert small_board.total() == 39
     sample_board = Board(SAMPLE, 50)
     assert sample_board.total() == 590784
     sample2_board = Board(SAMPLE2)
@@ -419,4 +502,4 @@ def test_game_board():
 
 def test_second_part_with_game_board():
     game_board = Board(INPUTS)
-    assert game_board.total() == 611378
+    assert game_board.total() == 1214313344725528
