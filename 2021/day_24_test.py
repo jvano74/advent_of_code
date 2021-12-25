@@ -415,5 +415,5 @@ def test_find_zeros_part1():
 def test_find_zeros_part2():
     # part 2
     z_range = find_zeros_forward(13, find_lowest=True)
-    assert z_range[0] == '74929995999389'
+    assert z_range[0] == '11118151637112'
     # z_outs = find_zeros_rev(5)
