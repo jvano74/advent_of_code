@@ -148,7 +148,7 @@ def test_score():
     assert letter_value("z") == 26
     assert letter_value("A") == 27
     assert letter_value("Z") == 52
-    assert sum(score(*split(x)) for x in INPUTS) == 8056
+    assert sum(score(*split(x)) for x in INPUTS) == 7766
 
 
 def test_badge():
