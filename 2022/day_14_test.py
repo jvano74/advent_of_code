@@ -1,5 +1,4 @@
 from typing import NamedTuple
-from collections import defaultdict
 
 
 class Puzzle:
@@ -225,7 +224,7 @@ class Map:
                 break
             if self.floor is not None and active_pt.y + 1 == self.floor:
                 fixed_sand.add(falling_sand.pop())
-                continue 
+                continue
             next_pt = active_pt.s()
             if next_pt not in fixed_sand:
                 falling_sand.append(next_pt)
@@ -262,6 +261,7 @@ def test_map():
     assert sample.sand_fill() == 24
     sample.floor = sample.max_y + 2
     assert sample.sand_fill() == 93
+
 
 def test_my_map():
     my_input = Map(MY_INPUT)
