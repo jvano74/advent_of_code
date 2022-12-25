@@ -1,3 +1,4 @@
+from heapq import heappush, heappop
 from typing import NamedTuple
 
 
@@ -77,6 +78,9 @@ class Pt(NamedTuple):
     y: int
     z: int
 
+    def __neg__(self):
+        return Pt(-self.x, -self.y, -self.z)
+
     def __add__(self, other):
         return Pt(self.x + other.x, self.y + other.y, self.z + other.z)
 
@@ -88,37 +92,6 @@ class Pt(NamedTuple):
 
     def pt_max(self, other):
         return Pt(max(self.x, other.x), max(self.y, other.y), max(self.z, other.z))
-
-    def top(self):
-        return Pt(self.x, self.y, self.z + 1)
-
-    def bottom(self):
-        return Pt(self.x, self.y, self.z - 1)
-
-    def left(self):
-        return Pt(self.x - 1, self.y, self.z)
-
-    def right(self):
-        return Pt(self.x + 1, self.y, self.z)
-
-    def front(self):
-        return Pt(self.x, self.y + 1, self.z)
-
-    def back(self):
-        return Pt(self.x, self.y - 1, self.z)
-
-    def faces(self, neighbors):
-        return len(
-            {
-                self.top(),
-                self.bottom(),
-                self.left(),
-                self.right(),
-                self.front(),
-                self.back(),
-            }
-            - neighbors
-        )
 
 
 def parse_point(line):
@@ -142,8 +115,32 @@ SAMPLE = [
     Pt(2, 3, 5),
 ]
 
+
 with open("day_18_input.txt") as fp:
     MY_INPUT = [parse_point(line) for line in fp]
+
+
+DIRECTIONS = {
+    Pt(0, 0, 1),  # top
+    Pt(0, 0, -1),  # bottom
+    Pt(-1, 0, 0),  # left
+    Pt(1, 0, 0),  # right
+    Pt(0, 1, 0),  # front
+    Pt(0, -1, 0),  # back
+}
+
+
+class Face(NamedTuple):
+    pt: Pt
+    face: Pt
+
+
+def faces(pt, neighbors):
+    count = 0
+    for dir in DIRECTIONS:
+        if pt + dir in neighbors:
+            count += 1
+    return count
 
 
 class Blob:
@@ -155,8 +152,105 @@ class Blob:
             self.pt_min = self.pt_min.pt_min(pt)
             self.pt_max = self.pt_max.pt_max(pt)
             self.bits.add(pt)
+        self.boundry_layer = set()
+        self.surfaces = set()
+        for pt in self.bits:
+            for dir in DIRECTIONS:
+                new_pt = pt + dir
+                if new_pt not in self.bits:
+                    self.boundry_layer.add(new_pt)
+                    self.surfaces.add((pt, dir))
+        # thicken boundry layer
+        for _ in range(5):
+            for pt in set(self.boundry_layer):
+                for dir in DIRECTIONS:
+                    new_pt = pt + dir
+                    if new_pt not in self.bits and new_pt not in self.boundry_layer:
+                        self.boundry_layer.add(new_pt)
+
+    def total_boundry_volume(self):
+        return len(self.boundry_layer)
+
+    def total_surface_area(self):
+        return len(self.surfaces)
+
+    def find_boundry(self):
+        free_boundry = sorted(list(self.boundry_layer), reverse=True)
+        found_boundry = dict()
+        while free_boundry:
+            start_pt = free_boundry.pop()
+
+            current_boundry = {start_pt}
+            exploring = []
+            heappush(exploring, start_pt)
+            while exploring:
+                current_pt = heappop(exploring)
+                for delta in DIRECTIONS:
+                    next_pt = current_pt + delta
+                    if next_pt in free_boundry:
+                        free_boundry.remove(next_pt)
+                        current_boundry.add(next_pt)
+                        heappush(exploring, next_pt)
+            found_boundry[start_pt] = current_boundry
+        return found_boundry
+
+    def find_surfaces_on_layer(self, boundry_layer):
+        count = 0
+        for pt, face in self.surfaces:
+            if pt + face in boundry_layer:
+                count += 1
+        return count
+        
+    def find_surfaces(self):
+        free_surfaces = set(self.surfaces)
+        found_surfaces = dict()
+        while free_surfaces:
+            start_pt, start_face = free_surfaces.pop()
+            current_surface = {
+                (start_pt, start_face),
+            }
+            exploring = []
+            heappush(exploring, (start_pt, start_face))
+            while exploring:
+                current_pt, current_face = heappop(exploring)
+                dir_to_check = DIRECTIONS - {current_face, -current_face}
+                for next_face in dir_to_check:
+                    next_pt = current_pt + next_face  # around current face
+                    next_pt_above = next_pt + current_face  # above current cube
+                    if (next_pt_above, -next_face) in free_surfaces:
+                        free_surfaces.remove((next_pt_above, -next_face))
+                        current_surface.add((next_pt_above, -next_face))
+                        heappush(exploring, (next_pt_above, -next_face))
+                    elif (next_pt, current_face) in free_surfaces:
+                        free_surfaces.remove((next_pt, current_face))
+                        current_surface.add((next_pt, current_face))
+                        heappush(exploring, (next_pt, current_face))
+                    elif (current_pt, next_face) in free_surfaces:
+                        free_surfaces.remove((current_pt, next_face))
+                        current_surface.add((current_pt, next_face))
+                        heappush(exploring, (current_pt, next_face))
+            found_surfaces[start_pt] = current_surface
+        return found_surfaces
 
 
-def test_pt():
-    assert sum(pt.faces(set(SAMPLE)) for pt in SAMPLE) == 64
-    assert sum(pt.faces(set(MY_INPUT)) for pt in MY_INPUT) == 4302
+def test_sample():
+    assert len(DIRECTIONS) == 6
+    sample = Blob(SAMPLE)
+    assert sample.total_boundry_volume() == 845  # for just 1 layer only 35
+    assert sample.total_surface_area() == 64
+    surfaces = sample.find_boundry()
+    assert {pt: len(s) for pt, s in surfaces.items()} == {
+        Pt(x=-5, y=2, z=2): 844,
+        Pt(x=2, y=2, z=5): 1,
+    }
+    assert sample.find_surfaces_on_layer(surfaces[Pt(x=-5, y=2, z=2)]) == 58
+
+
+def test_my_blob():
+    my_blob = Blob(MY_INPUT)
+    assert my_blob.total_surface_area() == 4302
+    surfaces = my_blob.find_boundry()
+    assert {pt: len(s) for pt, s in surfaces.items() if len(s) > 2000} == {
+        Pt(x=-6, y=9, z=9): 9813,
+    }
+    assert my_blob.find_surfaces_on_layer(surfaces[Pt(x=-6, y=9, z=9)]) == 2492
