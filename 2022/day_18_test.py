@@ -200,7 +200,7 @@ class Blob:
             if pt + face in boundry_layer:
                 count += 1
         return count
-        
+
     def find_surfaces(self):
         free_surfaces = set(self.surfaces)
         found_surfaces = dict()
