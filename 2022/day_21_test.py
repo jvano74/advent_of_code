@@ -1,13 +1,12 @@
-import cmath
 from numbers import Number
 from fractions import Fraction
-from operator import add, sub, mul, truediv
+from operator import add, sub, mul  # , truediv, ifloordiv
 
 OP = {
     "+": add,
     "-": sub,
     "*": mul,
-    "/": truediv,  # Fraction or truediv or ifloordiv
+    "/": Fraction,  # Fraction or truediv or ifloordiv
 }
 
 
@@ -138,10 +137,13 @@ class MonkeyMath:
                 known[key] = int(value)
 
         if fix_root:
+            known["humn"] = "x"
             # known["humn"] = (0, 1)
-            known["humn"] = 0 + 1j
+            # known["humn"] = 0 + 1j
             self.left, _, self.right = values["root"].split(" ")
-            calc_next = [{self.left, self.right}]
+            values["root"] = " ".join([self.left, "-", self.right])
+            # calc_next = [{self.left, self.right}]
+            calc_next = [{"root"}]
         else:
             calc_next = [{"root"}]
         while calc_next:
@@ -201,20 +203,49 @@ def test_sample():
     sample = MonkeyMath(SAMPLE)
     assert sample.known["root"] == 152
     sample = MonkeyMath(SAMPLE, fix_root=True)
-    assert sample.known[sample.left] == (-0.5 + 0.5j)  
-    # ((4+(2*((0, 1)-3)))/4) = (-0.5, 0.5)
-    assert sample.known[sample.right] == 150
-    assert (150 + 0.5) / 0.5 == 301
+    # assert sample.known[sample.left] == (Fraction(-1, 2), Fraction(1, 2))
+    # ((4+(2*((0, 1)-3)))/4)
+    # assert sample.known[sample.right] == 150
+    # assert (150 + 0.5) / 0.5 == 301
+    expression = sample.known["root"]
+    x = 0
+    b = eval(expression)
+    x = 1
+    m = eval(expression) - b
+    # y = mx + b
+    z = -b / m
+    assert b == -150.5
+    assert m == 0.5
+    assert z == 301
 
 
 def test_my_input():
     my_input = MonkeyMath(MY_INPUT)
     assert my_input.known["root"] == 155708040358220.0
     my_input = MonkeyMath(MY_INPUT, fix_root=True)
-    assert my_input.known[my_input.left] == (107542057559298.95-17.765806210250652j)
-    # (Fraction(95819973285335362, 891), Fraction(47488, 2673))
-    assert my_input.known[my_input.right] == 48165982835110
-    assert (
-        Fraction(48165982835110 * 891 * 2673 - 95819973285335362 * 2673, 47488)
-        == -2977859937970467
-    ) # -2977859937970467 is not right answer
+    # expression = my_input.known[my_input.left]
+    # (
+    #     Fraction(95819973285335362, 891),
+    #     Fraction(47488, 2673),
+    # )
+    # assert my_input.known[my_input.right] == 48165982835110
+    # assert ( 48165982835110 * 891 - 95819973285335362 )  * 2673 == -141412612734341536896
+    # assert -141412612734341536896 / 47488 == -2977859937970467  # -2977859937970467 is not correct
+
+    # Trying with normal integers and not fractions got
+    # 59376074724188.95
+    # -17.765625
+    # 3342188902680.821 also wrong, not integer
+
+    expression = my_input.known["root"]
+    x = Fraction(0, 1)
+    b = eval(expression)
+    x = Fraction(1, 1)
+    m = eval(expression) - b
+    # y = mx + b
+    z = -b / m
+    assert b == Fraction(52904082579252352, 891)
+    assert m == Fraction(-47488, 2673)
+    assert z == Fraction(
+        3342154812537, 1
+    )  # finally got correct answer with 3342154812537
