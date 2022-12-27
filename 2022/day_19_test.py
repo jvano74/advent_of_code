@@ -1,5 +1,6 @@
 from heapq import heappush, heappop
 from typing import NamedTuple
+#from tqdm import tqdm
 
 
 class Puzzle:
@@ -219,7 +220,7 @@ SAMPLE = [
 
 
 with open("day_19_input.txt") as fp:
-    MY_INPUT = [line for line in fp]
+    MY_INPUT = [line.strip() for line in fp]
 
 
 class Resource(NamedTuple):
@@ -245,81 +246,141 @@ class Resource(NamedTuple):
         )
 
 
-class Factory(NamedTuple):
-    geode: Resource
-    obsidian: Resource
-    clay: Resource
-    ore: Resource
+class State(NamedTuple):
+    time: int
+    rate: Resource
+    inventory: Resource
+
+    def geode_max_extra(self, max_time=24):
+        time = self.time
+        geodes = self.inventory.geode
+        robots = self.rate.geode
+        while time < max_time:
+            time += 1
+            geodes += robots
+            robots += 1
+        return geodes
+
+    def priority(self, max_time=24):
+        return tuple(
+            [
+                -self.geode_max_extra(max_time=max_time),
+                -self.rate.geode,
+                -self.inventory.geode,
+                -self.rate.obsidian,
+                -self.inventory.obsidian,
+                -self.inventory.clay,
+            ]
+        )
 
 
-class Factory:
+class RobotFactory:
     def __init__(self, blueprints) -> None:
         self.blueprints = {}
         for blueprint in blueprints:
             blueprint_name, blueprint_data = blueprint.split(": ")
             blueprint_id = int(blueprint_name.replace("Blueprint ", ""))
-            self.blueprints[blueprint_id] = {}
+            self.blueprints[blueprint_id] = {
+                "geode": None,
+                "obsidian": None,
+                "clay": None,
+                "ore": None,
+            }
             blueprint_data = blueprint_data[:-1]
             for robot_cost in blueprint_data.split(". "):
                 robot_type, raw_costs = robot_cost.replace("Each ", "").split(
                     " robot costs "
                 )
-                self.blueprints[blueprint_id][robot_type] = {}
+                blueprint_robot_type = {
+                    "geode": 0,
+                    "obsidian": 0,
+                    "clay": 0,
+                    "ore": 0,
+                }
                 for cost in raw_costs.split(" and "):
                     amount, material_type = cost.split(" ")
-                    self.blueprints[blueprint_id][robot_type][material_type] = int(
-                        amount
-                    )
+                    blueprint_robot_type[material_type] = int(amount)
+                self.blueprints[blueprint_id][robot_type] = Resource(
+                    **blueprint_robot_type
+                )
 
     def max_geodes(self, blueprint_id, max_time=24):
-        max_geode_count = 0
-        time = 0
-        inventory = Resource(geode=0, obsidian=0, clay=0, ore=0)
-        rate = Resource(geode=0, obsidian=0, clay=0, ore=1)
-
-        blueprint = {
-            robot: Resource(**costs)
-            for robot, costs in self.blueprints[blueprint_id].items()
+        add_robot = {
+            "geode": Resource(geode=1, obsidian=0, clay=0, ore=0),
+            "obsidian": Resource(geode=0, obsidian=1, clay=0, ore=0),
+            "clay": Resource(geode=0, obsidian=0, clay=1, ore=0),
+            "ore": Resource(geode=0, obsidian=0, clay=0, ore=1),
         }
 
-        # exploring = [(time, inventory, rate)]
+        blueprint = self.blueprints[blueprint_id]
+        max_geode_count = 0
+        history = set()
+        starting_state = State(
+            time=0,
+            rate=Resource(geode=0, obsidian=0, clay=0, ore=1),
+            inventory=Resource(geode=0, obsidian=0, clay=0, ore=0),
+        )
+
         exploring = []
-        heappush(exploring, (time, inventory, rate))
+        heappush(
+            exploring, (starting_state.priority(max_time=max_time), starting_state)
+        )
         while exploring:
-            time, inventory, rate = heappop(exploring)
-            # time, inventory, rate = exploring.pop()
-            if time == max_time:
-                max_geode_count = max(max_geode_count, inventory["geode"])
+            priority, state = heappop(exploring)
+
+            if state in history:
+                continue
+            history.add(state)
+
+            if state.inventory.geode > max_geode_count:
+                print(f"new max {max_geode_count}>{state.inventory.geode} from {state}")
+                max_geode_count = state.inventory.geode
+            if state.time == max_time:
                 continue
 
-            # no factory
-            # grown_inventory = {m: curent + rate[m] for m, curent in inventory.items()}
-            grown_inventory = inventory + rate
-            heappush(exploring, (time + 1, grown_inventory, rate))
-            # exploring.append((time + 1, grown_inventory, rate))
+            if -priority[0] <= max_geode_count:
+                continue
 
+            # no factory use
+            grown_inventory = state.inventory + state.rate
+            next_state = State(
+                time=state.time + 1, inventory=grown_inventory, rate=state.rate
+            )
+            heappush(exploring, (next_state.priority(max_time=max_time), next_state))
+
+            # use factory
             for next_robot, costs in blueprint.items():
-                can_build = True
-                next_inventory = grown_inventory.copy()
-                for material_type, cost in costs.items():
-                    next_inventory[material_type] -= cost
-                    if inventory[material_type] < cost:
-                        can_build = False
-                        break
-                if can_build:
-                    next_rate = rate.copy()
-                    next_rate[next_robot] += 1
-                    heappush(exploring, (time + 1, next_inventory, next_rate))
-                    # exploring.append((time + 1, next_inventory, next_rate))
+                if min(state.inventory - costs) >= 0:
+                    next_inventory = grown_inventory - costs
+                    next_rate = state.rate + add_robot[next_robot]
+                    next_state = State(
+                        time=state.time + 1, inventory=next_inventory, rate=next_rate
+                    )
+                    heappush(
+                        exploring, (next_state.priority(max_time=max_time), next_state)
+                    )
         return max_geode_count
+
+    def find_quality_level(self):
+        max_geodes = {}
+        # for id in tqdm(self.blueprints):
+        for id in self.blueprints:
+            max_geodes[id] = self.max_geodes(id)
+        return sum(k * v for k, v in max_geodes.items())
 
 
 def test_sample_factory():
-    sample = Factory(SAMPLE)
+    sample = RobotFactory(SAMPLE)
     assert sample.blueprints[1] == {
-        "clay": {"ore": 2},
-        "geode": {"obsidian": 7, "ore": 2},
-        "obsidian": {"clay": 14, "ore": 3},
-        "ore": {"ore": 4},
+        "geode": Resource(geode=0, obsidian=7, clay=0, ore=2),
+        "obsidian": Resource(geode=0, obsidian=0, clay=14, ore=3),
+        "clay": Resource(geode=0, obsidian=0, clay=0, ore=2),
+        "ore": Resource(geode=0, obsidian=0, clay=0, ore=4),
     }
-    assert sample.max_geodes(1) == 12
+    assert sample.max_geodes(1) == 9  # not 37
+    assert sample.find_quality_level() == 33
+
+
+def test_my_factory():
+    my_factory = RobotFactory(MY_INPUT)
+    assert my_factory.find_quality_level() == 1
