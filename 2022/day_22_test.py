@@ -1,3 +1,6 @@
+from typing import NamedTuple
+
+
 class Puzzle:
     """
     --- Day 22: Monkey Map ---
@@ -84,14 +87,14 @@ class Puzzle:
     By drawing the last facing you had with an arrow on each tile you visit, the
     full path taken by the above example looks like this:
 
-            >>v#    
-            .#v.    
-            #.v.    
-            ..v.    
-    ...#...v..v#    
-    >>>v...>#.>>    
-    ..#v...#....    
-    ...>>>>v..#.    
+            >>v#
+            .#v.
+            #.v.
+            ..v.
+    ...#...v..v#
+    >>>v...>#.>>
+    ..#v...#....
+    ...>>>>v..#.
             ...#....
             .....#..
             .#......
@@ -109,7 +112,197 @@ class Puzzle:
     In the above example, the final row is 6, the final column is 8, and the
     final facing is 0. So, the final password is 1000 * 6 + 4 * 8 + 0: 6032.
 
-    Follow the path given in the monkeys' notes. What is the final password?    
+    Follow the path given in the monkeys' notes. What is the final password?
+
+    Your puzzle answer was 106094.
+
+    The first half of this puzzle is complete! It provides one gold star: *
+
+    --- Part Two ---
+    As you reach the force field, you think you hear some Elves in the distance.
+    Perhaps they've already arrived?
+
+    You approach the strange input device, but it isn't quite what the monkeys
+    drew in their notes. Instead, you are met with a large cube; each of its six
+    faces is a square of 50x50 tiles.
+
+    To be fair, the monkeys' map does have six 50x50 regions on it. If you were
+    to carefully fold the map, you should be able to shape it into a cube!
+
+    In the example above, the six (smaller, 4x4) faces of the cube are:
+
+            1111
+            1111
+            1111
+            1111
+    222233334444
+    222233334444
+    222233334444
+    222233334444
+            55556666
+            55556666
+            55556666
+            55556666
+
+    You still start in the same position and with the same facing as before, but
+    the wrapping rules are different. Now, if you would walk off the board, you
+    instead proceed around the cube. From the perspective of the map, this can
+    look a little strange. In the above example, if you are at A and move to the
+    right, you would arrive at B facing down; if you are at C and move down, you
+    would arrive at D facing up:
+
+            ...#
+            .#..
+            #...
+            ....
+    ...#.......#
+    ........#..A
+    ..#....#....
+    .D........#.
+            ...#..B.
+            .....#..
+            .#......
+            ..C...#.
+
+    Walls still block your path, even if they are on a different face of the
+    cube. If you are at E facing up, your movement is blocked by the wall marked
+    by the arrow:
+
+            ...#
+            .#..
+        -->#...
+            ....
+    ...#..E....#
+    ........#...
+    ..#....#....
+    ..........#.
+            ...#....
+            .....#..
+            .#......
+            ......#.
+
+    Using the same method of drawing the last facing you had with an arrow on
+    each tile you visit, the full path taken by the above example now looks like
+    this:
+
+            >>v#    
+            .#v.    
+            #.v.    
+            ..v.    
+    ...#..^...v#    
+    .>>>>>^.#.>>    
+    .^#....#....    
+    .^........#.    
+            ...#..v.
+            .....#v.
+            .#v<<<<.
+            ..v...#.
+
+    The final password is still calculated from your final position and facing
+    from the perspective of the map. In this example, the final row is 5, the
+    final column is 7, and the final facing is 3, so the final password is 1000
+    * 5 + 4 * 7 + 3 = 5031.
+
+    Fold the map into a cube, then follow the path given in the monkeys' notes.
+    What is the final password?
+
     """
 
 
+with open("day_22_sample.txt") as fp:
+    SAMPLE_MAP, SAMPLE_DIRECTIONS = fp.read().split("\n\n")
+
+
+with open("day_22_input.txt") as fp:
+    MY_MAP, MY_DIRECTIONS = fp.read().split("\n\n")
+
+
+class Pt(NamedTuple):
+    x: int
+    y: int
+
+    def __add__(self, other):
+        return Pt(self.x + other.x, self.y + other.y)
+
+    def __sub__(self, other):
+        return Pt(self.x - other.x, self.y - other.y)
+
+DIRECTION_VALUE = {
+    Pt(1, 0): 0,
+    Pt(0, 1): 1,
+    Pt(-1, 0): 2,
+    Pt(0, -1): 3,
+}
+
+ROTATION = {
+    (Pt(1, 0), "L"): Pt(0, -1),
+    (Pt(0, -1), "L"): Pt(-1, 0),
+    (Pt(-1, 0), "L"): Pt(0, 1),
+    (Pt(0, 1), "L"): Pt(1, 0),
+    (Pt(1, 0), "R"): Pt(0, 1),
+    (Pt(0, 1), "R"): Pt(-1, 0),
+    (Pt(-1, 0), "R"): Pt(0, -1),
+    (Pt(0, -1), "R"): Pt(1, 0),
+}
+
+
+class MonkeyMap:
+    def __init__(self, map, directions) -> None:
+        self.directions = directions.replace("L", ",L,").replace("R", ",R,").split(",")
+        self.board = {}
+        self.foward = Pt(1, 0)
+        self.location = None
+        for y, row in enumerate(map.split("\n")):
+            for x, c in enumerate(row):
+                if c not in {".", "#"}:
+                    continue
+                self.board[Pt(x=x, y=y)] = c
+                if self.location is None and c == ".":
+                    self.location = Pt(x=x, y=y)
+
+    def run_map(self):
+        for movement in self.directions:
+            self.move(movement)
+        return self.location
+
+    def move(self, movement):
+        match movement:
+            case "L" | "R":
+                self.foward = ROTATION[(self.foward, movement)]
+            case _:
+                dir = self.foward
+                pt = self.location
+                for _ in range(int(movement)):
+                    pt, dir = self.move_foward(pt, dir)
+                self.foward = dir
+                self.location = pt
+
+    def move_foward(self, pt, dir):
+        next_pt, next_dir = pt + dir, dir
+        if next_pt not in self.board:
+            next_pt, next_dir = self.wrap_point(pt, dir)
+        if self.board[next_pt] == ".":
+            return next_pt, next_dir
+        return pt, dir
+
+    def wrap_point(self, pt, dir):
+        next_pt = pt
+        while next_pt - dir in self.board:
+            next_pt -= dir
+        # print(f"pt={pt}, dir={dir} jumps to next_pt={next_pt}")
+        return next_pt, dir
+
+    def password(self):
+        return 1000 * (self.location.y + 1) + 4 * (self.location.x + 1) + DIRECTION_VALUE[self.foward] 
+
+def test_sample_map():
+    sample = MonkeyMap(SAMPLE_MAP, SAMPLE_DIRECTIONS)
+    assert sample.location == Pt(8, 0)
+    assert sample.foward == Pt(1, 0)
+    assert sample.run_map() == Pt(7, 5)
+    assert sample.password() == 6032
+
+def test_sample_map():
+    my_map = MonkeyMap(MY_MAP, MY_DIRECTIONS)
+    my_map.run_map()
+    assert my_map.password() == 106094
