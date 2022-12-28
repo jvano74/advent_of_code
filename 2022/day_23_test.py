@@ -1,3 +1,8 @@
+from __future__ import annotations
+from typing import NamedTuple, List, Set
+from collections import defaultdict
+
+
 class Puzzle:
     """
     --- Day 23: Unstable Diffusion ---
@@ -253,12 +258,203 @@ class Puzzle:
     ...#.#..#...
     ............
     ...#..#..#..
-    
+
     In this region, the number of empty ground tiles is 110.
 
     Simulate the Elves' process and find the smallest rectangle that contains
     the Elves after 10 rounds. How many empty ground tiles does that rectangle
-    contain?    
- 
+    contain?
+
+    Your puzzle answer was 3862.
+
+    The first half of this puzzle is complete! It provides one gold star: *
+
+    --- Part Two ---
+    It seems you're on the right track. Finish simulating the process and figure
+    out where the Elves need to go. How many rounds did you save them?
+
+    In the example above, the first round where no Elf moved was round 20:
+
+    .......#......
+    ....#......#..
+    ..#.....#.....
+    ......#.......
+    ...#....#.#..#
+    #.............
+    ....#.....#...
+    ..#.....#.....
+    ....#.#....#..
+    .........#....
+    ....#......#..
+    .......#......
+
+    Figure out where the Elves need to go. What is the number of the first round
+    where no Elf moves?
     """
 
+
+with open("day_23_large_sample.txt") as fp:
+    SAMPLE_MAP = [line for line in fp]
+
+
+with open("day_23_input.txt") as fp:
+    MY_MAP = [line for line in fp]
+
+
+class Pt(NamedTuple):
+    x: int
+    y: int
+
+    def __add__(self, other: Pt) -> Pt:
+        return Pt(x=self.x + other.x, y=self.y + other.y)
+
+    def __neg__(self) -> Pt:
+        return Pt(x=-self.x, y=-self.y)
+
+    def __sub__(self, other: Pt) -> Pt:
+        return Pt(x=self.x - other.x, y=self.y - other.y)
+
+    def alone(self, others) -> bool:
+        bubble = {
+            Pt(self.x - 1, self.y - 1),
+            Pt(self.x, self.y - 1),
+            Pt(self.x + 1, self.y - 1),
+            Pt(self.x - 1, self.y),
+            Pt(self.x + 1, self.y),
+            Pt(self.x - 1, self.y + 1),
+            Pt(self.x, self.y + 1),
+            Pt(self.x + 1, self.y + 1),
+        }
+        if bubble & others:
+            return False
+        return True
+
+    def field(self, dir) -> Set[Pt]:
+        match dir:
+            case "N":
+                return [
+                    Pt(self.x - 1, self.y - 1),
+                    Pt(self.x, self.y - 1),
+                    Pt(self.x + 1, self.y - 1),
+                ]
+            case "S":
+                return [
+                    Pt(self.x - 1, self.y + 1),
+                    Pt(self.x, self.y + 1),
+                    Pt(self.x + 1, self.y + 1),
+                ]
+            case "W":
+                return [
+                    Pt(self.x - 1, self.y - 1),
+                    Pt(self.x - 1, self.y),
+                    Pt(self.x - 1, self.y + 1),
+                ]
+            case "E":
+                return [
+                    Pt(self.x + 1, self.y - 1),
+                    Pt(self.x + 1, self.y),
+                    Pt(self.x + 1, self.y + 1),
+                ]
+
+
+class Box(NamedTuple):
+    min: Pt
+    max: Pt
+
+
+def bound(pts) -> Box:
+    new_min_x = min([p.x for p in pts])
+    new_min_y = min([p.y for p in pts])
+    new_max_x = max([p.x for p in pts])
+    new_max_y = max([p.y for p in pts])
+    return Box(Pt(new_min_x, new_min_y), Pt(new_max_x, new_max_y))
+
+
+class Diffusion:
+    def __init__(self, map: List[str]) -> None:
+        self.board = set()
+        for y, row in enumerate(map):
+            for x, c in enumerate(row):
+                if c == "#":
+                    self.board.add(Pt(x=x, y=y))
+        self.move_order = "NSWE"
+
+    def step_to_stable(self):
+        n = 0
+        old_board = self.board
+        while True:
+            self.step()
+            n += 1
+            if self.board == old_board:
+                return n
+            old_board = self.board
+
+    def step(self):
+        # first half
+        next_board = defaultdict(list)
+        for pt in self.board:
+            if pt.alone(self.board):
+                next_board[pt].append(None)
+                continue
+            placed = False
+            for dir in self.move_order:
+                if not set(d := pt.field(dir)) & self.board:
+                    next_board[d[1]].append(pt)
+                    placed = True
+                    break
+            if not placed:
+                next_board[pt].append(None)
+
+        # second half
+        self.board = set()
+        for new_pt, old_pts in next_board.items():
+            if len(old_pts) == 1:
+                self.board.add(new_pt)
+            else:
+                self.board = self.board.union(old_pts)
+
+        # finally update move order
+        self.move_order = f"{self.move_order[1:]}{self.move_order[0]}"
+
+    def display(self):
+        bound_box = bound(self.board)
+        result = []
+        for y in range(bound_box.min.y, bound_box.max.y + 1):
+            line = []
+            for x in range(bound_box.min.x, bound_box.max.x + 1):
+                line.append("#" if Pt(x, y) in self.board else ".")
+            result.append("".join(line))
+        return result
+
+    def empty_region(self):
+        bound_box = bound(self.board)
+        rl = bound_box.max.x - bound_box.min.x + 1
+        rw = bound_box.max.y - bound_box.min.y + 1
+        return rl * rw - len(self.board)
+
+
+def test_sample_diffusion():
+    my_bound = bound({Pt(-2, 0), Pt(3, 0), Pt(0, 5)})
+    assert my_bound == Box(Pt(-2, 0), Pt(3, 5))
+    sample = Diffusion(SAMPLE_MAP)
+    assert len(sample.board) == 22
+    assert sample.empty_region() == 27
+    print("\nInitial board")
+    print("\n".join(sample.display()))
+    for n in range(10):
+        sample.step()
+        print(f"\nstep={n+1}")
+        print("\n".join(sample.display()))
+    assert len(sample.board) == 22
+    assert sample.empty_region() == 110
+    sample = Diffusion(SAMPLE_MAP)
+    assert sample.step_to_stable() == 20
+
+
+def test_my_diffusion():
+    my_diffusion = Diffusion(MY_MAP)
+    for _ in range(10):
+        my_diffusion.step()
+    assert my_diffusion.empty_region() == 3862
+    my_diffusion = Diffusion(MY_MAP)
+    assert my_diffusion.step_to_stable() == 913
