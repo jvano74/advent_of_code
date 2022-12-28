@@ -1,3 +1,4 @@
+from __future__ import annotations
 from typing import NamedTuple
 
 
@@ -185,14 +186,14 @@ class Puzzle:
     each tile you visit, the full path taken by the above example now looks like
     this:
 
-            >>v#    
-            .#v.    
-            #.v.    
-            ..v.    
-    ...#..^...v#    
-    .>>>>>^.#.>>    
-    .^#....#....    
-    .^........#.    
+            >>v#
+            .#v.
+            #.v.
+            ..v.
+    ...#..^...v#
+    .>>>>>^.#.>>
+    .^#....#....
+    .^........#.
             ...#..v.
             .....#v.
             .#v<<<<.
@@ -221,18 +222,18 @@ class Pt(NamedTuple):
     x: int
     y: int
 
-    def __add__(self, other):
-        return Pt(self.x + other.x, self.y + other.y)
+    def __add__(self, other: Pt) -> Pt:
+        return Pt(x=self.x + other.x, y=self.y + other.y)
 
-    def __sub__(self, other):
-        return Pt(self.x - other.x, self.y - other.y)
+    def __neg__(self) -> Pt:
+        return Pt(x=-self.x, y=-self.y)
 
-DIRECTION_VALUE = {
-    Pt(1, 0): 0,
-    Pt(0, 1): 1,
-    Pt(-1, 0): 2,
-    Pt(0, -1): 3,
-}
+    def __sub__(self, other: Pt) -> Pt:
+        return Pt(x=self.x - other.x, y=self.y - other.y)
+
+
+DIRECTIONS = [Pt(1, 0), Pt(0, 1), Pt(-1, 0), Pt(0, -1)]
+
 
 ROTATION = {
     (Pt(1, 0), "L"): Pt(0, -1),
@@ -246,63 +247,186 @@ ROTATION = {
 }
 
 
+class V(NamedTuple):
+    pt: Pt
+    v: Pt
+
+    def __neg__(self) -> V:
+        return V(pt=self.pt, v=-self.v)
+
+    def fwd(self) -> V:
+        return V(pt=self.pt + self.v, v=self.v)
+
+    def bkwd(self) -> V:
+        return V(pt=self.pt - self.v, v=self.v)
+
+    def cw(self) -> V:
+        return V(pt=self.pt, v=ROTATION[self.v, "R"])
+
+    def ccw(self) -> V:
+        return V(pt=self.pt, v=ROTATION[self.v, "L"])
+
+    def cw_fwd(self) -> V:
+        return V(pt=self.pt + ROTATION[self.v, "R"], v=self.v)
+
+    def ccw_fwd(self) -> V:
+        return V(pt=self.pt + ROTATION[self.v, "L"], v=self.v)
+
+    def cw_fwd_ccw(self) -> V:
+        next_pt = self.pt + self.v + ROTATION[self.v, "R"]
+        return V(pt=next_pt, v=ROTATION[self.v, "L"])
+
+    def ccw_fwd_cw(self) -> V:
+        next_pt = self.pt + self.v + ROTATION[self.v, "L"]
+        return V(pt=next_pt, v=ROTATION[self.v, "R"])
+
+
 class MonkeyMap:
-    def __init__(self, map, directions) -> None:
+    def __init__(self, map, directions, cube=False, trace=False) -> None:
+        self.trace = trace
+
         self.directions = directions.replace("L", ",L,").replace("R", ",R,").split(",")
+
+        # process board
         self.board = {}
-        self.foward = Pt(1, 0)
-        self.location = None
+        self.boundry = {}
+        self.process_map(map=map)
+
+        # mark starting point
+        loc_y = 0  # assume map starts on first line
+        loc_x = min(ptn.pt.x for ptn in self.boundry if ptn.pt.y == 0)
+        self.location = V(pt=Pt(x=loc_x, y=loc_y), v=Pt(x=1, y=0))
+
+        self.flat_map = {}
+        for ptn in self.boundry:
+            self.flat_map[ptn] = self.wrap_flat_point(ptn)
+
+        self.cube_map = {}
+        corners = [ptn for ptn, type in self.boundry.items() if type == "-x"]
+        while corners:
+            ccw_ptn = corners.pop()
+            cw_ptn = ccw_ptn.cw_fwd_ccw()
+            self.boundry[cw_ptn] = "*-"
+            self.boundry[ccw_ptn] = "-*"
+            self.cube_map[ccw_ptn] = -cw_ptn
+            self.cube_map[cw_ptn] = -ccw_ptn
+            while f"{self.boundry[cw_ptn]}{self.boundry[ccw_ptn]}".count("o") < 2:
+                # move
+                match self.boundry[cw_ptn]:
+                    case "*-" | "--" | "o-":
+                        cw_ptn = cw_ptn.cw_fwd()
+                    case "-o":
+                        cw_ptn = cw_ptn.cw()
+                    case "-x" | "x-" | _:
+                        raise Exception(f"boundry[{cw_ptn}]={self.boundry[cw_ptn]}")
+                match self.boundry[ccw_ptn]:
+                    case "-*" | "--" | "-o":
+                        ccw_ptn = ccw_ptn.ccw_fwd()
+                    case "o-":
+                        ccw_ptn = ccw_ptn.ccw()
+                    case "x-" | "-x" | _:
+                        raise Exception(f"boundry[{ccw_ptn}]={self.boundry[ccw_ptn]}")
+                self.cube_map[ccw_ptn] = -cw_ptn
+                self.cube_map[cw_ptn] = -ccw_ptn
+
+        if cube:
+            self.boundry_map = self.cube_map
+        else:
+            self.boundry_map = self.flat_map
+
+    def process_map(self, map):
+        self.board = {}
         for y, row in enumerate(map.split("\n")):
             for x, c in enumerate(row):
                 if c not in {".", "#"}:
                     continue
                 self.board[Pt(x=x, y=y)] = c
-                if self.location is None and c == ".":
-                    self.location = Pt(x=x, y=y)
+        self.boundry = {}
+        for pt in self.board:
+            for normal in DIRECTIONS:
+                if pt + normal not in self.board:
+                    ptn = V(pt=pt, v=normal)
+                    self.boundry[ptn] = None
+        for ptn in self.boundry:
+            if ptn.cw() in self.boundry:
+                self.boundry[ptn] = "-o"
+            elif ptn.ccw() in self.boundry:
+                self.boundry[ptn] = "o-"
+            elif ptn.cw_fwd_ccw() in self.boundry:
+                self.boundry[ptn] = "-x"
+            elif ptn.ccw_fwd_cw() in self.boundry:
+                self.boundry[ptn] = "x-"
+            else:
+                self.boundry[ptn] = "--"
+
+    def wrap_flat_point(self, ptn: V) -> V:
+        current_pt = ptn
+        while (next_pt := current_pt.bkwd()).pt in self.board:
+            current_pt = next_pt
+        # print(f"ptn={ptn} jumps to current_pt={current_pt}")
+        return current_pt
 
     def run_map(self):
         for movement in self.directions:
             self.move(movement)
+            if self.trace:
+                print(f"movement={movement} > loc={self.location}")
         return self.location
 
     def move(self, movement):
         match movement:
-            case "L" | "R":
-                self.foward = ROTATION[(self.foward, movement)]
+            case "R":
+                self.location = self.location.cw()
+            case "L":
+                self.location = self.location.ccw()
             case _:
-                dir = self.foward
-                pt = self.location
+                ptn = self.location
                 for _ in range(int(movement)):
-                    pt, dir = self.move_foward(pt, dir)
-                self.foward = dir
-                self.location = pt
+                    ptn = self.move_foward(ptn)
+                self.location = ptn
 
-    def move_foward(self, pt, dir):
-        next_pt, next_dir = pt + dir, dir
-        if next_pt not in self.board:
-            next_pt, next_dir = self.wrap_point(pt, dir)
-        if self.board[next_pt] == ".":
-            return next_pt, next_dir
-        return pt, dir
-
-    def wrap_point(self, pt, dir):
-        next_pt = pt
-        while next_pt - dir in self.board:
-            next_pt -= dir
-        # print(f"pt={pt}, dir={dir} jumps to next_pt={next_pt}")
-        return next_pt, dir
+    def move_foward(self, ptn: V) -> V:
+        # find next step
+        next_ptn = ptn.fwd()
+        if next_ptn.pt not in self.board:
+            next_ptn = self.boundry_map[ptn]
+            if self.trace:
+                print(f"wrap={ptn} > {next_ptn}")
+        # check if next step is clear
+        if self.board[next_ptn.pt] == ".":
+            return next_ptn
+        return ptn
 
     def password(self):
-        return 1000 * (self.location.y + 1) + 4 * (self.location.x + 1) + DIRECTION_VALUE[self.foward] 
+        return (
+            1000 * (self.location.pt.y + 1)
+            + 4 * (self.location.pt.x + 1)
+            + DIRECTIONS.index(self.location.v)
+        )
+
 
 def test_sample_map():
     sample = MonkeyMap(SAMPLE_MAP, SAMPLE_DIRECTIONS)
-    assert sample.location == Pt(8, 0)
-    assert sample.foward == Pt(1, 0)
-    assert sample.run_map() == Pt(7, 5)
+    assert sample.location == V(Pt(8, 0), Pt(1, 0))
+    assert sample.run_map() == V(Pt(7, 5), Pt(1, 0))
     assert sample.password() == 6032
+    # from self.boundry looking at -x and x- elements
+    a = V(pt=Pt(x=7, y=4), v=Pt(x=0, y=-1))
+    b = V(pt=Pt(x=8, y=3), v=Pt(x=-1, y=0))
+    assert sample.boundry[a] == "-*"
+    assert sample.boundry[b] == "*-"
+    assert a.cw_fwd_ccw() == b
+    assert set(sample.boundry.keys()) == set(sample.flat_map.keys())
+    assert set(sample.flat_map.keys()) == set(sample.cube_map.keys())
+    sample = MonkeyMap(SAMPLE_MAP, SAMPLE_DIRECTIONS, cube=True, trace=True)
+    assert sample.run_map() == V(pt=Pt(x=6, y=4), v=Pt(x=0, y=-1))
+    assert sample.password() == 5031
 
-def test_sample_map():
+
+def test_my_map():
     my_map = MonkeyMap(MY_MAP, MY_DIRECTIONS)
     my_map.run_map()
     assert my_map.password() == 106094
+    my_map = MonkeyMap(MY_MAP, MY_DIRECTIONS, cube=True)
+    my_map.run_map()
+    assert my_map.password() == 162038
