@@ -141,6 +141,48 @@ class Puzzle:
 
     The Elves are starting to get cold. What SNAFU number do you supply to Bob's
     console?
+
+    Your puzzle answer was 2-==10--=-0101==1201.
+
+    The first half of this puzzle is complete! It provides one gold star: *
+
+    --- Part Two ---
+    The hot air balloons quickly carry you to the North Pole. As soon as you
+    land, most of the expedition is escorted directly to a small building
+    attached to the reindeer stables.
+
+    The head smoothie chef has just finished warming up the industrial-grade
+    smoothie blender as you arrive. It will take 50 stars to fill the blender.
+    The expedition Elves turn their attention to you, and you begin emptying the
+    fruit from your pack onto the table.
+
+    As you do, a very young Elf - one you recognize from the expedition team -
+    approaches the table and holds up a single star fruit he found. The head
+    smoothie chef places it in the blender.
+
+    Only 49 stars to go.
+
+    You have enough stars to Start The Blender.
+
+    You make a smoothie with all fifty stars and deliver it to the reindeer! The
+    sleigh is already warmed up by the time they finish eating.
+
+    Congratulations! You've finished every puzzle in Advent of Code 2022! I hope
+    you had as much fun solving them as I had making them for you. I'd love to
+    hear about your adventure; you can get in touch with me via contact info on
+    my website or through Twitter.
+
+    If you'd like to see more things like this in the future, please consider
+    supporting Advent of Code and sharing it with others.
+
+    To hear about future projects, you can follow me on Twitter.
+
+    I've highlighted the easter eggs in each puzzle, just in case you missed
+    any. Hover your mouse over them, and the easter egg will appear.
+
+    You can [Share] this moment with your friends, or [Go Check on Your
+    Calendar].
+
     """
 
 
@@ -191,7 +233,7 @@ def snafu_to_decimal(raw: str) -> int:
 
 def decimal_to_snafu(decimal: int) -> str:
     if decimal < 0:
-        raise NotImplemented
+        raise NotImplementedError
 
     remainders = []
     while decimal > 0:
