@@ -1,3 +1,9 @@
+from __future__ import annotations
+from heapq import heappush, heappop
+from typing import NamedTuple, Set
+from collections import defaultdict
+
+
 class Puzzle:
     """
     --- Day 24: Blizzard Basin ---
@@ -268,6 +274,250 @@ class Puzzle:
     ######E#
 
     What is the fewest number of minutes required to avoid the blizzards and
-    reach the goal?    
+    reach the goal?
 
+    Your puzzle answer was 225.
+
+    The first half of this puzzle is complete! It provides one gold star: *
+
+    --- Part Two ---
+    As the expedition reaches the far side of the valley, one of the Elves looks
+    especially dismayed:
+
+    He forgot his snacks at the entrance to the valley!
+
+    Since you're so good at dodging blizzards, the Elves humbly request that you
+    go back for his snacks. From the same initial conditions, how quickly can
+    you make it from the start to the goal, then back to the start, then back to
+    the goal?
+
+    In the above example, the first trip to the goal takes 18 minutes, the trip
+    back to the start takes 23 minutes, and the trip back to the goal again
+    takes 13 minutes, for a total time of 54 minutes.
+
+    What is the fewest number of minutes required to reach the goal, go back to
+    the start, then reach the goal again?
+
+    Your puzzle answer was 711.
+
+    Both parts of this puzzle are complete! They provide two gold stars: **
     """
+
+
+SAMPLE_MAP = [
+    "#.######",
+    "#>>.<^<#",
+    "#.<..<<#",
+    "#>v.><>#",
+    "#<^v^^>#",
+    "######.#",
+]
+
+with open("day_24_input.txt") as fp:
+    MY_MAP = [line.strip() for line in fp]
+
+
+class Pt(NamedTuple):
+    x: int
+    y: int
+
+    def __add__(self, other: Pt) -> Pt:
+        return Pt(x=self.x + other.x, y=self.y + other.y)
+
+    def __neg__(self) -> Pt:
+        return Pt(x=-self.x, y=-self.y)
+
+    def __sub__(self, other: Pt) -> Pt:
+        return Pt(x=self.x - other.x, y=self.y - other.y)
+
+    def nbhd(self) -> Set[Pt]:
+        return {
+            self,
+            self + Pt(0, -1),
+            self + Pt(0, 1),
+            self + Pt(-1, 0),
+            self + Pt(1, 0),
+        }
+
+
+class T(NamedTuple):
+    pos: Pt
+    time: int
+
+
+class State(NamedTuple):
+    pos: Pt
+    board: int
+
+    def dist_to_goal(self, goal: Pt):
+        return abs(self.pos.x - goal.x) + abs(self.pos.y - goal.y)
+
+    def priority(self, time: int, goal: Pt):
+        return (time, self.dist_to_goal(goal=goal))
+
+    @staticmethod
+    def create(time: int, pos: Pt, max_t: int) -> State:
+        return State(pos=pos, board=time % max_t)
+
+    def next_moves(self, storms, max_t: int):
+        next_board = (self.board + 1) % max_t
+        return [
+            State(pos=p, board=next_board)
+            for p in self.pos.nbhd()
+            if T(pos=p, time=next_board) not in storms
+        ]
+
+
+class BlizzardBasin:
+    def __init__(self, map) -> None:
+        self.max_x = len(map[0]) - 2
+        self.max_y = len(map) - 2
+        self.max_t = self.max_x * self.max_y
+
+        self.start = Pt(0, -1)
+        self.end = Pt(self.max_x - 1, self.max_y)
+
+        storms = defaultdict(list)
+        for t in range(self.max_t):
+            storms[T(pos=Pt(0, -2), time=t)].append("#")
+        for y, row in enumerate(map):
+            for x, c in enumerate(row):
+                match c:
+                    case "#":
+                        for t in range(self.max_t):
+                            storms[T(pos=Pt(x - 1, y - 1), time=t)].append("#")
+                    case ">":
+                        for t in range(self.max_t):
+                            storms[
+                                T(pos=Pt((x - 1 + t) % self.max_x, y - 1), time=t)
+                            ].append(">")
+                    case "<":
+                        for t in range(self.max_t):
+                            storms[
+                                T(pos=Pt((x - 1 - t) % self.max_x, y - 1), time=t)
+                            ].append("<")
+                    case "^":
+                        for t in range(self.max_t):
+                            storms[
+                                T(pos=Pt(x - 1, (y - 1 - t) % self.max_y), time=t)
+                            ].append("^")
+                    case "v":
+                        for t in range(self.max_t):
+                            storms[
+                                T(pos=Pt(x - 1, (y - 1 + t) % self.max_y), time=t)
+                            ].append("v")
+                    case ".":
+                        pass
+        self.storms = dict(storms)
+
+    def display(self, state):
+        grid = []
+        for y in range(-1, self.max_y + 1):
+            line = []
+            for x in range(-1, self.max_x + 1):
+                stpt = T(pos=Pt(x, y), time=state.board)
+                c = "."
+                if stpt.pos == state.pos:
+                    c = "E"
+                if stpt.pos == self.end:
+                    c = "x"
+                if stpt in self.storms:
+                    stm = self.storms[stpt]
+                    nc = stm[0] if len(stm) == 1 else f"{len(stm)}"
+                    c = nc if c == "." else "X"
+                line.append(c)
+            grid.append("".join(line))
+        return grid
+
+    def find_shortest_time(
+        self,
+        time=0,
+        start_pt=None,
+        goal=None,
+        track_path=False,
+        print_status=False,
+        print_freq=100_000,
+    ):
+        if start_pt is None:
+            start_pt = self.start
+
+        if goal is None:
+            goal = self.end
+
+        state = State.create(time=time, pos=start_pt, max_t=self.max_t)
+        priority = state.priority(time=time, goal=goal)
+        if track_path:
+            path = [state]
+        else:
+            path = None
+
+        history = set()
+        exploring = []
+        heappush(exploring, (priority, state, path))
+
+        steps = 0
+        while exploring:
+            priority, state, path = heappop(exploring)
+            time = priority[0]
+
+            if print_status and steps % print_freq == 0:
+                print(f"steps={steps} priority={priority} exploring={len(exploring)}")
+            steps += 1
+
+            if state in history:
+                continue
+            history.add(state)
+
+            if state.pos == goal:
+                return time, path
+
+            for next_state in state.next_moves(storms=self.storms, max_t=self.max_t):
+                if track_path:
+                    next_path = path[:]
+                    next_path.append(next_state)
+                else:
+                    next_path = None
+                priority = next_state.priority(time=time + 1, goal=goal)
+                heappush(exploring, (priority, next_state, next_path))
+        raise Exception("Can't get there")
+
+    def find_shortest_loop_back_time(self):
+        time = 0
+        time, _ = self.find_shortest_time(time=time, start_pt=self.start, goal=self.end)
+        print(f"first finish {time}")
+        # head back
+        time, _ = self.find_shortest_time(time=time, start_pt=self.end, goal=self.start)
+        print(f"first return {time}")
+        # and out
+        time, _ = self.find_shortest_time(time=time, start_pt=self.start, goal=self.end)
+        print(f"second finish {time}")
+        return time
+
+
+def test_sample_blizzard():
+    sample = BlizzardBasin(SAMPLE_MAP)
+    min_time, min_path = sample.find_shortest_time(track_path=True)
+    # print(min_path)
+    # for state in min_path:
+    #     print(state)
+    #     print("\n".join(sample.display(state)))
+    assert min_time == 18
+    min_time = sample.find_shortest_loop_back_time()
+    assert min_time == 54
+
+
+def test_my_blizzard():
+    my_blizzard = BlizzardBasin(MY_MAP)
+    min_time, _ = my_blizzard.find_shortest_time()
+    assert min_time == 225
+    min_time = my_blizzard.find_shortest_loop_back_time()
+    # assert min_time == 469
+    # 469 is too low, had bug with correctly replacing self.end with goal
+    assert min_time == 711
+
+
+if __name__ == "__main__":
+    my_blizzard = BlizzardBasin(MY_MAP)
+    # min_time, _ = my_blizzard.find_shortest_time(print_status=True)
+    min_time = my_blizzard.find_shortest_loop_back_time()
+    print(f"min_time={min_time}")
