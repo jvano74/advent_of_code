@@ -140,6 +140,92 @@ class Puzzle:
     the SNAFU number you need to supply to Bob's console is 2=-1=0.
 
     The Elves are starting to get cold. What SNAFU number do you supply to Bob's
-    console?    
+    console?
     """
 
+
+TEST_MATRIX = {
+    "1=-0-2": 1747,
+    "12111": 906,
+    "2=0=": 198,
+    "21": 11,
+    "2=01": 201,
+    "111": 31,
+    "20012": 1257,
+    "112": 32,
+    "1=-1=": 353,
+    "1-12": 107,
+    "12": 7,
+    "1=": 3,
+    "122": 37,
+}
+
+
+SAMPLE = TEST_MATRIX.keys()
+
+
+with open("day_25_input.txt") as fp:
+    MY_INPUT = [line.strip() for line in fp]
+
+
+def snafu_to_decimal(raw: str) -> int:
+    total = 0
+    pow = 1
+    for digit in reversed(raw):
+        match digit:
+            case "=":
+                total += -2 * pow
+            case "-":
+                total += -1 * pow
+            case "0":
+                total += 0 * pow
+            case "1":
+                total += 1 * pow
+            case "2":
+                total += 2 * pow
+            case _:
+                raise Exception("Invalid digit")
+        pow *= 5
+    return total
+
+
+def decimal_to_snafu(decimal: int) -> str:
+    if decimal < 0:
+        raise NotImplemented
+
+    remainders = []
+    while decimal > 0:
+        remainder = decimal % 5
+        match remainder:
+            case 4:
+                remainders.append("-")
+                decimal = (decimal // 5) + 1
+                pass
+            case 3:
+                remainders.append("=")
+                decimal = (decimal // 5) + 1
+                pass
+            case _:
+                remainders.append(f"{remainder}")
+                decimal = decimal // 5
+    return "".join(reversed(remainders))
+
+
+def test_snafu_to_decimal():
+    for snafu, decimal in TEST_MATRIX.items():
+        assert snafu_to_decimal(snafu) == decimal
+
+
+def test_decimal_to_snafu():
+    for snafu, decimal in TEST_MATRIX.items():
+        assert decimal_to_snafu(decimal) == snafu
+
+
+def test_sample():
+    snafu_sum = sum(snafu_to_decimal(d) for d in SAMPLE)
+    assert decimal_to_snafu(snafu_sum) == "2=-1=0"
+
+
+def test_my_input():
+    snafu_sum = sum(snafu_to_decimal(d) for d in MY_INPUT)
+    assert decimal_to_snafu(snafu_sum) == "2-==10--=-0101==1201"
