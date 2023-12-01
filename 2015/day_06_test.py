@@ -63,10 +63,11 @@ class Lights:
                 self.grid[x][y] = self.f_toggle(self.grid[x][y])
 
     def execute_direction(self, direction):
-        m = re.match(
-            r"(?P<action>turn on|turn off|toggle) (?P<start_x>\d+),(?P<start_y>\d+) through (?P<end_x>\d+),(?P<end_y>\d+)",
-            direction,
-        )
+        exp = r"(?P<action>turn on|turn off|toggle)" \
+            + r" (?P<start_x>\d+),(?P<start_y>\d+)" \
+            + r" through" \
+            + r" (?P<end_x>\d+),(?P<end_y>\d+)"
+        m = re.match(exp, direction)
         if m:
             ul = (int(m.group("start_x")), int(m.group("start_y")))
             lr = (int(m.group("end_x")), int(m.group("end_y")))
@@ -78,7 +79,7 @@ class Lights:
                 self.on(ul, lr)
 
     def execute_directions(self):
-        with open("./input_day_6.txt", "r") as fp:
+        with open("./day_06_input.txt", "r") as fp:
             line = fp.readline()
             while line:
                 self.execute_direction(line)
@@ -107,8 +108,6 @@ def test_submit():
 
 
 class NewLights(Lights):
-    pass
-
     def f_on(self, x):
         return x + 1
 

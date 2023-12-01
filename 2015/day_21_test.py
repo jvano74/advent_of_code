@@ -69,6 +69,7 @@ class Puzzle:
 
     What is the most amount of gold you can spend and still lose the fight?
     """
+
     pass
 
 
@@ -82,14 +83,16 @@ class Item(NamedTuple):
         return self.cost < other.cost
 
     def __add__(self, other):
-        return Item(f'{self.name}, {other.name}',
-                    self.cost + other.cost,
-                    self.damage + other.damage,
-                    self.armor + other.armor)
+        return Item(
+            f"{self.name}, {other.name}",
+            self.cost + other.cost,
+            self.damage + other.damage,
+            self.armor + other.armor,
+        )
 
 
 def test_items():
-    assert Weapons[0] + Weapons[1] == Item('Dagger, Shortsword', 18, 9, 0)
+    assert Weapons[0] + Weapons[1] == Item("Dagger, Shortsword", 18, 9, 0)
 
 
 class Stats(NamedTuple):
@@ -112,7 +115,9 @@ class Stats(NamedTuple):
         if damage_delt < 1:
             damage_delt = 1
         if print_combat:
-            print(f'{self.name} deals {damage_delt}; {other.name} down to {other.hp - damage_delt} hp')
+            print(
+                f"{self.name} deals {damage_delt}; {other.name} down to {other.hp - damage_delt} hp"
+            )
         return Stats(other.name, other.hp - damage_delt, other.damage, other.armor)
 
 
@@ -120,49 +125,55 @@ class Player:
     def __init__(self, enemy, items, hp=100):
         self.items = items
         self.enemy = enemy
-        self.stats = Stats('Player', hp, items.damage, items.armor)
+        self.stats = Stats("Player", hp, items.damage, items.armor)
 
     def run_combat(self, print_combat=False):
         while True:
             self.enemy = self.stats.attacks(self.enemy, print_combat)
             if self.enemy.hp <= 0:
                 if print_combat:
-                    print('You won')
-                return 'You won'
+                    print("You won")
+                return "You won"
             self.stats = self.enemy.attacks(self.stats, print_combat)
             if self.stats.hp <= 0:
                 if print_combat:
-                    print('You lost')
-                return 'You lost'
+                    print("You lost")
+                return "You lost"
 
 
 def test_player():
     print()
-    player1 = Player(Stats('Sample Boss', 12, 7, 2), Item('Total Items', 0, 5, 5), 8)
-    assert player1.run_combat(print_combat=True) == 'You won'
+    player1 = Player(Stats("Sample Boss", 12, 7, 2), Item("Total Items", 0, 5, 5), 8)
+    assert player1.run_combat(print_combat=True) == "You won"
 
 
 # Real game values
-INPUT_BOSS = Stats('Boss', 104, 8, 1)
+INPUT_BOSS = Stats("Boss", 104, 8, 1)
 
-Weapons = [Item('Dagger', 8, 4, 0),
-           Item('Shortsword', 10, 5, 0),
-           Item('Warhammer', 25, 6, 0),
-           Item('Longsword', 40, 7, 0),
-           Item('Greataxe', 74, 8, 0)]
+Weapons = [
+    Item("Dagger", 8, 4, 0),
+    Item("Shortsword", 10, 5, 0),
+    Item("Warhammer", 25, 6, 0),
+    Item("Longsword", 40, 7, 0),
+    Item("Greataxe", 74, 8, 0),
+]
 
-Armor = [Item('Leather', 13, 0, 1),
-         Item('Chainmail', 31, 0, 2),
-         Item('Splintmail', 53, 0, 3),
-         Item('Bandedmail', 75, 0, 4),
-         Item('Platemail', 102, 0, 5)]
+Armor = [
+    Item("Leather", 13, 0, 1),
+    Item("Chainmail", 31, 0, 2),
+    Item("Splintmail", 53, 0, 3),
+    Item("Bandedmail", 75, 0, 4),
+    Item("Platemail", 102, 0, 5),
+]
 
-Rings = [Item('Damage +1', 25, 1, 0),
-         Item('Damage +2', 50, 2, 0),
-         Item('Damage +3', 100, 3, 0),
-         Item('Defense +1', 20, 0, 1),
-         Item('Defense +2', 40, 0, 2),
-         Item('Defense +3', 80, 0, 3)]
+Rings = [
+    Item("Damage +1", 25, 1, 0),
+    Item("Damage +2", 50, 2, 0),
+    Item("Damage +3", 100, 3, 0),
+    Item("Defense +1", 20, 0, 1),
+    Item("Defense +2", 40, 0, 2),
+    Item("Defense +3", 80, 0, 3),
+]
 
 
 def generate_player_items(weapons, armor, rings):
@@ -174,7 +185,7 @@ def generate_player_items(weapons, armor, rings):
     ring_options = set()
     for i in range(0, len(rings)):
         ring_options.add(rings[i])
-        for j in range(i+1, len(rings)):
+        for j in range(i + 1, len(rings)):
             ring_options.add(rings[i] + rings[j])
     non_ring_options = weapon_only.union(weapon_and_armor)
     total_options = set(non_ring_options)
@@ -190,15 +201,19 @@ def find_solution(win=True):
         possible_gear = reversed(possible_gear)
     for gear in possible_gear:
         player1 = Player(INPUT_BOSS, gear)
-        if win and player1.run_combat() == 'You won':
+        if win and player1.run_combat() == "You won":
             return player1.items
-        elif not win and player1.run_combat() != 'You won':
+        elif not win and player1.run_combat() != "You won":
             return player1.items
 
 
 def test_find_solution():
-    assert find_solution() == Item(name='Longsword, Leather, Damage +1', cost=78, damage=8, armor=1)
+    assert find_solution() == Item(
+        name="Longsword, Leather, Damage +1", cost=78, damage=8, armor=1
+    )
 
 
 def test_find_solution2():
-    assert find_solution(win=False) == Item(name='Dagger, Damage +3, Defense +2', cost=148, damage=7, armor=2)
+    assert find_solution(win=False) == Item(
+        name="Dagger, Damage +3, Defense +2", cost=148, damage=7, armor=2
+    )

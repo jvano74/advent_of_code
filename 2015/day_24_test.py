@@ -76,12 +76,42 @@ class Puzzle:
 
     Now, what is the quantum entanglement of the first group of packages in the ideal configuration?
     """
+
     pass
 
 
 SAMPLE = [1, 2, 3, 4, 5, 7, 8, 9, 10, 11]
-INPUT = [1, 2, 3, 5, 7, 13, 17, 19, 23, 29, 31, 37, 41, 43, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97,
-         101, 103, 107, 109, 113]
+INPUT = [
+    1,
+    2,
+    3,
+    5,
+    7,
+    13,
+    17,
+    19,
+    23,
+    29,
+    31,
+    37,
+    41,
+    43,
+    53,
+    59,
+    61,
+    67,
+    71,
+    73,
+    79,
+    83,
+    89,
+    97,
+    101,
+    103,
+    107,
+    109,
+    113,
+]
 
 
 def split_gifts3(gifts):
@@ -145,7 +175,9 @@ def find_swaps(gifts):
                 swaps2[gifts[i] + gifts[j]].append((gifts[i], gifts[j]))
             for k in range(j + 1, len(gifts)):
                 if gifts[i] + gifts[j] + gifts[k] in gifts:
-                    swaps3[gifts[i] + gifts[j] + gifts[k]].append((gifts[i], gifts[j], gifts[k]))
+                    swaps3[gifts[i] + gifts[j] + gifts[k]].append(
+                        (gifts[i], gifts[j], gifts[k])
+                    )
     return swaps2, swaps3
 
 
@@ -157,7 +189,12 @@ def find_best_with_4(gifts):
         for j in range(i + 1, len(gifts) - 2):
             for k in range(j + 1, len(gifts)):
                 if bag_wt - (gifts[i] + gifts[j] + gifts[k]) in gifts:
-                    bag = (gifts[i], gifts[j], gifts[k], bag_wt - (gifts[i] + gifts[j] + gifts[k]))
+                    bag = (
+                        gifts[i],
+                        gifts[j],
+                        gifts[k],
+                        bag_wt - (gifts[i] + gifts[j] + gifts[k]),
+                    )
                     bag_qe = 1
                     for g in bag:
                         bag_qe *= g

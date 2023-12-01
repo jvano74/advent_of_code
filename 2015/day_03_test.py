@@ -98,7 +98,7 @@ def test_robot_houses_visited():
 
 
 def test_submission():
-    fp = open("./input_day_3.txt", "r")
+    fp = open("./day_03_input.txt", "r")
     if fp.mode == "r":
         submission_input = fp.read()
     assert robot_ans(submission_input) == 2639

@@ -210,7 +210,7 @@ class Kit:
         out_wire.line_in = Wire(Gate(gate, in1_wire, in2_wire))
 
     def execute_directions(self):
-        with open("./input_day_7.txt", "r") as fp:
+        with open("./day_07_input.txt", "r") as fp:
             line = fp.readline()
             while line:
                 self.wire_in(line)

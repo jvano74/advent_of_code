@@ -31,10 +31,11 @@ class Puzzle:
 
     What is the value in register b when the program in your puzzle input is finished executing?
     """
+
     pass
 
 
-with open('day_23_input.txt') as fp:
+with open("day_23_input.txt") as fp:
     INPUT = [line.strip() for line in fp]
 
 
@@ -46,64 +47,64 @@ class Computer:
         self.program = program
 
     def perform_instruction(self, i_line):
-        if i_line[:3] == 'hlf':
-            if i_line[4] == 'a' and self.a % 2 == 0:
+        if i_line[:3] == "hlf":
+            if i_line[4] == "a" and self.a % 2 == 0:
                 self.a //= 2
-            elif i_line[4] == 'b' and self.b % 2 == 0:
+            elif i_line[4] == "b" and self.b % 2 == 0:
                 self.b //= 2
             else:
-                raise Exception(f'Invalid operation {i_line}')
+                raise Exception(f"Invalid operation {i_line}")
             self.pointer += 1
-        elif i_line[:3] == 'tpl':
-            if i_line[4] == 'a':
+        elif i_line[:3] == "tpl":
+            if i_line[4] == "a":
                 self.a *= 3
-            elif i_line[4] == 'b':
+            elif i_line[4] == "b":
                 self.b *= 3
             else:
-                raise Exception(f'Invalid operation {i_line}')
+                raise Exception(f"Invalid operation {i_line}")
             self.pointer += 1
-        elif i_line[:3] == 'inc':
-            if i_line[4] == 'a':
+        elif i_line[:3] == "inc":
+            if i_line[4] == "a":
                 self.a += 1
-            elif i_line[4] == 'b':
+            elif i_line[4] == "b":
                 self.b += 1
             else:
-                raise Exception(f'Invalid operation {i_line}')
+                raise Exception(f"Invalid operation {i_line}")
             self.pointer += 1
-        elif i_line[:3] == 'jmp':
+        elif i_line[:3] == "jmp":
             self.pointer += int(i_line[4:])
-        elif i_line[:3] == 'jie':
-            if i_line[4:7] == 'a, ':
+        elif i_line[:3] == "jie":
+            if i_line[4:7] == "a, ":
                 if self.a % 2 == 0:
                     self.pointer += int(i_line[7:])
                 else:
                     # raise Exception(f'Undefined operation {i_line}')
                     self.pointer += 1
-            elif i_line[4:7] == 'b, ':
+            elif i_line[4:7] == "b, ":
                 if self.b % 2 == 0:
                     self.pointer += int(i_line[7:])
                 else:
                     # raise Exception(f'Undefined operation {i_line}')
                     self.pointer += 1
             else:
-                raise Exception(f'Invalid operation {i_line}')
-        elif i_line[:3] == 'jio':
-            if i_line[4:7] == 'a, ':
+                raise Exception(f"Invalid operation {i_line}")
+        elif i_line[:3] == "jio":
+            if i_line[4:7] == "a, ":
                 if self.a == 1:
                     self.pointer += int(i_line[7:])
                 else:
                     # raise Exception(f'Undefined operation {i_line}')
                     self.pointer += 1
-            elif i_line[4:7] == 'b, ':
+            elif i_line[4:7] == "b, ":
                 if self.b == 1:
                     self.pointer += int(i_line[7:])
                 else:
                     # raise Exception(f'Undefined operation {i_line}')
                     self.pointer += 1
             else:
-                raise Exception(f'Invalid operation {i_line}')
+                raise Exception(f"Invalid operation {i_line}")
         else:
-            raise Exception('Unknown operation')
+            raise Exception("Unknown operation")
 
     def run(self):
         while 0 <= self.pointer < len(self.program):

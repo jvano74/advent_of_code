@@ -45,6 +45,7 @@ class Puzzle:
     With these changes, what is the new lowest house number of the house to get at least as many presents as
     the number in your puzzle input?
     """
+
     pass
 
 
@@ -56,7 +57,7 @@ def prime_factors(n):
         else:
             factors[2] += 1
         n = n / 2
-    for i in range(3, math.ceil(math.sqrt(n+1)), 2):
+    for i in range(3, math.ceil(math.sqrt(n + 1)), 2):
         while n % i == 0:
             if i not in factors:
                 factors[i] = 1
@@ -84,7 +85,7 @@ def present_sum_from_prime_factors(n, present_multiplier=10):
     factors = prime_factors(n)
     result = 1
     for factor in factors:
-        sum_factor = sum(pow(factor, i) for i in range(factors[factor]+1))
+        sum_factor = sum(pow(factor, i) for i in range(factors[factor] + 1))
         result *= sum_factor
     return present_multiplier * result
 
@@ -103,23 +104,25 @@ def test_present_sum_from_prime_factors():
 
 def get_lazy_presents(n, max_houses=1, num_mult=11):
     lazy_sum = 0
-    for i in range(1, max_houses+1):
+    for i in range(1, max_houses + 1):
         if n % i == 0:
             lazy_sum += n // i
-    return num_mult*lazy_sum
+    return num_mult * lazy_sum
 
 
-def min_house(total, multiplier=10, starting_house=1, ending_house=None, max_houses=None):
+def min_house(
+    total, multiplier=10, starting_house=1, ending_house=None, max_houses=None
+):
     house = starting_house
     if max_houses is None:
         while present_sum_from_prime_factors(house, multiplier) < total:
             if ending_house is not None and house > ending_house:
-                raise Exception('Past ending house.')
+                raise Exception("Past ending house.")
             house += 1
     else:
         while get_lazy_presents(house, max_houses, multiplier) < total:
             if ending_house is not None and house > ending_house:
-                raise Exception('Past ending house.')
+                raise Exception("Past ending house.")
             house += 1
     return house
 

@@ -139,6 +139,7 @@ class Puzzle:
     With the same starting stats for you and the boss, what is the least amount of mana you can spend and still
     win the fight?
     """
+
     pass
 
 
@@ -159,8 +160,7 @@ class Spell(NamedTuple):
 
 
 class Character:
-
-    def __init__(self, name, hp=50, damage=0, armor=0, mana=500, mode='normal'):
+    def __init__(self, name, hp=50, damage=0, armor=0, mana=500, mode="normal"):
         self.print_combat = False
         self.name = name
         self.initial_hp = hp
@@ -182,16 +182,52 @@ class Character:
         # - Recharge costs 229 mana. It starts an effect that lasts for 5 turns.
         #   At the start of each turn while it is active, it gives you 101 new mana.
         self.known_spells = {
-            'Magic Missile': Spell(cost=53, damage=4, heal=0, effect_duration=0,
-                                   effect_cost=0, effect_armor=0, effect_damage=0),
-            'Drain': Spell(cost=73, damage=2, heal=2, effect_duration=0,
-                           effect_cost=0, effect_armor=0, effect_damage=0),
-            'Shield': Spell(cost=113, damage=0, heal=0, effect_duration=6,
-                            effect_cost=0, effect_armor=7, effect_damage=0),
-            'Poison': Spell(cost=173, damage=0, heal=0, effect_duration=6,
-                            effect_cost=0, effect_armor=0, effect_damage=3),
-            'Recharge': Spell(cost=229, damage=0, heal=0, effect_duration=5,
-                              effect_cost=101, effect_armor=0, effect_damage=0)}
+            "Magic Missile": Spell(
+                cost=53,
+                damage=4,
+                heal=0,
+                effect_duration=0,
+                effect_cost=0,
+                effect_armor=0,
+                effect_damage=0,
+            ),
+            "Drain": Spell(
+                cost=73,
+                damage=2,
+                heal=2,
+                effect_duration=0,
+                effect_cost=0,
+                effect_armor=0,
+                effect_damage=0,
+            ),
+            "Shield": Spell(
+                cost=113,
+                damage=0,
+                heal=0,
+                effect_duration=6,
+                effect_cost=0,
+                effect_armor=7,
+                effect_damage=0,
+            ),
+            "Poison": Spell(
+                cost=173,
+                damage=0,
+                heal=0,
+                effect_duration=6,
+                effect_cost=0,
+                effect_armor=0,
+                effect_damage=3,
+            ),
+            "Recharge": Spell(
+                cost=229,
+                damage=0,
+                heal=0,
+                effect_duration=5,
+                effect_cost=101,
+                effect_armor=0,
+                effect_damage=0,
+            ),
+        }
 
         # All the following to be applied when resetting character
         self.hp = hp
@@ -213,53 +249,63 @@ class Character:
         # NEED TO FIX - doesn't factor in effect of recharge which would allow additional spells
         # options = set(s for s in self.known_spells if self.known_spells[s].cost < self.mana)
         # return options - set(self.active_effects)
-        raise Exception('Feature is broken, does not factor in what recharge would add to mana')
+        raise Exception(
+            "Feature is broken, does not factor in what recharge would add to mana"
+        )
 
     def cast(self, spell_to_cast, target=None):
         if spell_to_cast in self.active_effects:
             # raise Exception(f'{spell_to_cast} already cast/active')
-            return f'{spell_to_cast} already cast/active'
+            return f"{spell_to_cast} already cast/active"
         spell = self.known_spells[spell_to_cast]
 
         if self.mana < spell.cost:
             # raise Exception(f'Not enough mana for {spell_to_cast}')
-            return f'Not enough mana for {spell_to_cast}'
+            return f"Not enough mana for {spell_to_cast}"
         self.mana -= spell.cost
         self.mana_spent += spell.cost
 
         if spell.damage > 0:
             if self.print_combat:
-                print(f'{self.name} attacks with {spell_to_cast} for {self.damage}')
+                print(f"{self.name} attacks with {spell_to_cast} for {self.damage}")
             if target.take_damage(spell.damage) <= 0:
-                return 'You Win'
+                return "You Win"
 
         if spell.heal > 0:
             self.hp += spell.heal
             if self.print_combat:
-                print(f'{self.name} heals {spell.heal} hp to {self.hp} from {spell_to_cast}')
+                print(
+                    f"{self.name} heals {spell.heal} hp to {self.hp} from {spell_to_cast}"
+                )
 
         if spell.effect_duration > 0:
             if self.print_combat:
-                print(f'{self.name} starts {spell_to_cast} effect')
-            self.add_effect(spell_to_cast,
-                            spell.effect_duration,
-                            Effect(spell.effect_cost, spell.effect_armor, 0))
+                print(f"{self.name} starts {spell_to_cast} effect")
+            self.add_effect(
+                spell_to_cast,
+                spell.effect_duration,
+                Effect(spell.effect_cost, spell.effect_armor, 0),
+            )
             if spell.effect_armor > 0:
                 self.armor += spell.effect_armor
                 if self.print_combat:
-                    print(f'{self.name} armor increased {spell.effect_armor} hp to {self.armor} from {spell_to_cast}')
+                    print(
+                        f"{self.name} armor increased {spell.effect_armor} hp to {self.armor} from {spell_to_cast}"
+                    )
             if spell.effect_damage > 0:
-                target.add_effect(spell_to_cast,
-                                  spell.effect_duration,
-                                  Effect(0, 0, spell.effect_damage))
-        return 'Continue'
+                target.add_effect(
+                    spell_to_cast,
+                    spell.effect_duration,
+                    Effect(0, 0, spell.effect_damage),
+                )
+        return "Continue"
 
     def add_effect(self, effect_name, duration, effect):
         self.active_effects[effect_name] = (duration, effect)
 
     def attack(self, opponent):
         if self.print_combat:
-            print(f'{self.name} attacks with {self.damage}')
+            print(f"{self.name} attacks with {self.damage}")
         return opponent.take_damage(self.damage)
 
     def take_damage(self, amount):
@@ -268,21 +314,23 @@ class Character:
             damage_dealt = 1
         self.hp -= damage_dealt
         if self.print_combat:
-            print(f'{self.name} took {damage_dealt}; down to {self.hp} hp')
+            print(f"{self.name} took {damage_dealt}; down to {self.hp} hp")
         return self.hp
 
     def start_of_turn(self, role):
-        if role == 'Attack':
+        if role == "Attack":
             if self.print_combat:
                 print()
-                print(f'-- {self.name} turn --')
-            if self.mode == 'hard':
+                print(f"-- {self.name} turn --")
+            if self.mode == "hard":
                 self.hp -= 1
                 if self.print_combat:
-                    print(f'hard mode, -1 hp, now @ {self.hp}')
+                    print(f"hard mode, -1 hp, now @ {self.hp}")
 
         if self.print_combat:
-            print(f'- {self.name} has {self.hp} hp, {self.armor} armor, {self.mana} mana')
+            print(
+                f"- {self.name} has {self.hp} hp, {self.armor} armor, {self.mana} mana"
+            )
 
         effect_ending = {}
         for effect_name in self.active_effects:
@@ -290,13 +338,13 @@ class Character:
             if effect.damage > 0:
                 self.hp -= effect.damage
                 if self.print_combat:
-                    print(f'{effect_name} causes {effect.damage} damage')
+                    print(f"{effect_name} causes {effect.damage} damage")
             if effect.cost > 0:
                 self.mana += effect.cost
                 if self.print_combat:
-                    print(f'{effect_name} gives {effect.cost} mana')
+                    print(f"{effect_name} gives {effect.cost} mana")
             if self.print_combat:
-                print(f'{effect_name} timer now {turns_left - 1}')
+                print(f"{effect_name} timer now {turns_left - 1}")
             if turns_left > 1:
                 self.active_effects[effect_name] = (turns_left - 1, effect)
             else:
@@ -306,10 +354,10 @@ class Character:
             if effect.armor > 0:
                 self.armor -= effect.armor
                 if self.print_combat:
-                    print(f'{effect_name} ended, armor now {self.armor}')
+                    print(f"{effect_name} ended, armor now {self.armor}")
             else:
                 if self.print_combat:
-                    print(f'{effect_name} ended')
+                    print(f"{effect_name} ended")
 
         return self.hp
 
@@ -336,40 +384,40 @@ class Fight:
         if self.print_combat:
             print()
         # Player goes first
-        if self.player.start_of_turn('Attack') <= 0:
-            return 'You Lose'
-        if self.boss.start_of_turn('Defend') <= 0:
-            return 'You Win'
+        if self.player.start_of_turn("Attack") <= 0:
+            return "You Lose"
+        if self.boss.start_of_turn("Defend") <= 0:
+            return "You Win"
 
         cast_result = self.player.cast(spell_to_cast, self.boss)
-        if cast_result == 'You Win':
-            return 'You Win'
-        elif cast_result != 'Continue':
-            return 'You Lose'
+        if cast_result == "You Win":
+            return "You Win"
+        elif cast_result != "Continue":
+            return "You Lose"
 
         if self.boss.end_of_turn() <= 0:
-            return 'You Win'
+            return "You Win"
         if self.player.end_of_turn() <= 0:
-            return 'You Lose'
+            return "You Lose"
 
         # Next boss takes turn
-        if self.boss.start_of_turn('Attack') <= 0:
-            return 'You Win'
-        if self.player.start_of_turn('Defend') <= 0:
-            return 'You Lose'
+        if self.boss.start_of_turn("Attack") <= 0:
+            return "You Win"
+        if self.player.start_of_turn("Defend") <= 0:
+            return "You Lose"
         if self.boss.attack(self.player) <= 0:
-            return 'You Lose'
+            return "You Lose"
         if self.player.end_of_turn() <= 0:
-            return 'You Lose'
+            return "You Lose"
         if self.boss.end_of_turn() <= 0:
-            return 'You Win'
-        return f'player at {self.player.hp}, boss at {self.boss.hp}'
+            return "You Win"
+        return f"player at {self.player.hp}, boss at {self.boss.hp}"
 
     def multiple_rounds(self, list_of_spells):
-        status = f'player at {self.player.hp}, boss at {self.boss.hp}'
+        status = f"player at {self.player.hp}, boss at {self.boss.hp}"
         for spell in list_of_spells:
             status = self.combat_round(spell)
-            if status in {'You Lose', 'You Win'}:
+            if status in {"You Lose", "You Win"}:
                 return status, self.player.mana_spent
         return status, self.player.mana_spent
 
@@ -378,8 +426,8 @@ def test_wizard_first_example():
     """
     For example, suppose the player has 10 hit points and 250 mana, and that the boss has 13 hit points and 8 damage:
     """
-    example_boss = Character('Boss', hp=13, damage=8)
-    example_wizard = Character('Player', hp=10, mana=250)
+    example_boss = Character("Boss", hp=13, damage=8)
+    example_wizard = Character("Player", hp=10, mana=250)
     example_fight = Fight(player=example_wizard, boss=example_boss, print_combat=True)
     print()
 
@@ -395,10 +443,10 @@ def test_wizard_first_example():
     Poison deals 3 damage; its timer is now 5.
     Boss attacks for 8 damage.
     """
-    print('=== First round cast Poison ===')
-    result = example_fight.combat_round('Poison')
+    print("=== First round cast Poison ===")
+    result = example_fight.combat_round("Poison")
     print(result)
-    assert result == 'player at 2, boss at 10'
+    assert result == "player at 2, boss at 10"
 
     """
     -- Player turn --
@@ -412,18 +460,18 @@ def test_wizard_first_example():
     - Boss has 3 hit points
     Poison deals 3 damage. This kills the boss, and the player wins.
     """
-    print('=== Second round cast Magic Missile ===')
-    result = example_fight.combat_round('Magic Missile')
+    print("=== Second round cast Magic Missile ===")
+    result = example_fight.combat_round("Magic Missile")
     print(result)
-    assert result == 'You Win'
+    assert result == "You Win"
 
 
 def test_wizard_second_example():
     """
     Now, suppose the same initial conditions, except that the boss has 14 hit points instead:
     """
-    example_boss = Character('Boss', hp=14, damage=8)
-    example_wizard = Character('Player', hp=10, mana=250)
+    example_boss = Character("Boss", hp=14, damage=8)
+    example_wizard = Character("Player", hp=10, mana=250)
     example_fight = Fight(player=example_wizard, boss=example_boss, print_combat=True)
 
     """
@@ -438,10 +486,10 @@ def test_wizard_second_example():
     Recharge provides 101 mana; its timer is now 4.
     Boss attacks for 8 damage!
     """
-    print('=== First round cast Recharge ===')
-    result = example_fight.combat_round('Recharge')
+    print("=== First round cast Recharge ===")
+    result = example_fight.combat_round("Recharge")
     print(result)
-    assert result == 'player at 2, boss at 14'
+    assert result == "player at 2, boss at 14"
 
     """
     -- Player turn --
@@ -457,10 +505,10 @@ def test_wizard_second_example():
     Recharge provides 101 mana; its timer is now 2.
     Boss attacks for 8 - 7 = 1 damage!
     """
-    print('=== Second round cast Shield ===')
-    result = example_fight.combat_round('Shield')
+    print("=== Second round cast Shield ===")
+    result = example_fight.combat_round("Shield")
     print(result)
-    assert result == 'player at 1, boss at 14'
+    assert result == "player at 1, boss at 14"
 
     """
     -- Player turn --
@@ -478,10 +526,10 @@ def test_wizard_second_example():
     Recharge wears off.
     Boss attacks for 8 - 7 = 1 damage!
     """
-    print('=== Third round cast Drain ===')
-    result = example_fight.combat_round('Drain')
+    print("=== Third round cast Drain ===")
+    result = example_fight.combat_round("Drain")
     print(result)
-    assert result == 'player at 2, boss at 12'
+    assert result == "player at 2, boss at 12"
 
     """
     -- Player turn --
@@ -497,10 +545,10 @@ def test_wizard_second_example():
     Poison deals 3 damage; its timer is now 5.
     Boss attacks for 8 - 7 = 1 damage!
     """
-    print('=== Fourth round cast Poison ===')
-    result = example_fight.combat_round('Poison')
+    print("=== Fourth round cast Poison ===")
+    result = example_fight.combat_round("Poison")
     print(result)
-    assert result == 'player at 1, boss at 9'
+    assert result == "player at 1, boss at 9"
 
     """
     -- Player turn --
@@ -516,47 +564,49 @@ def test_wizard_second_example():
     - Boss has 2 hit points
     Poison deals 3 damage. This kills the boss, and the player wins.
     """
-    print('=== Fourth round cast Magic Missile ===')
-    result = example_fight.combat_round('Magic Missile')
+    print("=== Fourth round cast Magic Missile ===")
+    result = example_fight.combat_round("Magic Missile")
     print(result)
-    assert result == 'You Win'
+    assert result == "You Win"
 
 
 def test_wizard_second_example_automated():
-    example_boss = Character('Boss', hp=14, damage=8)
-    example_wizard = Character('Player', hp=10, mana=250)
+    example_boss = Character("Boss", hp=14, damage=8)
+    example_wizard = Character("Player", hp=10, mana=250)
     example_fight = Fight(player=example_wizard, boss=example_boss)
-    results = example_fight.multiple_rounds(['Recharge', 'Shield', 'Drain', 'Poison', 'Magic Missile'])
-    assert results == ('You Win', 641)
+    results = example_fight.multiple_rounds(
+        ["Recharge", "Shield", "Drain", "Poison", "Magic Missile"]
+    )
+    assert results == ("You Win", 641)
 
 
-def search_real_game(current_min_mana_soln=0, mode='normal'):
+def search_real_game(current_min_mana_soln=0, mode="normal"):
     # after running and finding at least one solution
     # we can pass in current_min_mana_soln to reduce search space
     # e.g. know solution exists below ??? mana
-    real_boss = Character('Boss', hp=71, damage=10)
-    real_wizard = Character('Player', hp=50, mana=500, mode=mode)
+    real_boss = Character("Boss", hp=71, damage=10)
+    real_wizard = Character("Player", hp=50, mana=500, mode=mode)
     real_fight = Fight(player=real_wizard, boss=real_boss)
     results = []
     paths_to_explore = [(0, [])]
     while True:
         # paths_to_explore = sorted(paths_to_explore, reverse=True)
         paths_to_explore = sorted(paths_to_explore)
-        spell_list = ''
-        while spell_list == '' and len(paths_to_explore) > 0:
+        spell_list = ""
+        while spell_list == "" and len(paths_to_explore) > 0:
             cost, spell_list = paths_to_explore.pop()
             if cost > current_min_mana_soln > 0:
-                spell_list = ''
-        if spell_list == '' and len(paths_to_explore) == 0:
+                spell_list = ""
+        if spell_list == "" and len(paths_to_explore) == 0:
             break
         real_fight.reset()
         status, mana_spent = real_fight.multiple_rounds(spell_list)
-        if status == 'You Win':
+        if status == "You Win":
             if current_min_mana_soln == 0:
                 current_min_mana_soln = mana_spent
             current_min_mana_soln = min(current_min_mana_soln, mana_spent)
             results.append((mana_spent, spell_list))
-        elif status != 'You Lose':
+        elif status != "You Lose":
             for next_spell in real_wizard.known_spells:
                 new_path = spell_list[:]
                 new_path.append(next_spell)
@@ -566,18 +616,18 @@ def search_real_game(current_min_mana_soln=0, mode='normal'):
 
 
 def play_real_game():
-    real_boss = Character('Boss', hp=71, damage=10)
-    real_wizard = Character('Player', hp=50, mana=500)
+    real_boss = Character("Boss", hp=71, damage=10)
+    real_wizard = Character("Player", hp=50, mana=500)
     real_fight = Fight(player=real_wizard, boss=real_boss, print_combat=True)
-    result = ''
+    result = ""
     while True:
         while real_boss.hp > 0 and real_wizard.hp > 0:
-            print(f'Spent {real_wizard.mana_spent} remaining {real_wizard.mana}')
-            next_spell = input('@! Enter Spell to cast:')
+            print(f"Spent {real_wizard.mana_spent} remaining {real_wizard.mana}")
+            next_spell = input("@! Enter Spell to cast:")
             result = real_fight.combat_round(next_spell)
             print(result)
-        print('GAME OVER')
-        if input('Play again') != 'n':
+        print("GAME OVER")
+        if input("Play again") != "n":
             real_fight.reset()
         else:
             break
@@ -591,18 +641,30 @@ def test_search_real_game():
 
 
 def test_search_hard_game():
-    search_result = search_real_game(mode='hard')
+    search_result = search_real_game(mode="hard")
     print(search_result)
     assert min(search_result)[0] == 1937
 
 
 def test_wizard_examples_from_search():
-    real_boss = Character('Boss', hp=71, damage=10)
-    real_wizard = Character('Player', hp=50, mana=500)
+    real_boss = Character("Boss", hp=71, damage=10)
+    real_wizard = Character("Player", hp=50, mana=500)
     real_fight = Fight(player=real_wizard, boss=real_boss, print_combat=True)
-    list_of_spells = ['Recharge', 'Poison', 'Shield', 'Recharge', 'Poison', 'Shield', 'Recharge',
-                      'Poison', 'Shield', 'Magic Missile', 'Poison', 'Magic Missile']
-    assert real_fight.multiple_rounds(list_of_spells) == ('You Win', 1824)
+    list_of_spells = [
+        "Recharge",
+        "Poison",
+        "Shield",
+        "Recharge",
+        "Poison",
+        "Shield",
+        "Recharge",
+        "Poison",
+        "Shield",
+        "Magic Missile",
+        "Poison",
+        "Magic Missile",
+    ]
+    assert real_fight.multiple_rounds(list_of_spells) == ("You Win", 1824)
 
 
 if __name__ == "__main__":

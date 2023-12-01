@@ -89,7 +89,7 @@ def test_submission():
     file_total = 0
     mem_total = 0
     extra = 0
-    with open("./input_day_8.txt", "r") as fp:
+    with open("./day_08_input.txt", "r") as fp:
         line = fp.readline().rstrip()
         while line:
             file_total += len(line)

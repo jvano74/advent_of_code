@@ -44,31 +44,33 @@ class Solution:
     """
 
 
-with open('day_16_input.txt') as fp:
+with open("day_16_input.txt") as fp:
     raw = fp.read()
-MY_AUNTS = raw.split('\n')
+MY_AUNTS = raw.split("\n")
 
-RESULTS = { 'children': 3,
-            'cats': 7,
-            'samoyeds': 2,
-            'pomeranians': 3,
-            'akitas': 0,
-            'vizslas': 0,
-            'goldfish': 5,
-            'trees': 3,
-            'cars': 2,
-            'perfumes': 1 }
+RESULTS = {
+    "children": 3,
+    "cats": 7,
+    "samoyeds": 2,
+    "pomeranians": 3,
+    "akitas": 0,
+    "vizslas": 0,
+    "goldfish": 5,
+    "trees": 3,
+    "cars": 2,
+    "perfumes": 1,
+}
 
 
 def classify_aunts(aunt_list, results):
     aunt_dict = {}
     for aunt_info in aunt_list:
         possible_match = True
-        (_, number, properties) = aunt_info.split(' ', 2)
+        (_, number, properties) = aunt_info.split(" ", 2)
         number = int(number[:-1])
         prop_dict = {}
-        for prop in properties.split(','):
-            (name, val) = prop.split(':')
+        for prop in properties.split(","):
+            (name, val) = prop.split(":")
             name = name.strip()
             val = int(val.strip())
             if name in results and results[name] != val:
@@ -83,17 +85,17 @@ def updated_classify_aunts(aunt_list, results):
     aunt_dict = {}
     for aunt_info in aunt_list:
         possible_match = True
-        (_, number, properties) = aunt_info.split(' ', 2)
+        (_, number, properties) = aunt_info.split(" ", 2)
         number = int(number[:-1])
         prop_dict = {}
-        for prop in properties.split(','):
-            (name, val) = prop.split(':')
+        for prop in properties.split(","):
+            (name, val) = prop.split(":")
             name = name.strip()
             val = int(val.strip())
-            if name in ('cats', 'trees'):
+            if name in ("cats", "trees"):
                 if name in results and results[name] >= val:
                     possible_match = False
-            elif name in ('pomeranians', 'goldfish'):
+            elif name in ("pomeranians", "goldfish"):
                 if name in results and results[name] <= val:
                     possible_match = False
             elif name in results and results[name] != val:
@@ -105,6 +107,11 @@ def updated_classify_aunts(aunt_list, results):
 
 
 def test_aunts():
-    assert classify_aunts(MY_AUNTS, RESULTS) == {40: {'akitas': 0, 'cats': 7, 'vizslas': 0}}
-    assert updated_classify_aunts(MY_AUNTS, RESULTS) == {241: {'cars': 2, 'pomeranians': 1, 'samoyeds': 2}} == ''
-
+    assert classify_aunts(MY_AUNTS, RESULTS) == {
+        40: {"akitas": 0, "cats": 7, "vizslas": 0}
+    }
+    assert (
+        updated_classify_aunts(MY_AUNTS, RESULTS)
+        == {241: {"cars": 2, "pomeranians": 1, "samoyeds": 2}}
+        == ""
+    )

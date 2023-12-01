@@ -89,8 +89,16 @@ class Problem:
 
 
 class Board:
-    DELTAS = [Point(0, 1), Point(1, 1), Point(1, 0), Point(1, -1),
-              Point(0, -1), Point(-1, -1), Point(-1, 0), Point(-1, 1)]
+    DELTAS = [
+        Point(0, 1),
+        Point(1, 1),
+        Point(1, 0),
+        Point(1, -1),
+        Point(0, -1),
+        Point(-1, -1),
+        Point(-1, 0),
+        Point(-1, 1),
+    ]
 
     def __init__(self, raw: List, broken=False):
         self.state = defaultdict(int)
@@ -99,7 +107,7 @@ class Board:
         self.broken = broken
         for y, line in enumerate(raw):
             for x, c in enumerate(line):
-                if c == '#':
+                if c == "#":
                     self.state[Point(x, y)] = 1
         if self.broken:
             self.set_broken()
@@ -113,7 +121,7 @@ class Board:
     def show(self):
         for y in range(self.y_max):
             for x in range(self.x_max):
-                print('#' if self.state[Point(x,y)] == 1 else '.', end='')
+                print("#" if self.state[Point(x, y)] == 1 else ".", end="")
             print()
 
     def step(self):
@@ -136,17 +144,12 @@ class Board:
         return len(self.state)
 
 
-SAMPLE = ['.#.#.#',
-          '...##.',
-          '#....#',
-          '..#...',
-          '#.#..#',
-          '####..']
+SAMPLE = [".#.#.#", "...##.", "#....#", "..#...", "#.#..#", "####.."]
 
 
-with open('day_18_input.txt') as fp:
+with open("day_18_input.txt") as fp:
     raw = fp.read()
-    SUBMISSION = raw.split('\n')
+    SUBMISSION = raw.split("\n")
 
 
 def test_board():

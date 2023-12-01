@@ -94,37 +94,41 @@ class Cookie:
             self.high_score = new_score
             self.high_score_receipt = dict(self.receipt)
 
-
     def find_max(self):
         pass
 
 
 def test_sample():
-    sample_cookie = Cookie({'butterscotch': Ingredient(-1, -2,  6,  3,  8),
-                            'cinnamon':     Ingredient( 2,  3, -2, -1,  3)},
-                           {'butterscotch': 44,
-                            'cinnamon':     56})
+    sample_cookie = Cookie(
+        {
+            "butterscotch": Ingredient(-1, -2, 6, 3, 8),
+            "cinnamon": Ingredient(2, 3, -2, -1, 3),
+        },
+        {"butterscotch": 44, "cinnamon": 56},
+    )
     assert sample_cookie.score() == 62842880
     for a in range(101):
-        sample_cookie.new_receipt({'butterscotch': a,
-                                   'cinnamon': 100 - a})
+        sample_cookie.new_receipt({"butterscotch": a, "cinnamon": 100 - a})
     assert sample_cookie.high_score == 62842880
+
 
 def test_submission():
     my_ingredients = {
-        'sugar':     Ingredient( 3,  0,  0, -3,  2),
-        'sprinkles': Ingredient(-3,  3,  0,  0,  9),
-        'candy':     Ingredient(-1,  0,  4,  0,  1),
-        'chocolate': Ingredient( 0,  0, -2,  2,  8)
+        "sugar": Ingredient(3, 0, 0, -3, 2),
+        "sprinkles": Ingredient(-3, 3, 0, 0, 9),
+        "candy": Ingredient(-1, 0, 4, 0, 1),
+        "chocolate": Ingredient(0, 0, -2, 2, 8),
     }
     my_cookie = Cookie(my_ingredients, {})
     for a in range(101):
         for b in range(101):
             for c in range(101):
-                my_receipt = {'sugar': a,
-                              'sprinkles': b,
-                              'candy': c,
-                              'chocolate': 100 - (a + b + c) }
+                my_receipt = {
+                    "sugar": a,
+                    "sprinkles": b,
+                    "candy": c,
+                    "chocolate": 100 - (a + b + c),
+                }
                 my_cookie.new_receipt(my_receipt)
     assert my_cookie.high_score == 222870
     # reset high score
@@ -133,12 +137,12 @@ def test_submission():
         for b in range(101):
             for c in range(101):
                 d = 100 - (a + b + c)
-                if 2*a + 9*b + c + 8*d == 500:
-                    my_receipt = {'sugar': a,
-                                  'sprinkles': b,
-                                  'candy': c,
-                                  'chocolate': d }
+                if 2 * a + 9 * b + c + 8 * d == 500:
+                    my_receipt = {
+                        "sugar": a,
+                        "sprinkles": b,
+                        "candy": c,
+                        "chocolate": d,
+                    }
                     my_cookie.new_receipt(my_receipt)
     assert my_cookie.high_score == 222870
-
-

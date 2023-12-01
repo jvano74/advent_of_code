@@ -68,7 +68,10 @@ def test_stuff():
 
 def test_submission():
     max_time = 2503
-    reindeer = {re.split(' ', ln)[0]: Reindeer(*re.findall(r'\d+', ln)) for ln in open('day_14_input.txt', 'r')}
+    reindeer = {
+        re.split(" ", ln)[0]: Reindeer(*re.findall(r"\d+", ln))
+        for ln in open("day_14_input.txt", "r")
+    }
     assert len(reindeer) == 9
     race = {}
     final_distances = []
@@ -78,6 +81,7 @@ def test_submission():
         race[name] = name_race
         final_distances.append(name_race[-1])
     assert max(final_distances) == 2696
+
 
 class Race:
     """
@@ -102,7 +106,10 @@ class Race:
 
     def __init__(self):
         self.max_time = 2503
-        self.reindeer = {re.split(' ', ln)[0]: Reindeer(*re.findall(r'\d+', ln)) for ln in open('day_14_input.txt', 'r')}
+        self.reindeer = {
+            re.split(" ", ln)[0]: Reindeer(*re.findall(r"\d+", ln))
+            for ln in open("day_14_input.txt", "r")
+        }
 
     def runners_take_your_marks(self):
         self.score = {name: 0 for name in self.reindeer}
@@ -110,7 +117,7 @@ class Race:
 
     def go(self):
         for time in range(self.max_time):
-            snapshot = { name: next(self.track[name]) for name in self.track}
+            snapshot = {name: next(self.track[name]) for name in self.track}
             front = max(snapshot.values())
             for name in snapshot:
                 if snapshot[name] == front:

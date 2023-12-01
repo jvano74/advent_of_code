@@ -69,10 +69,11 @@ class Puzzle:
     ..."one star is available"? You check the fuel tank; sure enough, a lone star sits at the bottom, awaiting its
     friends. Looks like you need to provide 49 yourself.
     """
+
     pass
 
 
-INPUT = 'To continue, please consult the code grid in the manual.  Enter the code at row 3010, column 3019.'
+INPUT = "To continue, please consult the code grid in the manual.  Enter the code at row 3010, column 3019."
 
 
 def code_generator(start=20151125, multiple=252533, modulus=33554393):

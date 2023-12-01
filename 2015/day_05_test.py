@@ -48,7 +48,7 @@ def test_nice():
 
 
 def test_wrapping_paper_sub():
-    with open("./input_day_5.txt", "r") as fp:
+    with open("./day_05_input.txt", "r") as fp:
         total = 0
         line = fp.readline()
         while line:
@@ -109,7 +109,7 @@ def test_nice():
 
 
 def test_wrapping_paper_sub():
-    with open("./input_day_5.txt", "r") as fp:
+    with open("./day_05_input.txt", "r") as fp:
         total = 0
         line = fp.readline()
         while line:

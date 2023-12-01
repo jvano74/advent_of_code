@@ -69,40 +69,47 @@ class Solution:
     """
 
 
-with open('day_19_input.txt') as fp:
+with open("day_19_input.txt") as fp:
     raw = fp.read()
-    reactions, STARTING = raw.split('\n\n')
-    SUBMISSION = reactions.split('\n')
+    reactions, STARTING = raw.split("\n\n")
+    SUBMISSION = reactions.split("\n")
 
 
 def build_formulary(formulary_text):
     formulary = defaultdict(list)
     for line in formulary_text:
-        orig, _, new = line.split(' ')
+        orig, _, new = line.split(" ")
         formulary[orig].append(new)
     return formulary
 
 
 def test_calibration():
-    formulary = build_formulary(['H => HO', 'H => OH', 'O => HH'])
-    assert formulary.items() == ({'H': ['HO', 'OH'], 'O': ['HH']}).items()
+    formulary = build_formulary(["H => HO", "H => OH", "O => HH"])
+    assert formulary.items() == ({"H": ["HO", "OH"], "O": ["HH"]}).items()
 
 
 def new_elements_from_initial(initial, formulary):
     options = set()
     for pos in range(len(initial)):
-        if pos > 1 and initial[pos-1:pos+1] in formulary:
-            for replacement_element in formulary[initial[pos - 1:pos + 1]]:
-                options.add(initial[:pos-1]+replacement_element+initial[pos+1:])
-        elif initial[pos:pos+1] in formulary:
-            for replacement_element in formulary[initial[pos:pos + 1]]:
-                options.add(initial[:pos]+replacement_element+initial[pos+1:])
+        if pos > 1 and initial[pos - 1 : pos + 1] in formulary:
+            for replacement_element in formulary[initial[pos - 1 : pos + 1]]:
+                options.add(
+                    initial[: pos - 1] + replacement_element + initial[pos + 1 :]
+                )
+        elif initial[pos : pos + 1] in formulary:
+            for replacement_element in formulary[initial[pos : pos + 1]]:
+                options.add(initial[:pos] + replacement_element + initial[pos + 1 :])
     return options
 
 
 def test_new_elements_from_initial():
-    formulary = build_formulary(['H => HO', 'H => OH', 'O => HH'])
-    assert new_elements_from_initial('HOH', formulary) == {'HHHH', 'HOHO', 'OHOH', 'HOOH'}
+    formulary = build_formulary(["H => HO", "H => OH", "O => HH"])
+    assert new_elements_from_initial("HOH", formulary) == {
+        "HHHH",
+        "HOHO",
+        "OHOH",
+        "HOOH",
+    }
 
 
 def test_submission1():
@@ -139,7 +146,7 @@ your puzzle input, what is the fewest number of steps to go from e to the medici
 def build_unformulary(formulary_text):
     formulary = defaultdict(list)
     for line in formulary_text:
-        orig, _, new = line.split(' ')
+        orig, _, new = line.split(" ")
         formulary[new].append(orig)
     return formulary
 
@@ -158,17 +165,19 @@ def deconstruct(target, unformulary):
     while len(current) > 0:
         current = sorted(current)
         generation, element = current.pop()
-        if element == 'e':
+        if element == "e":
             return generation
-        if element.count('e') == 0:
+        if element.count("e") == 0:
             for parent_element in reduced_elements_from_initial(element, unformulary):
                 current.append((generation + 1, parent_element))
-    raise ValueError(f'Unable to synthesize {target}')
+    raise ValueError(f"Unable to synthesize {target}")
 
 
 def test_deconstruct():
-    unformulary = build_unformulary(['e => H', 'e => O', 'H => HO', 'H => OH', 'O => HH'])
-    assert deconstruct('HOHOHO', unformulary) == 6
+    unformulary = build_unformulary(
+        ["e => H", "e => O", "H => HO", "H => OH", "O => HH"]
+    )
+    assert deconstruct("HOHOHO", unformulary) == 6
 
 
 def test_slow_submission2():
@@ -231,16 +240,16 @@ def build_interesting_unformulary(formulary_text):
     normal_formulary = {}
     rn_formulary = {}
     for line in formulary_text:
-        orig, _, new = line.split(' ')
-        if new.count('Rn') == 0:
+        orig, _, new = line.split(" ")
+        if new.count("Rn") == 0:
             if new in normal_formulary:
-                raise Exception(f'Compound {new} already in normal formulary')
+                raise Exception(f"Compound {new} already in normal formulary")
             normal_formulary[new] = orig
         else:
-            pre, post = new.split('Rn')
-            if post[-2:] != 'Ar':
-                raise Exception(f'Compound {new} missing Ar end')
-            middle = tuple(post[:-2].split('Y'))
+            pre, post = new.split("Rn")
+            if post[-2:] != "Ar":
+                raise Exception(f"Compound {new} missing Ar end")
+            middle = tuple(post[:-2].split("Y"))
             num_of_y = len(middle)
             if num_of_y not in rn_formulary:
                 rn_formulary[num_of_y] = {}
@@ -289,15 +298,14 @@ def split_by_RnY(molecule):
      ['SiRnF'],
      ['TiRnPMg'],
      ['F']]
-
-"""
-    return [bit.split('Y') for bit in molecule.split('Ar')]
+    """
+    return [bit.split("Y") for bit in molecule.split("Ar")]
 
 
 def enhance_string(molecule):
     enhance = f"['{molecule}']"
-    enhance = enhance.replace('Ar',"Ar'],'")
-    enhance = enhance.replace('Rn',"',['Rn")
+    enhance = enhance.replace("Ar", "Ar'],'")
+    enhance = enhance.replace("Rn", "',['Rn")
     # enhance = enhance.replace('T',"',['T'],'")
     # return json.loads(enhance)
     # return enhance
@@ -311,12 +319,12 @@ class RnAr:
         self.inner = parse_enhanced_string(inner)
 
     def display(self, offset):
-        print(f'{offset}{self.head} len={self.inner_len}')
+        print(f"{offset}{self.head} len={self.inner_len}")
         for inner in self.inner:
             if type(inner) == RnAr:
-                inner.display(f'{offset}    ')
+                inner.display(f"{offset}    ")
             else:
-                print(f'{offset}    {inner}')
+                print(f"{offset}    {inner}")
 
 
 def parse_enhanced_string(eh):
@@ -325,13 +333,13 @@ def parse_enhanced_string(eh):
         if type(ele) == list:
             head[-1] = RnAr(head[-1], ele)
         elif type(ele) == str:
-            head.append(RnAr(ele, ''))
+            head.append(RnAr(ele, ""))
     return head
 
 
 def test_submission2():
     # Too slow
-    #unformulary = build_unformulary(SUBMISSION)
+    # unformulary = build_unformulary(SUBMISSION)
     # assert defabricate(STARTING, unformulary) == 6
     nof, rnf = build_interesting_unformulary(SUBMISSION)
     working_bits = split_by_RnY(STARTING)
@@ -344,5 +352,5 @@ def test_submission2():
     print(working_bits)
     print()
     for x in eh2:
-        x.display('')
+        x.display("")
     assert False

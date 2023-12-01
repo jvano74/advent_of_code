@@ -16,7 +16,12 @@ class Solution:
     containers can exactly fit all 150 liters of eggnog?
     """
 
-CONTAINERS = sorted([11, 30, 47, 31, 32, 36, 3, 1, 5, 3, 32, 36, 15, 11, 46, 26, 28, 1, 19, 3], reverse=True)
+
+CONTAINERS = sorted(
+    [11, 30, 47, 31, 32, 36, 3, 1, 5, 3, 32, 36, 15, 11, 46, 26, 28, 1, 19, 3],
+    reverse=True,
+)
+
 
 def does_subset_equal_150(mask, list):
     sum = 0
@@ -34,23 +39,23 @@ def does_subset_equal_150(mask, list):
 
 
 def test_subset():
-    assert does_subset_equal_150(1,[100,99,50]) == (False, 1)
-    assert does_subset_equal_150(5,[100,99,50]) == (True, 2)
+    assert does_subset_equal_150(1, [100, 99, 50]) == (False, 1)
+    assert does_subset_equal_150(5, [100, 99, 50]) == (True, 2)
 
 
 def test_submission():
     count = 0
     min_containers = len(CONTAINERS)
-    for n in range(pow(2,len(CONTAINERS))):
-        fits, containers = does_subset_equal_150(n,CONTAINERS)
+    for n in range(pow(2, len(CONTAINERS))):
+        fits, containers = does_subset_equal_150(n, CONTAINERS)
         if fits:
             min_containers = min(min_containers, containers)
             count += 1
     assert count == 4372
     assert min_containers == 4
     count = 0
-    for n in range(pow(2,len(CONTAINERS))):
-        fits, containers = does_subset_equal_150(n,CONTAINERS)
+    for n in range(pow(2, len(CONTAINERS))):
+        fits, containers = does_subset_equal_150(n, CONTAINERS)
         if fits and containers == 4:
             count += 1
     assert count == 4

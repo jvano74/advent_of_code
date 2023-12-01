@@ -54,6 +54,7 @@ class Solution:
     What is the total change in happiness for the optimal seating arrangement of the actual guest list?
     """
 
+
 class Person:
     def __init__(self):
         self.relation = defaultdict(int)
@@ -66,22 +67,22 @@ class Seating:
         for person_info in guest_info:
             # sample line of guest info
             # Carol would gain 8 happiness units by sitting next to Bob.
-            info = person_info.split(' ')
+            info = person_info.split(" ")
             name = info[0]
             neighbor = info[-1][:-1]
-            if info[2] == 'gain':
+            if info[2] == "gain":
                 happy = int(info[3])
             else:
                 happy = -int(info[3])
             self.guests[name].relation[neighbor] = happy
 
     def add_self(self):
-        self.guests['Me'] = Person()
+        self.guests["Me"] = Person()
         for name in self.guests:
-            if name == 'Me':
+            if name == "Me":
                 continue
-            self.guests[name].relation['Me'] = 0
-            self.guests['Me'].relation[name] = 0
+            self.guests[name].relation["Me"] = 0
+            self.guests["Me"].relation[name] = 0
 
     def max_happiness(self) -> List:
         guest_count = len(self.guests)
@@ -105,37 +106,39 @@ class Seating:
                         n0 = new_hx[0]
                         new_happyness -= self.guests[n0].relation[nn]
                         new_happyness -= self.guests[nn].relation[n0]
-                        heappush(arrangements,(new_happyness, new_hx))
+                        heappush(arrangements, (new_happyness, new_hx))
                     heappush(frontier, (new_happyness, nn, new_hx))
         return heappop(arrangements)
 
 
-SAMPLE = ['Alice would gain 54 happiness units by sitting next to Bob.',
-          'Alice would lose 79 happiness units by sitting next to Carol.',
-          'Alice would lose 2 happiness units by sitting next to David.',
-          'Bob would gain 83 happiness units by sitting next to Alice.',
-          'Bob would lose 7 happiness units by sitting next to Carol.',
-          'Bob would lose 63 happiness units by sitting next to David.',
-          'Carol would lose 62 happiness units by sitting next to Alice.',
-          'Carol would gain 60 happiness units by sitting next to Bob.',
-          'Carol would gain 55 happiness units by sitting next to David.',
-          'David would gain 46 happiness units by sitting next to Alice.',
-          'David would lose 7 happiness units by sitting next to Bob.',
-          'David would gain 41 happiness units by sitting next to Carol.']
+SAMPLE = [
+    "Alice would gain 54 happiness units by sitting next to Bob.",
+    "Alice would lose 79 happiness units by sitting next to Carol.",
+    "Alice would lose 2 happiness units by sitting next to David.",
+    "Bob would gain 83 happiness units by sitting next to Alice.",
+    "Bob would lose 7 happiness units by sitting next to Carol.",
+    "Bob would lose 63 happiness units by sitting next to David.",
+    "Carol would lose 62 happiness units by sitting next to Alice.",
+    "Carol would gain 60 happiness units by sitting next to Bob.",
+    "Carol would gain 55 happiness units by sitting next to David.",
+    "David would gain 46 happiness units by sitting next to Alice.",
+    "David would lose 7 happiness units by sitting next to Bob.",
+    "David would gain 41 happiness units by sitting next to Carol.",
+]
 
 
 def test_sample():
     table = Seating(SAMPLE)
-    assert set(table.guests.keys()) == {'Alice', 'Bob', 'Carol', 'David'}
+    assert set(table.guests.keys()) == {"Alice", "Bob", "Carol", "David"}
     assert table.max_happiness()[0] == -330
 
 
-with open('day_13_input.txt') as fp:
+with open("day_13_input.txt") as fp:
     SUBMISSION = fp.read()
 
 
 def test_submission():
-    guest_list = [dist.strip() for dist in SUBMISSION.split('\n')]
+    guest_list = [dist.strip() for dist in SUBMISSION.split("\n")]
     my_table = Seating(guest_list)
     assert my_table.max_happiness()[0] == -709
     my_table.add_self()
