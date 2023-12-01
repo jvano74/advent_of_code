@@ -24,9 +24,9 @@ class Puzzle:
     reading the values on the document.
 
     The newly-improved calibration document consists of lines of text; each line
-    originally contained a specific calibration value that the Elves now need to recover.
-    On each line, the calibration value can be found by combining the first digit and the
-    last digit (in that order) to form a single two-digit number.
+    originally contained a specific calibration value that the Elves now need to
+    recover. On each line, the calibration value can be found by combining the first
+    digit and the last digit (in that order) to form a single two-digit number.
 
     For example:
 
@@ -99,9 +99,9 @@ STRING_TO_DIGIT = {
 
 def replace_digit_strings(cal_str):
     """
-    BUG: With this approach the last digit might be combined with something like 123oneight
-         Parsing forward we would get the one and reject the last ight, but if we read from
-         the end we should pull eight as the last digit...
+    BUG: With this approach the last digit might be combined with something like
+         123oneight. Parsing forward we would get the one and reject the last ight,
+         but if we read from the end we should pull eight as the last digit...
     """
 
     fixed = ""
