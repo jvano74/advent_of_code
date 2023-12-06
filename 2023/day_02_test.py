@@ -119,7 +119,9 @@ def parse_input(raw_string):
     for game in game_list:
         raw_game, raw_draws = game.split(": ")
         game = int(raw_game.replace("Game ", ""))
-        draws = [{m.split(" ")[1]: int(m.split(" ")[0]) for m in raw_marbles.split(", ")} for raw_marbles in raw_draws.split("; ")]
+        draws = [{m.split(" ")[1]: int(m.split(" ")[0])
+                  for m in raw_marbles.split(", ")}
+                 for raw_marbles in raw_draws.split("; ")]
         formatted_games.append((game, draws))
     return formatted_games
 
