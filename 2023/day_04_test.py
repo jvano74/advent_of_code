@@ -1,7 +1,3 @@
-from typing import NamedTuple
-from collections import defaultdict
-
-
 class Puzzle:
     """
     --- Day 4: Scratchcards ---
