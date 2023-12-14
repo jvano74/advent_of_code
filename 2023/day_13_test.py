@@ -91,6 +91,78 @@ class Puzzle:
     Find the line of reflection in each of the patterns in your notes. What
     number do you get after summarizing all of your notes?
 
+    Your puzzle answer was 33520.
+
+    The first half of this puzzle is complete! It provides one gold star: *
+
+    --- Part Two ---
+    You resume walking through the valley of mirrors and - SMACK! - run directly
+    into one. Hopefully nobody was watching, because that must have been pretty
+    embarrassing.
+
+    Upon closer inspection, you discover that every mirror has exactly one
+    smudge: exactly one . or # should be the opposite type.
+
+    In each pattern, you'll need to locate and fix the smudge that causes a
+    different reflection line to be valid. (The old reflection line won't
+    necessarily continue being valid after the smudge is fixed.)
+
+    Here's the above example again:
+
+    #.##..##.
+    ..#.##.#.
+    ##......#
+    ##......#
+    ..#.##.#.
+    ..##..##.
+    #.#.##.#.
+
+    #...##..#
+    #....#..#
+    ..##..###
+    #####.##.
+    #####.##.
+    ..##..###
+    #....#..#
+
+    The first pattern's smudge is in the top-left corner. If the top-left # were
+    instead ., it would have a different, horizontal line of reflection:
+
+    1 ..##..##. 1
+    2 ..#.##.#. 2
+    3v##......#v3
+    4^##......#^4
+    5 ..#.##.#. 5
+    6 ..##..##. 6
+    7 #.#.##.#. 7
+
+    With the smudge in the top-left corner repaired, a new horizontal line of
+    reflection between rows 3 and 4 now exists. Row 7 has no corresponding
+    reflected row and can be ignored, but every other row matches exactly: row 1
+    matches row 6, row 2 matches row 5, and row 3 matches row 4.
+
+    In the second pattern, the smudge can be fixed by changing the fifth symbol
+    on row 2 from . to #:
+
+    1v#...##..#v1
+    2^#...##..#^2
+    3 ..##..### 3
+    4 #####.##. 4
+    5 #####.##. 5
+    6 ..##..### 6
+    7 #....#..# 7
+
+    Now, the pattern has a different horizontal line of reflection between rows
+    1 and 2.
+
+    Summarize your notes as before, but instead use the new different reflection
+    lines. In this example, the first pattern's new horizontal line has 3 rows
+    above it and the second pattern's new horizontal line has 1 row above it,
+    summarizing to the value 400.
+
+    In each pattern, fix the smudge and find the different line of reflection.
+    What number do you get after summarizing the new reflection line in each
+    pattern in your notes?
     """
 
 
@@ -121,18 +193,28 @@ SAMPLE_2 = [
 ]
 
 
-def convolution(sequence):
+def mirror_point(sequence):
     n = len(sequence)
-    for offset in range(n):
+    for offset in range(n - 1):
+        if (n - offset) % 2:
+            continue
+        # extra on right
+        left = 0
+        right = n - 1 - offset
+        while sequence[left] == sequence[right]:
+            if not (left < right):
+                return left, n - offset
+            left += 1
+            right -= 1
+        # extra on left
         left = offset
         right = n - 1
         while sequence[left] == sequence[right]:
-            if left == n - 1:
-                return 0
             if not (left < right):
-                return left
+                return left, offset - n
             left += 1
             right -= 1
+    return 0, 0
 
 
 def calc_symetry(raw_map):
@@ -145,33 +227,22 @@ def calc_symetry(raw_map):
                 row_count += 2**x
                 col_counts[x] += 2**y
         row_counts.append(row_count)
-    return convolution(col_counts) + 100 * convolution(row_counts)
-
-
-class Rocks:
-    def __init__(self, raw_map) -> None:
-        self.col_counts = [0] * len(raw_map[0])
-        self.row_counts = []
-        for y, raw_line in enumerate(raw_map):
-            row_count = 0
-            for x, c in enumerate(raw_line):
-                if c == "#":
-                    row_count += 2**x
-                    self.col_counts[x] += 2**y
-            self.row_counts.append(row_count)
-
-    def score(self):
-        return convolution(self.col_counts) + 100 * convolution(self.row_counts)
+    a = mirror_point(col_counts)
+    b = mirror_point(row_counts)
+    answer = a[0] + 100 * b[0]
+    # print("\n".join(raw_map))
+    # print(f"{a} {col_counts=}")
+    # print(f"{b} {row_counts=}")
+    # print(f"{answer=}")
+    return answer
 
 
 def test_rocks():
-    sample_1 = Rocks(SAMPLE_1)
-    assert sample_1.score() == 5
     assert calc_symetry(SAMPLE_1) == 5
-    sample_2 = Rocks(SAMPLE_2)
-    assert sample_2.score() == 400
     assert calc_symetry(SAMPLE_2) == 400
-    print()
+    my_answer = sum(calc_symetry(block) for block in RAW_INPUT)
+    assert my_answer == 33520
+    # 16887 is too low, 33625 is too high, 33520 is just right
 
 
 test_rocks()
