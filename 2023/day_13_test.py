@@ -163,6 +163,10 @@ class Puzzle:
     In each pattern, fix the smudge and find the different line of reflection.
     What number do you get after summarizing the new reflection line in each
     pattern in your notes?
+
+    Your puzzle answer was 34824.
+
+    Both parts of this puzzle are complete! They provide two gold stars: **
     """
 
 
@@ -203,7 +207,7 @@ def mirror_point(sequence):
         right = n - 1 - offset
         while sequence[left] == sequence[right]:
             if not (left < right):
-                return left, n - offset
+                return left
             left += 1
             right -= 1
         # extra on left
@@ -211,13 +215,74 @@ def mirror_point(sequence):
         right = n - 1
         while sequence[left] == sequence[right]:
             if not (left < right):
-                return left, offset - n
+                return left
             left += 1
             right -= 1
-    return 0, 0
+    return 0
 
 
-def calc_symetry(raw_map):
+def smudge_mirror_point(sequence):
+    n = len(sequence)
+
+    # build diff set
+    # The previous range of
+    # set(2**p for p in range(n))
+    # was too small
+    max_val = max(sequence)
+    smudge = set()
+    diff = 1
+    smudge.add(diff)
+    while diff < 2 * max_val:
+        diff *= 2
+        smudge.add(diff)
+
+    for offset in range(n - 1):
+        if (n - offset) % 2:
+            continue
+        # extra on right
+        found = False
+        smudge_n = None
+        left = 0
+        right = n - 1 - offset
+        while True:
+            diff = abs(sequence[left] - sequence[right])
+            if diff != 0:
+                if found:
+                    break
+                if diff not in smudge:
+                    break
+                smudge_n = (left, diff)
+                found = True
+            if not (left < right - 1):
+                if found:
+                    return right
+                break
+            left += 1
+            right -= 1
+        # extra on left
+        found = False
+        smudge_n = None
+        left = offset
+        right = n - 1
+        while True:
+            diff = abs(sequence[left] - sequence[right])
+            if diff != 0:
+                if found:
+                    break
+                if diff not in smudge:
+                    break
+                smudge_n = (left, diff)
+                found = True
+            if not (left < right - 1):
+                if found:
+                    return right
+                break
+            left += 1
+            right -= 1
+    return 0
+
+
+def calc_symetry(raw_map, with_smudge=False):
     col_counts = [0] * len(raw_map[0])
     row_counts = []
     for y, raw_line in enumerate(raw_map):
@@ -227,22 +292,44 @@ def calc_symetry(raw_map):
                 row_count += 2**x
                 col_counts[x] += 2**y
         row_counts.append(row_count)
-    a = mirror_point(col_counts)
-    b = mirror_point(row_counts)
-    answer = a[0] + 100 * b[0]
-    # print("\n".join(raw_map))
-    # print(f"{a} {col_counts=}")
-    # print(f"{b} {row_counts=}")
-    # print(f"{answer=}")
+    if with_smudge:
+        a = smudge_mirror_point(col_counts)
+        b = smudge_mirror_point(row_counts)
+        if a and b:
+            if a == 1 or a == len(col_counts) - 1:
+                a = 0
+            elif b == 1 or b == len(row_counts) - 1:
+                b = 0
+    else:
+        a = mirror_point(col_counts)
+        b = mirror_point(row_counts)
+    answer = a + 100 * b
+    # if a and b:
+    #     print("\n".join(raw_map))
+    #     print(f"{a} {col_counts=}")
+    #     print(f"{b} {row_counts=}")
+    #     print(f"{answer=}")
+
     return answer
 
 
 def test_rocks():
     assert calc_symetry(SAMPLE_1) == 5
     assert calc_symetry(SAMPLE_2) == 400
+    assert calc_symetry(SAMPLE_1, with_smudge=True) == 300
+    assert calc_symetry(SAMPLE_2, with_smudge=True) == 100
     my_answer = sum(calc_symetry(block) for block in RAW_INPUT)
     assert my_answer == 33520
     # 16887 is too low, 33625 is too high, 33520 is just right
 
+    # for index, block in enumerate(RAW_INPUT):
+    #     # if index in {6, 21, 29, 50, 59, 64, 87}:
+    #     print(f"{index=}")
+    #     calc_symetry(block, with_smudge=True)
 
-test_rocks()
+    my_answer_2 = sum(calc_symetry(block, with_smudge=True) for block in RAW_INPUT)
+    # 33814 is too low, 34934 is too high,
+    # note - guessed the correct answer of 34824 by inspecting the cases where
+    # there were horizontal and vertical mirror points (two cases, index 18 and 93)
+    # and disgarding smudge that was closest to an edge
+    assert my_answer_2 == 34824
