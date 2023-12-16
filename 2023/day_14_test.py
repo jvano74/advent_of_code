@@ -1,3 +1,6 @@
+from collections import defaultdict
+
+
 class Puzzle:
     """
     --- Day 14: Parabolic Reflector Dish ---
@@ -78,6 +81,74 @@ class Puzzle:
     Tilt the platform so that the rounded rocks all roll north. Afterward, what
     is the total load on the north support beams?
 
+    Your puzzle answer was 109596.
+
+    The first half of this puzzle is complete! It provides one gold star: *
+
+    --- Part Two ---
+    The parabolic reflector dish deforms, but not in a way that focuses the
+    beam. To do that, you'll need to move the rocks to the edges of the
+    platform. Fortunately, a button on the side of the control panel labeled
+    "spin cycle" attempts to do just that!
+
+    Each cycle tilts the platform four times so that the rounded rocks roll
+    north, then west, then south, then east. After each tilt, the rounded rocks
+    roll as far as they can before the platform tilts in the next direction.
+    After one cycle, the platform will have finished rolling the rounded rocks
+    in those four directions in that order.
+
+    Here's what happens in the example above after each of the first few cycles:
+
+    After 1 cycle:
+    .....#....
+    ....#...O#
+    ...OO##...
+    .OO#......
+    .....OOO#.
+    .O#...O#.#
+    ....O#....
+    ......OOOO
+    #...O###..
+    #..OO#....
+
+    After 2 cycles:
+    .....#....
+    ....#...O#
+    .....##...
+    ..O#......
+    .....OOO#.
+    .O#...O#.#
+    ....O#...O
+    .......OOO
+    #..OO###..
+    #.OOO#...O
+
+    After 3 cycles:
+    .....#....
+    ....#...O#
+    .....##...
+    ..O#......
+    .....OOO#.
+    .O#...O#.#
+    ....O#...O
+    .......OOO
+    #...O###.O
+    #.OOO#...O
+
+    This process should work if you leave it running long enough, but you're
+    still worried about the north support beams. To make sure they'll survive
+    for a while, you need to calculate the total load on the north support beams
+    after 1000000000 cycles.
+
+    In the above example, after 1000000000 cycles, the total load on the north
+    support beams is 64.
+
+    Run the spin cycle for 1000000000 cycles. Afterward, what is the total load
+    on the north support beams?
+
+    Your puzzle answer was 96105.
+
+    Both parts of this puzzle are complete! They provide two gold stars: **
     """
 
 
@@ -97,3 +168,99 @@ RAW_SAMPLES = [
     "#....###..",
     "#OO..#....",
 ]
+
+
+class Dish:
+    def __init__(self, raw_map) -> None:
+        self.map = set()
+        self.rocks = set()
+        self.orig_rocks = set()
+        self.y_max = 0
+        self.x_max = 0
+        for y, raw_line in enumerate(raw_map):
+            self.y_max = max(self.y_max, y)
+            for x, c in enumerate(raw_line):
+                self.x_max = max(self.x_max, x)
+                if c == "#":
+                    self.map.add((x, y))
+                elif c == "O":
+                    self.rocks.add((x, y))
+
+    def tilt(self, dx, dy, rocks=None):
+        dxs = range(self.x_max + 1)
+        dys = range(self.y_max + 1)
+        if dx == 1:
+            dxs = range(self.x_max, -1, -1)
+        if dy == 1:
+            dys = range(self.y_max, -1, -1)
+        if rocks is None:
+            rocks = self.rocks.copy()
+        new_rocks = set()
+        load = 0
+        for y in dys:
+            for x in dxs:
+                if (x, y) in rocks:
+                    new_x, new_y = x + dx, y + dy
+                    while (
+                        (new_x, new_y) not in new_rocks
+                        and (new_x, new_y) not in self.map
+                        and (0 <= new_x <= self.x_max)
+                        and (0 <= new_y <= self.y_max)
+                    ):
+                        new_x += dx
+                        new_y += dy
+                    # back up from collision
+                    (new_x, new_y) = (new_x - dx, new_y - dy)
+                    new_rocks.add((new_x, new_y))
+                    load += self.y_max + 1 - new_y
+        if len(rocks) != len(new_rocks):
+            raise Exception(f"Missing rocks {rocks=} {new_rocks=}")
+        return load, frozenset(new_rocks)
+
+    def spin(self, cycles=1000000000, rocks=None):
+        history = defaultdict(list)
+        delta = None
+        if rocks is None:
+            rocks = frozenset(self.rocks)
+        for cycle in range(cycles):
+            for dx, dy in [(0, -1), (-1, 0), (0, 1), (1, 0)]:
+                load, rocks = self.tilt(dx, dy, rocks)
+            if rocks in history:
+                if delta is None:
+                    delta = cycle + 1 - history[rocks][0]
+                # print(f"repeated {cycle+1=} {history[rocks]=} {delta=}")
+                if (cycles - (cycle + 1)) % delta == 0:
+                    return load, rocks
+            history[rocks].append(cycle + 1)
+        return load, rocks
+
+    def print(self, rocks=None):
+        if rocks is None:
+            rocks = self.rocks
+        dxs = range(self.x_max + 1)
+        dys = range(self.x_max + 1)
+        lines = []
+        for y in dys:
+            row = []
+            for x in dxs:
+                if (x, y) in self.map:
+                    row.append("#")
+                elif (x, y) in rocks:
+                    row.append("O")
+                else:
+                    row.append(".")
+            lines.append("".join(row))
+        print("\n".join(lines))
+
+
+def test_dish():
+    sample_dish = Dish(RAW_SAMPLES)
+    load, _ = sample_dish.tilt(0, -1)
+    assert load == 136
+    load, _ = sample_dish.spin()
+    assert load == 64
+    my_dish = Dish(RAW_INPUT)
+    load, _ = my_dish.tilt(0, -1)
+    assert load == 109596
+    load, _ = my_dish.spin()
+    assert load == 96105
