@@ -120,6 +120,48 @@ class Puzzle:
     For each row, count all of the different arrangements of operational and
     broken springs that meet the given criteria. What is the sum of those
     counts?
+
+    Your puzzle answer was 7674.
+
+    The first half of this puzzle is complete! It provides one gold star: *
+
+    --- Part Two ---
+    As you look out at the field of springs, you feel like there are way more
+    springs than the condition records list. When you examine the records, you
+    discover that they were actually folded up this whole time!
+
+    To unfold the records, on each row, replace the list of spring conditions
+    with five copies of itself (separated by ?) and replace the list of
+    contiguous groups of damaged springs with five copies of itself (separated
+    by ,).
+
+    So, this row:
+
+    .# 1
+    Would become:
+
+    .#?.#?.#?.#?.# 1,1,1,1,1
+
+    The first line of the above example would become:
+
+    ???.###????.###????.###????.###????.### 1,1,3,1,1,3,1,1,3,1,1,3,1,1,3
+
+    In the above example, after unfolding, the number of possible arrangements
+    for some rows is now much larger:
+
+    ???.### 1,1,3 - 1 arrangement
+    .??..??...?##. 1,1,3 - 16384 arrangements
+    ?#?#?#?#?#?#?#? 1,3,1,6 - 1 arrangement
+    ????.#...#... 4,1,1 - 16 arrangements
+    ????.######..#####. 1,6,5 - 2500 arrangements
+    ?###???????? 3,2,1 - 506250 arrangements
+
+    After unfolding, adding all of the possible arrangement counts together
+    produces 525152.
+
+    Unfold your condition records; what is the new sum of possible arrangement
+    counts?
+
     """
 
 
@@ -128,28 +170,71 @@ with open("day_12_input.txt") as fp:
 
 
 SAMPLES = {
-    "???.### 1,1,3": 1,
-    ".??..??...?##. 1,1,3": 4,
-    "?#?#?#?#?#?#?#? 1,3,1,6": 1,
-    "????.#...#... 4,1,1": 1,
-    "????.######..#####. 1,6,5": 4,
-    "?###???????? 3,2,1": 10,
+    "???.### 1,1,3": (1, 1),
+    ".??..??...?##. 1,1,3": (4, 16384),
+    "?#?#?#?#?#?#?#? 1,3,1,6": (1, 1),
+    "????.#...#... 4,1,1": (1, 16),
+    "????.######..#####. 1,6,5": (4, 2500),
+    "?###???????? 3,2,1": (10, 506250),
+}
+
+MORE_SAMPLES = {
+    "?.?##??##??..??????? 9,4": 4,  # not 13,
+    ".???.????.???????? 1,4,3,1": 30,  # not 81,
 }
 
 
-def possible_arangements(row_criteria):
+def possible_arangements(row_criteria, unfold=False):
     state, raw_counts = row_criteria.split(" ")
-    # trim left and right .
-    state = state.strip(".")
-    # remove left faulty springs
-    faulty = [int(d) for d in raw_counts.split(",")]
-    return 1
+    falts = [int(d) for d in raw_counts.split(",")]
+
+    count = 0
+    if unfold:
+        to_process = [(falts * 5, "?".join([state] * 5))]
+    else:
+        to_process = [(falts, state)]
+    while to_process:
+        falts, state = to_process.pop()
+        # check for complete states
+        if len(falts) == 0:
+            if state.count("#"):
+                continue
+            count += 1
+            continue
+        # check for imposible to complete states
+        state = state.strip(".")
+        min_len = sum(falts) + len(falts) - 1
+        if len(state) < min_len:
+            continue
+        # delay falt
+        if state[0] == "?":
+            to_process.append((falts, state[1:]))
+        # start falt
+        if state[0 : falts[0]].count("."):
+            continue
+        if falts[0] < len(state) and state[falts[0]] == "#":
+            continue
+        to_process.append((falts[1:], state[falts[0] + 1 :]))
+
+    return count
 
 
 def test_possible_arangements():
-    for criteria, count in SAMPLES.items():
-        print(f"{criteria=} should be {count=}")
-        print(f"     calculates to {possible_arangements(criteria)=}")
+    for criteria, counts in SAMPLES.items():
+        assert possible_arangements(criteria) == counts[0]
+    for criteria, count in MORE_SAMPLES.items():
+        assert possible_arangements(criteria) == count
+
+    for criteria, counts in SAMPLES.items():
+        # TODO: Need to find a better method to unfold
+        assert possible_arangements(criteria, unfold=True) == counts[1]
+
+    my_answer = sum(possible_arangements(c) for c in RAW_INPUT)
+    # 9594 was too high, 7674 is correct - found and fixed bug
+    assert my_answer == 7674
+
+    # my_answer_2 = sum(possible_arangements(c, unfold=True) for c in RAW_INPUT)
+    # print(my_answer_2)
 
 
 test_possible_arangements()
