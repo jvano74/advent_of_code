@@ -146,6 +146,9 @@ class Puzzle:
     Directing the ultra crucible from the lava pool to the machine parts
     factory, what is the least heat loss it can incur?
 
+    Your puzzle answer was 1312.
+
+    Both parts of this puzzle are complete! They provide two gold stars: **
     """
 
 
@@ -189,34 +192,35 @@ class Pt(NamedTuple):
 
 
 LEFT = {
-    Pt(1, 0): Pt(0, -1),
-    Pt(0, -1): Pt(-1, 0),
-    Pt(-1, 0): Pt(0, 1),
-    Pt(0, 1): Pt(1, 0),
+    Pt(1, 0): (Pt(0, -1), "^"),
+    Pt(0, -1): (Pt(-1, 0), "<"),
+    Pt(-1, 0): (Pt(0, 1), "v"),
+    Pt(0, 1): (Pt(1, 0), ">"),
 }
 
 RIGHT = {
-    Pt(1, 0): Pt(0, 1),
-    Pt(0, 1): Pt(-1, 0),
-    Pt(-1, 0): Pt(0, -1),
-    Pt(0, -1): Pt(1, 0),
+    Pt(1, 0): (Pt(0, 1), "v"),
+    Pt(0, 1): (Pt(-1, 0), "<"),
+    Pt(-1, 0): (Pt(0, -1), "^"),
+    Pt(0, -1): (Pt(1, 0), ">"),
 }
 
 
 class V(NamedTuple):
     p: Pt
     v: Pt
+    str: str
 
     def fwd(self):
-        return V(self.p + self.v, self.v)
+        return V(self.p + self.v, self.v, self.str)
 
     def left(self):
-        new_v = LEFT[self.v]
-        return V(self.p + new_v, new_v)
+        new_v, new_str = LEFT[self.v]
+        return V(self.p + new_v, new_v, new_str)
 
     def right(self):
-        new_v = RIGHT[self.v]
-        return V(self.p + new_v, new_v)
+        new_v, new_str = RIGHT[self.v]
+        return V(self.p + new_v, new_v, new_str)
 
 
 class Path:
@@ -234,7 +238,7 @@ class Path:
         self, start: V = None, end: Pt = None, ultra=False
     ) -> int:
         if start is None:
-            start = V(Pt(0, 0), Pt(1, 0))
+            start = Pt(0, 0)
         if end is None:
             end = Pt(self.x_max, self.y_max)
         partial_paths = []
@@ -242,42 +246,42 @@ class Path:
         min_turn = 4 if ultra else 0
         max_straight = 10 if ultra else 3
 
-        heappush(partial_paths, (0, start, 0))
+        start_v1 = V(start, Pt(1, 0), ">")
+        start_v2 = V(start, Pt(0, 1), "v")
+        heappush(partial_paths, (0, start_v1, 1, start_v1.str))
+        heappush(partial_paths, (0, start_v2, 1, start_v2.str))
+
         history.add((start, 0))
         while partial_paths:
-            lost_heat, current_v, turn_timer = heappop(partial_paths)
+            lost_heat, current_v, turn_timer, path = heappop(partial_paths)
+            turn_ok = True if min_turn <= turn_timer else False
+            must_turn = True if turn_timer == max_straight else False
+
+            # check end
+            if current_v.p == end and (not ultra or turn_ok):
+                return lost_heat
+
             # fwd
-            if turn_timer < max_straight:
+            if not must_turn:
                 next_v = current_v.fwd()
-                if next_v.p == end and min_turn < turn_timer + 1:
-                    return lost_heat + self.heat_loss[next_v.p]
-                if (
-                    next_v,
-                    turn_timer + 1,
-                ) not in history and next_v.p in self.heat_loss:
-                    history.add((next_v, turn_timer + 1))
+                next_timer = turn_timer + 1
+                if (next_v, next_timer) not in history and next_v.p in self.heat_loss:
+                    history.add((next_v, next_timer))
+                    next_heat = lost_heat + self.heat_loss[next_v.p]
                     heappush(
                         partial_paths,
-                        (
-                            lost_heat + self.heat_loss[next_v.p],
-                            next_v,
-                            turn_timer + 1,
-                        ),
+                        (next_heat, next_v, next_timer, f"{path}{next_v.str}"),
                     )
+
             # left and right
-            if min_turn < turn_timer:
+            if turn_ok:
                 for next_v in [current_v.left(), current_v.right()]:
-                    if next_v.p == end and not ultra:
-                        return lost_heat + self.heat_loss[next_v.p]
                     if (next_v, 1) not in history and next_v.p in self.heat_loss:
                         history.add((next_v, 1))
+                        next_heat = lost_heat + self.heat_loss[next_v.p]
                         heappush(
                             partial_paths,
-                            (
-                                lost_heat + self.heat_loss[next_v.p],
-                                next_v,
-                                1,
-                            ),
+                            (next_heat, next_v, 1, f"{path}{next_v.str}"),
                         )
 
 
@@ -287,20 +291,17 @@ def test_path():
     min_heat_loss = sample_path.find_least_heat_loss_path()
     assert min_heat_loss == 102
     # part 2
+    min_heat_loss = sample_path.find_least_heat_loss_path(ultra=True)
+    assert min_heat_loss == 94
     sample_path_2 = Path(SAMPLE_2)
     min_heat_loss = sample_path_2.find_least_heat_loss_path(ultra=True)
-    print(min_heat_loss)
+    assert min_heat_loss == 71
 
-    min_heat_loss = sample_path.find_least_heat_loss_path(ultra=True)
-    print(min_heat_loss)
-
+    # my inputs
     my_path = Path(MY_INPUT)
     min_heat_loss = my_path.find_least_heat_loss_path()
     # 1169 was too high (some bugs), 1138 is correct
     assert min_heat_loss == 1138
     min_heat_loss = my_path.find_least_heat_loss_path(ultra=True)
-    print(min_heat_loss)
-    # 1291 was too low
-
-
-test_path()
+    # 1291 was too low, 1320 is too high, 1324 is even higher, 1312 is correct
+    assert min_heat_loss == 1312
