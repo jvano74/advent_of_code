@@ -219,6 +219,31 @@ def possible_arangements(row_criteria, unfold=False):
     return count
 
 
+class SpringLine:
+    def __init__(self, row_criteria, unfold=False) -> None:
+        self.state, raw_counts = row_criteria.split(" ")
+        self.falts = [int(d) for d in raw_counts.split(",")]
+        self.unfold = unfold
+        if unfold:
+            self.falts = self.falts * 5
+            self.state = "?".join([self.state] * 5)
+
+    def arangements(self, n_state, n_falt, final_char):
+        # base case
+        if n_state == 0:
+            if n_falt > 0:
+                return 0
+            if self.falts[0] > 1:
+                return 0
+            if final_char != self.state[0]:
+                return 0
+            return 1
+
+        cases = self.arangements(
+            n_state - 1,
+        )
+
+
 def test_possible_arangements():
     for criteria, counts in SAMPLES.items():
         assert possible_arangements(criteria) == counts[0]

@@ -150,18 +150,6 @@ class Pt(NamedTuple):
     def scale(self, d):
         return Pt(d * self.x, d * self.y)
 
-    def up(self):
-        return Pt(self.x, self.y - 1)
-
-    def down(self):
-        return Pt(self.x, self.y + 1)
-
-    def left(self):
-        return Pt(self.x - 1, self.y)
-
-    def right(self):
-        return Pt(self.x + 1, self.y)
-
 
 class Lagoon:
     def __init__(self, outline, use_hex=False, use_vectors=False) -> None:
@@ -174,9 +162,13 @@ class Lagoon:
         self.y_max = 0
         dir_map = {
             "0": Pt(1, 0),  # R
+            "R": Pt(1, 0),  # R
             "1": Pt(0, 1),  # D
+            "D": Pt(0, 1),  # D
             "2": Pt(-1, 0),  # L
+            "L": Pt(-1, 0),  # L
             "3": Pt(0, -1),  # U
+            "U": Pt(0, -1),  # U
         }
         for raw in outline:
             direction, distance, color = raw.split(" ")
@@ -184,6 +176,9 @@ class Lagoon:
                 use_vectors = True
                 direction = dir_map[color[-2]]
                 distance = int(color[2:-2], 16)
+            else:
+                direction = dir_map[direction]
+                distance = int(distance)
 
             if use_vectors:
                 # calculate
@@ -202,14 +197,7 @@ class Lagoon:
                 self.y_max = max(pt.y, self.y_max)
             else:
                 for _ in range(int(distance)):
-                    if direction == "U":
-                        pt = pt.up()
-                    elif direction == "D":
-                        pt = pt.down()
-                    elif direction == "L":
-                        pt = pt.left()
-                    elif direction == "R":
-                        pt = pt.right()
+                    pt += direction
                     self.x_min = min(pt.x, self.x_min)
                     self.y_min = min(pt.y, self.y_min)
                     self.x_max = max(pt.x, self.x_max)
@@ -225,7 +213,6 @@ class Lagoon:
         ignore = set()
         for key in self.map.keys():
             heappush(keys, key)
-        # print(f"{keys=}")
         while keys:
             pt1 = heappop(keys)
             while keys and pt1 in ignore:
@@ -244,41 +231,19 @@ class Lagoon:
                 print(f"{keys=}")
                 raise Exception("Unexpected data format - next points not in pairs")
 
-            # print(f"{pt1=} {self.map[pt1]=}")
-            # print(f"{pt2=} {self.map[pt2]=}")
-
-            width = pt2.y - pt1.y
+            width = pt2.y - pt1.y + 1
             pt1_next = self.map[pt1]["h"]
             pt2_next = self.map[pt2]["h"]
-            length = min(pt1_next.x - pt1.x, pt2_next.x - pt2.x)
+            for k in sorted(keys):
+                if pt1.x < k.x:
+                    length = k.x - pt1.x
+                    break
 
-            pt1_new = pt1 + Pt(length, 0)
-            if pt1_new in self.map:
-                ignore.add(pt1_new)
-                # print(f"Ignore {pt1_new=}")
-                pt1_new = self.map[pt1_new]["v"]
-                # print(f"Shifted to {pt1_new=}")
-            else:
-                heappush(keys, pt1_new)
-                # print(f"Adding {pt1_new=}")
-                self.map[pt1_new]["h"] = pt1_next
+            print(f"{pt1=} a={width}x{length}")
+            total += width * length
 
-            pt2_new = pt2 + Pt(length, 0)
-            if pt2_new in self.map:
-                ignore.add(pt2_new)
-                # print(f"Ignore {pt2_new=}")
-                pt2_new = self.map[pt2_new]["v"]
-                # print(f"Shifted to {pt2_new=}")
-            else:
-                heappush(keys, pt2_new)
-                # print(f"Adding {pt2_new=}")
-                self.map[pt2_new]["h"] = pt2_next
-
-            # should not need to add the "v" index to new points
-            # self.map[pt1_new]["v"] = pt2_new
-            # self.map[pt2_new]["v"] = pt1_new
-
-            # If pt1_new and pt2_new close off isolated square capture full length, e.g.
+            # If pt1_new or pt2_new go down or up capture additional length,
+            # and if it closes off a loop only add one with a +2, e.g.
             #
             #         |
             #     pt1 +--+ pt2_new
@@ -286,15 +251,32 @@ class Lagoon:
             #     pt2 +--+ pt1_new
             #         |
             #
-            if pt1.y == pt2_new.y and pt2.y == pt1_new.y and pt1_new.x == pt2_new.x:
-                print(f"Closing loop {pt1=} {pt1_new=}")
-                print(f"Closing loop {pt2=} {pt2_new=}")
-                length += 1
-            total += (abs(pt1.y - pt2.y) + 1) * length
+            pt1_new = pt1 + Pt(length, 0)
+            if pt1_new in self.map:
+                ignore.add(pt1_new)
+                pt1_new = self.map[pt1_new]["v"]
+                strip = pt1_new.y - pt1.y
+                if strip > 0:
+                    print(f"{pt1=} s1={strip}")
+                    total += strip
+            else:
+                heappush(keys, pt1_new)
+                self.map[pt1_new]["h"] = pt1_next
 
-            # print(f"{pt1=} {pt1_new=}")
-            # print(f"{pt2=} {pt2_new=}")
-            print(width, length, total)
+            pt2_new = pt2 + Pt(length, 0)
+            if pt2_new in self.map:
+                ignore.add(pt2_new)
+                pt2_new = self.map[pt2_new]["v"]
+                strip = pt2.y - pt2_new.y
+                if pt2_new.y == pt1.y:
+                    print(f"{pt1=} close +1")
+                    total += 1
+                elif strip > 0:
+                    print(f"{pt2=} s2={strip}")
+                    total += strip
+            else:
+                heappush(keys, pt2_new)
+                self.map[pt2_new]["h"] = pt2_next
 
         return total
 
@@ -332,12 +314,28 @@ class Lagoon:
 
 def test_lagoon():
     # part 1
-    test = Lagoon(SAMPLE)
-    assert test.count(fill=True) == 62
+    # sammple = Lagoon(SAMPLE)
+    # assert sample.count(fill=True) == 62
+
+    my_lagoon = Lagoon(MY_INPUT)
+    # 49728 not right answer
+    assert my_lagoon.count(fill=True) == 48795
+    # my_lagoon.show()
+    my_lagoon = Lagoon(MY_INPUT, use_vectors=True)
+    print(f"{my_lagoon.find_blocks()=} should be 48795")
+    # assert my_lagoon.find_blocks() == 48795
 
     # part 2
+    # test.show()
+    # sample = Lagoon(SAMPLE, use_vectors=True)
+    # assert sample.find_blocks() == 62
+
     # test2 = Lagoon(SAMPLE, use_hex=True)
-    # test2.find_blocks()
+    # print(f"{test2.find_blocks()=} should be 952408144115")
+    # assert test2.find_blocks() == 952408144115
+    # 952408144115
+    # 952407224467
+    # 952406394493
 
     my_lagoon = Lagoon(MY_INPUT)
     # 49728 not right answer
