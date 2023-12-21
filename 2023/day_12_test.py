@@ -1,3 +1,6 @@
+from functools import cache
+
+
 class Puzzle:
     """
     --- Day 12: Hot Springs ---
@@ -162,6 +165,9 @@ class Puzzle:
     Unfold your condition records; what is the new sum of possible arrangement
     counts?
 
+    Your puzzle answer was 4443895258186.
+
+    Both parts of this puzzle are complete! They provide two gold stars: **
     """
 
 
@@ -179,87 +185,88 @@ SAMPLES = {
 }
 
 MORE_SAMPLES = {
+    ".?##??##??..??????? 9,4": 4,  # not 5
     "?.?##??##??..??????? 9,4": 4,  # not 13,
     ".???.????.???????? 1,4,3,1": 30,  # not 81,
 }
 
 
-def possible_arangements(row_criteria, unfold=False):
+def possible_arrangements(row_criteria: str, unfold=False, recursive=True):
     state, raw_counts = row_criteria.split(" ")
-    falts = [int(d) for d in raw_counts.split(",")]
-
-    count = 0
+    faults = tuple(int(d) for d in raw_counts.split(","))
     if unfold:
-        to_process = [(falts * 5, "?".join([state] * 5))]
-    else:
-        to_process = [(falts, state)]
+        faults = faults * 5
+        state = "?".join([state] * 5)
+    if recursive:
+        return recursive_arrangements(faults, state)
+    return path_find_possible_arrangements(faults, state)
+
+
+def path_find_possible_arrangements(faults, state):
+    count = 0
+    to_process = [(faults, state)]
     while to_process:
-        falts, state = to_process.pop()
+        faults, state = to_process.pop()
         # check for complete states
-        if len(falts) == 0:
+        if len(faults) == 0:
             if state.count("#"):
                 continue
             count += 1
             continue
-        # check for imposible to complete states
+        # check for impossible to complete states
         state = state.strip(".")
-        min_len = sum(falts) + len(falts) - 1
+        min_len = sum(faults) + len(faults) - 1
         if len(state) < min_len:
             continue
-        # delay falt
+        # delay fault
         if state[0] == "?":
-            to_process.append((falts, state[1:]))
-        # start falt
-        if state[0 : falts[0]].count("."):
+            to_process.append((faults, state[1:]))
+        # start fault
+        if state[0 : faults[0]].count("."):
             continue
-        if falts[0] < len(state) and state[falts[0]] == "#":
+        if faults[0] < len(state) and state[faults[0]] == "#":
             continue
-        to_process.append((falts[1:], state[falts[0] + 1 :]))
-
+        to_process.append((faults[1:], state[faults[0] + 1 :]))
     return count
 
 
-class SpringLine:
-    def __init__(self, row_criteria, unfold=False) -> None:
-        self.state, raw_counts = row_criteria.split(" ")
-        self.falts = [int(d) for d in raw_counts.split(",")]
-        self.unfold = unfold
-        if unfold:
-            self.falts = self.falts * 5
-            self.state = "?".join([self.state] * 5)
+@cache
+def recursive_arrangements(faults, state):
+    state = state.strip(".")
+    # base cases
+    if len(faults) == 0:
+        return 0 if state.count("#") else 1
+    if len(state) == 0:
+        return 0
+    if len(state) < sum(faults) + len(faults) - 1:
+        return 0
+    if len(state) == faults[0]:
+        return 0 if state.count(".") or len(faults) > 1 else 1
 
-    def arangements(self, n_state, n_falt, final_char):
-        # base case
-        if n_state == 0:
-            if n_falt > 0:
-                return 0
-            if self.falts[0] > 1:
-                return 0
-            if final_char != self.state[0]:
-                return 0
-            return 1
-
-        cases = self.arangements(
-            n_state - 1,
-        )
+    #  recursive cases
+    result = 0
+    if state[: faults[0]].count(".") == 0 and state[faults[0]] in ".?":
+        left = recursive_arrangements(faults[1:], state[faults[0] + 1 :])
+        result += left
+    if state[0] == "?":
+        shift = recursive_arrangements(faults, state[1:])
+        result += shift
+    return result
 
 
-def test_possible_arangements():
+def test_possible_arrangements():
     for criteria, counts in SAMPLES.items():
-        assert possible_arangements(criteria) == counts[0]
+        assert possible_arrangements(criteria) == counts[0]
+
     for criteria, count in MORE_SAMPLES.items():
-        assert possible_arangements(criteria) == count
+        assert possible_arrangements(criteria) == count
 
     for criteria, counts in SAMPLES.items():
-        # TODO: Need to find a better method to unfold
-        assert possible_arangements(criteria, unfold=True) == counts[1]
+        assert possible_arrangements(criteria, unfold=True) == counts[1]
 
-    my_answer = sum(possible_arangements(c) for c in RAW_INPUT)
+    my_answer = sum(possible_arrangements(c) for c in RAW_INPUT)
     # 9594 was too high, 7674 is correct - found and fixed bug
     assert my_answer == 7674
 
-    # my_answer_2 = sum(possible_arangements(c, unfold=True) for c in RAW_INPUT)
-    # print(my_answer_2)
-
-
-test_possible_arangements()
+    my_answer_2 = sum(possible_arrangements(c, unfold=True) for c in RAW_INPUT)
+    assert my_answer_2 == 4443895258186
