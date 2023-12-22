@@ -1,3 +1,6 @@
+from collections import defaultdict
+
+
 class Puzzle:
     """
     --- Day 20: Pulse Propagation ---
@@ -167,4 +170,123 @@ class Puzzle:
     you get if you multiply the total number of low pulses sent by the total
     number of high pulses sent?
 
+    Your puzzle answer was 898557000.
+
+    The first half of this puzzle is complete! It provides one gold star: *
+
+    --- Part Two ---
+    The final machine responsible for moving the sand down to Island Island has
+    a module attached named rx. The machine turns on when a single low pulse is
+    sent to rx.
+
+    Reset all modules to their default states. Waiting for all pulses to be
+    fully handled after each button press, what is the fewest number of button
+    presses required to deliver a single low pulse to the module named rx?
     """
+
+
+SAMPLE_1 = [
+    "broadcaster -> a, b, c",
+    "%a -> b",
+    "%b -> c",
+    "%c -> inv",
+    "&inv -> a",
+]
+
+SAMPLE_2 = [
+    "broadcaster -> a",
+    "%a -> inv, con",
+    "&inv -> b",
+    "%b -> con",
+    "&con -> output",
+]
+
+with open("day_20_input.txt") as fp:
+    RAW_INPUT = fp.read().split("\n")
+
+
+class Machine:
+    def __init__(self, raw_components) -> None:
+        self.fwd_link = defaultdict(list)
+        self.back_link = defaultdict(dict)
+        self.state = defaultdict(int)
+        self.operation = defaultdict(str)
+        self.totals = defaultdict(int)
+        for component in raw_components:
+            label, raw_destinations = component.split(" -> ")
+            if label != "broadcaster":
+                op = label[0]
+                label = label[1:]
+            else:
+                op = "broadcast"
+            self.operation[label] = op
+            self.fwd_link[label] = raw_destinations.split(", ")
+            for target in self.fwd_link[label]:
+                self.back_link[target][label] = 0
+
+    def push(self, display=False):
+        pulse = 0
+        source = "button"
+        target = "broadcaster"
+        op = "broadcast"
+        next_actions = [(target, pulse, source)]
+        self.totals[pulse] += 1
+
+        while next_actions:
+            target, pulse, source = next_actions.pop(0)
+            op = self.operation[target]
+            if display:
+                print(f"{source} --[{pulse}]--> {target} {op=}")
+            if op == "broadcast":
+                output_state = pulse
+            elif op == "%":  # Flip-flop
+                if pulse != 0:
+                    continue
+                self.state[target] = 1 - self.state[target]
+                output_state = self.state[target]
+            elif op == "&":  # Conjunction
+                self.back_link[target][source] = pulse
+                if 0 in self.back_link[target].values():
+                    output_state = 1
+                else:
+                    output_state = 0
+            for new_target in self.fwd_link[target]:
+                next_actions.append((new_target, output_state, target))
+                self.totals[output_state] += 1
+
+
+def test_machine():
+    sample_machine_1 = Machine(SAMPLE_1)
+    # sample_machine_1.push(display=True)
+    for _ in range(1000):
+        sample_machine_1.push()
+    totals = sample_machine_1.totals
+    prod = totals[0] * totals[1]
+    assert prod == 32000000
+
+    sample_machine_2 = Machine(SAMPLE_2)
+    # print("===== Push 1 =====")
+    # sample_machine_2.push(display=True)
+    # print("===== Push 2 =====")
+    # sample_machine_2.push(display=True)
+    # print("===== Push 3 =====")
+    # sample_machine_2.push(display=True)
+    # print("===== Push 4 =====")
+    # sample_machine_2.push(display=True)
+    for _ in range(1000):
+        sample_machine_2.push()
+    totals = sample_machine_2.totals
+    prod = totals[0] * totals[1]
+    # print(totals)
+    assert prod == 11687500
+
+    my_machine = Machine(RAW_INPUT)
+    for _ in range(1000):
+        my_machine.push()
+    totals = my_machine.totals
+    prod = totals[0] * totals[1]
+    print(prod)
+    assert prod == 11687500
+
+
+test_machine()
