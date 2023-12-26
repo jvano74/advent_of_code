@@ -78,6 +78,28 @@ class Puzzle:
     components into two separate groups. What do you get if you multiply the
     sizes of these two groups together?
 
+    Your puzzle answer was 554064.
+
+    The first half of this puzzle is complete! It provides one gold star: *
+
+    --- Part Two ---
+    You climb over weather machines, under giant springs, and narrowly avoid a
+    pile of pipes as you find and disconnect the three wires.
+
+    A moment after you disconnect the last wire, the big red reset button module
+    makes a small ding noise:
+
+    System overload resolved!
+    Power required is now 50 stars.
+
+    Out of the corner of your eye, you notice goggles and a loose-fitting hard
+    hat peeking at you from behind an ultra crucible. You think you see a faint
+    glow, but before you can investigate, you hear another small ding:
+
+    Power required is now 49 stars.
+
+    Please supply the necessary stars and
+    push the button to restart the system.
     """
 
 
@@ -104,7 +126,7 @@ with open("day_25_input.txt") as fp:
 class Graph:
     def __init__(self, raw_connections) -> None:
         self.connects = defaultdict(set)
-        self.ordered_connections = set()
+        self.ordered_connections = dict()
         self.first_node = None
         for raw_connection in raw_connections:
             node_a, raw_ends = raw_connection.split(": ")
@@ -114,9 +136,9 @@ class Graph:
                 self.connects[node_a].add(node_b)
                 self.connects[node_b].add(node_a)
                 if node_a < node_b:
-                    self.ordered_connections.add((node_a, node_b))
+                    self.ordered_connections[(node_a, node_b)] = 0
                 else:
-                    self.ordered_connections.add((node_b, node_a))
+                    self.ordered_connections[(node_b, node_a)] = 0
 
     def connected_size(self, broken_connections, start_node=None):
         if start_node is None:
@@ -138,40 +160,87 @@ class Graph:
                     if (node_a, node_b) not in broken_connections:
                         visited.add(next_node)
                         boundary.append(next_node)
-        # if len(self.connects) == len(visited):
-        #     return True
-        # return False
         return len(visited)
 
+    def order_connections(self):
+        total = len(self.connects.keys())
+        values = sum(self.ordered_connections.values())
+        if values == 0:
+            print(f"Calculating edge weights for {total} edges.")
+            for n, start_node in enumerate(self.connects.keys()):
+                boundary = [start_node]
+                visited = {
+                    start_node,
+                }
+                while boundary:
+                    test_node = boundary.pop(0)
+                    for next_node in self.connects[test_node]:
+                        if next_node not in visited:
+                            if test_node < next_node:
+                                node_a = test_node
+                                node_b = next_node
+                            else:
+                                node_b = test_node
+                                node_a = next_node
+                            visited.add(next_node)
+                            boundary.append(next_node)
+                            self.ordered_connections[(node_a, node_b)] += 1
+                if n % 1000 == 0:
+                    print(f"{n}/{total}")
+            print(f"{n}/{total} --- all edge weights calculated")
+        return [
+            k for _, k in sorted((-v, k) for k, v in self.ordered_connections.items())
+        ]
+
     def remove_in_triplicate(self):
-        count = 0
         total_size = len(self.connects)
-        for edge_a in self.ordered_connections:
-            for edge_b in self.ordered_connections:
+        ordered_connections = self.order_connections()
+        for edge_a in ordered_connections:
+            for edge_b in ordered_connections:
                 if edge_b < edge_a:
                     continue
-                for edge_c in self.ordered_connections:
+                for edge_c in ordered_connections:
                     if edge_c < edge_b:
                         continue
                     broken_connections = {edge_a, edge_b, edge_c}
                     connected_size = self.connected_size(broken_connections)
                     if connected_size != total_size:
-                        return connected_size * (total_size - connected_size)
-        return count
+                        print(f"{broken_connections=}")
+                        return connected_size, (total_size - connected_size)
+        return total_size, 0
 
 
 def test_graph():
     sample = Graph(SAMPLE)
-    print(len(sample.connects))
-    print(len(sample.ordered_connections))
+    # print(len(sample.connects))
+    # print(len(sample.ordered_connections))
     result = sample.remove_in_triplicate()
-    assert result == 54
+    assert result[0] * result[1] == 54
 
+    # print("Starting full puzzle input.")
     puzzle_graph = Graph(RAW_INPUT)
-    print(len(puzzle_graph.connects))
-    print(len(puzzle_graph.ordered_connections))
-    # result = puzzle_graph.remove_in_triplicate()
+    # Calculating edge weights for 1490 edges.
+    # 1489/1490 --- all edge weights calculated
+    # ('kzx', 'qmr')=1488
+    # ('jff', 'zns')=1486
+    # ('fts', 'nvb')=1477
+    # ('lzg', 'qfh')=1150
+    # ('rxc', 'tzd')=1147
+    # ('rxc', 'vmb')=1146
+    # ('fhv', 'qzr')=1136
+    # ('pgr', 'xxs')=1134
+    # ('jff', 'vht')=1130
+    # ('fvm', 'hbx')=1129
+    # for i, k in enumerate(puzzle_graph.order_connections()):
+    #    if i < 10:
+    #        print(f"{k}={puzzle_graph.ordered_connections[k]}")
+    # print(len(puzzle_graph.connects))
+    # print(len(puzzle_graph.ordered_connections))
+    result = puzzle_graph.remove_in_triplicate()
+    # broken_connections={('kzx', 'qmr'), ('jff', 'zns'), ('fts', 'nvb')}
     # print(result)
+    # (776, 714)
+    assert result[0] * result[1] == 554064
 
 
 test_graph()
