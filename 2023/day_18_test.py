@@ -116,6 +116,10 @@ class Puzzle:
     Convert the hexadecimal color codes into the correct instructions; if the
     Elves follow this new dig plan, how many cubic meters of lava could the
     lagoon hold?
+
+    Your puzzle answer was 40654918441248.
+
+    Both parts of this puzzle are complete! They provide two gold stars: **
     """
 
 
@@ -184,25 +188,31 @@ class Lagoon:
                 # calculate
                 next_pt = pt + direction.scale(distance)
                 if abs(direction.y) == 1:
+                    if "v" in self.map[pt]:
+                        raise Exception(f"Existing v at {pt=}")
+                    if "v" in self.map[next_pt]:
+                        raise Exception(f"Existing v at {next_pt=}")
                     self.map[pt]["v"] = next_pt
                     self.map[next_pt]["v"] = pt
                 elif abs(direction.x) == 1:
+                    if "h" in self.map[pt]:
+                        raise Exception(f"Existing h at {pt=}")
+                    if "h" in self.map[next_pt]:
+                        raise Exception(f"Existing h at {next_pt=}")
                     self.map[pt]["h"] = next_pt
                     self.map[next_pt]["h"] = pt
                 # move
                 pt = next_pt
-                self.x_min = min(pt.x, self.x_min)
-                self.y_min = min(pt.y, self.y_min)
-                self.x_max = max(pt.x, self.x_max)
-                self.y_max = max(pt.y, self.y_max)
             else:
                 for _ in range(int(distance)):
                     pt += direction
-                    self.x_min = min(pt.x, self.x_min)
-                    self.y_min = min(pt.y, self.y_min)
-                    self.x_max = max(pt.x, self.x_max)
-                    self.y_max = max(pt.y, self.y_max)
                     self.map[pt] = {"color": color}
+
+            self.x_min = min(pt.x, self.x_min)
+            self.y_min = min(pt.y, self.y_min)
+            self.x_max = max(pt.x, self.x_max)
+            self.y_max = max(pt.y, self.y_max)
+
         # check end pt ties to start
         if pt != Pt(0, 0):
             raise Exception("Loop not closed")
@@ -210,73 +220,94 @@ class Lagoon:
     def find_blocks(self):
         total = 0
         keys = []
-        ignore = set()
-        for key in self.map.keys():
+        x_slices = set()
+        y_slices = set()
+        map = self.map.copy()
+        ignore_pt = set()
+        ignore_strip = set()
+        for key in map.keys():
+            x_slices.add(key.x)
+            y_slices.add(key.y)
             heappush(keys, key)
+        x_slices = sorted([x for x in x_slices])
+        y_slices = sorted([y for y in y_slices])
+
+        next_x = x_slices.pop(0)
         while keys:
             pt1 = heappop(keys)
-            while keys and pt1 in ignore:
+            while keys and pt1 in ignore_pt:
                 pt1 = heappop(keys)
             if not keys:
                 break
             pt2 = heappop(keys)
-            while keys and pt2 in ignore:
+            while keys and pt2 in ignore_pt:
                 pt2 = heappop(keys)
-            if pt2 in ignore:
+            if pt2 in ignore_pt:
                 raise Exception("Unexpected data format - no second pair")
-
             if pt1.x != pt2.x:
-                print(f"{pt1=}")
-                print(f"{pt2=}")
-                print(f"{keys=}")
-                raise Exception("Unexpected data format - next points not in pairs")
+                raise Exception(f"Points not in pairs {pt1=} {pt2=} {keys=}")
+            if pt1.x == next_x:
+                next_x = x_slices.pop(0)
+
+            # check for left strips above pt1 or below pt2
+            if "v" in map[pt1]:
+                pt1_n = map[pt1]["v"]
+                if (pt1_n, pt1) not in ignore_strip:
+                    left_strip_n = pt1.y - pt1_n.y
+                    if "h" in map[pt1_n] and map[pt1_n]["h"].x > pt1_n.x:
+                        left_strip_n += -1
+                    if left_strip_n > 0:
+                        ignore_strip.add((pt1_n, pt1))
+                        total += left_strip_n
+            if "v" in map[pt2]:
+                pt2_s = map[pt2]["v"]
+                if (pt2, pt2_s) not in ignore_strip:
+                    left_strip_s = pt2_s.y - pt2.y
+                    if "h" in map[pt2_s] and map[pt2_s]["h"].x > pt2_s.x:
+                        left_strip_s += -1
+                    if left_strip_s > 0:
+                        ignore_strip.add((pt2, pt2_s))
+                        total += left_strip_s
 
             width = pt2.y - pt1.y + 1
-            pt1_next = self.map[pt1]["h"]
-            pt2_next = self.map[pt2]["h"]
-            for k in sorted(keys):
-                if pt1.x < k.x:
-                    length = k.x - pt1.x
-                    break
-
-            print(f"{pt1=} a={width}x{length}")
+            length = next_x - pt1.x
             total += width * length
+
+            pt1_r = Pt(next_x, pt1.y)
+            pt1_next = map[pt1]["h"]
+
+            pt2_r = Pt(next_x, pt2.y)
+            pt2_next = map[pt2]["h"]
 
             # If pt1_new or pt2_new go down or up capture additional length,
             # and if it closes off a loop only add one with a +2, e.g.
             #
             #         |
-            #     pt1 +--+ pt2_new
+            #     pt1 +--+ pt1_r pt2_new
             #            |
-            #     pt2 +--+ pt1_new
+            #     pt2 +--+ pt2_r pt1_new
             #         |
             #
-            pt1_new = pt1 + Pt(length, 0)
-            if pt1_new in self.map:
-                ignore.add(pt1_new)
-                pt1_new = self.map[pt1_new]["v"]
-                strip = pt1_new.y - pt1.y
-                if strip > 0:
-                    print(f"{pt1=} s1={strip}")
-                    total += strip
+            if pt1_r not in map:
+                heappush(keys, pt1_r)
+                pt1_ignore = None
+                map[pt1_r]["h"] = pt1_next
             else:
-                heappush(keys, pt1_new)
-                self.map[pt1_new]["h"] = pt1_next
+                pt1_ignore = pt1_r
+                pt1_r = map[pt1_r]["v"]
+                ignore_pt.add(pt1_ignore)
 
-            pt2_new = pt2 + Pt(length, 0)
-            if pt2_new in self.map:
-                ignore.add(pt2_new)
-                pt2_new = self.map[pt2_new]["v"]
-                strip = pt2.y - pt2_new.y
-                if pt2_new.y == pt1.y:
-                    print(f"{pt1=} close +1")
-                    total += 1
-                elif strip > 0:
-                    print(f"{pt2=} s2={strip}")
-                    total += strip
+            if pt2_r not in map:
+                heappush(keys, pt2_r)
+                pt2_ignore = None
+                map[pt2_r]["h"] = pt2_next
             else:
-                heappush(keys, pt2_new)
-                self.map[pt2_new]["h"] = pt2_next
+                pt2_ignore = pt2_r
+                pt2_r = map[pt2_r]["v"]
+                ignore_pt.add(pt2_ignore)
+            if pt1_ignore and pt2_ignore and pt1_ignore == pt2_r:
+                close = pt2_ignore.y - pt1_ignore.y + 1
+                total += close
 
         return total
 
@@ -314,36 +345,29 @@ class Lagoon:
 
 def test_lagoon():
     # part 1
-    # sammple = Lagoon(SAMPLE)
-    # assert sample.count(fill=True) == 62
+    sample = Lagoon(SAMPLE)
+    sample_count = sample.count(fill=True)
+    assert sample_count == 62
+    sample_vector_version = Lagoon(SAMPLE, use_vectors=True)
+    sample_vector_version_count = sample_vector_version.find_blocks()
+    assert sample_vector_version_count == 62
 
     my_lagoon = Lagoon(MY_INPUT)
-    # 49728 not right answer
-    assert my_lagoon.count(fill=True) == 48795
-    # my_lagoon.show()
-    my_lagoon = Lagoon(MY_INPUT, use_vectors=True)
-    print(f"{my_lagoon.find_blocks()=} should be 48795")
-    # assert my_lagoon.find_blocks() == 48795
+    my_lagoon_count = my_lagoon.count(fill=True)
+    assert my_lagoon_count == 48795  # 49728 not right answer
+
+    my_lagoon_vector_version = Lagoon(MY_INPUT, use_vectors=True)
+    my_lagoon_vector_version_count = my_lagoon_vector_version.find_blocks()
+    assert my_lagoon_vector_version_count == 48795
 
     # part 2
-    # test.show()
-    # sample = Lagoon(SAMPLE, use_vectors=True)
-    # assert sample.find_blocks() == 62
-
-    # test2 = Lagoon(SAMPLE, use_hex=True)
-    # print(f"{test2.find_blocks()=} should be 952408144115")
-    # assert test2.find_blocks() == 952408144115
-    # 952408144115
-    # 952407224467
-    # 952406394493
+    sample_pt2 = Lagoon(SAMPLE, use_hex=True)
+    sample_pt2_count = sample_pt2.find_blocks()
+    assert sample_pt2_count == 952408144115
 
     my_lagoon = Lagoon(MY_INPUT)
     # 49728 not right answer
     assert my_lagoon.count(fill=True) == 48795
-    # my_lagoon2 = Lagoon(MY_INPUT, use_hex=True)
-    # my_lagoon2.find_blocks()
-    # my_lagoon.show()
-    # my_lagoon.show(fill=True)
-
-
-test_lagoon()
+    my_lagoon2 = Lagoon(MY_INPUT, use_hex=True)
+    my_lagoon2_count = my_lagoon2.find_blocks()
+    assert my_lagoon2_count == 40654918441248
