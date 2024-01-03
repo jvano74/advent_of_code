@@ -179,11 +179,20 @@ class R(NamedTuple):
 class EvaluationCenter:
     def __init__(self, workflows) -> None:
         self.workflow = dict()
+        self.partition = {"x": [], "m": [], "a": [], "s": []}
         for workflow in workflows:
             # "px{a<2006:qkq,m>2090:A,rfg}",
             name, raw_rules, _ = re.split("[{}]", workflow)
             rules = raw_rules.split(",")
             self.workflow[name] = rules
+            for rule in rules:
+                if rule.count(":") == 0:
+                    continue
+                condition, _ = rule.split(":")
+                attribute = condition[0]
+                self.partition[attribute].append((int(condition[2:]), condition[1]))
+        for a in "xmas":
+            self.partition[a].sort()
 
     def evaluate_workflows(self, rating: R) -> str:
         station = "in"
@@ -199,6 +208,40 @@ class EvaluationCenter:
                 total += rating.x + rating.m + rating.a + rating.s
         return total
 
+    def evaluate_partitions(self) -> int:
+        total = 0
+        grid = {"x": [], "m": [], "a": [], "s": []}
+        # 1, 4000 plus stuff in partition
+        for a in "xmas":
+            last_pt = 1
+            last_counted = 0  # if prev pt is included below
+            for next_pt, next_op in self.partition[a]:
+                if next_pt >= 4000:
+                    raise Exception("unexpected partition")
+                if next_op == "<":
+                    next_counted = 0
+                elif next_op == ">":
+                    next_counted = 1
+                else:
+                    raise Exception("unexpected operation")
+                grid[a].append(
+                    (
+                        next_pt - 1,
+                        (next_pt - 1 + next_counted) - last_pt + 1 - last_counted,
+                    )
+                )
+                last_pt = next_pt
+                last_counted = next_counted
+            grid[a].append((4000, 4000 - last_pt + 1 - last_counted))
+        for x, dx in grid["x"]:
+            for m, dm in grid["m"]:
+                for a, da in grid["a"]:
+                    for s, ds in grid["s"]:
+                        rating = R(x=x, m=m, a=a, s=s)
+                        if self.evaluate_workflows(rating) == "A":
+                            total += dx * dm * da * ds
+        return total
+
 
 def test_evaluations():
     sample_rating = R.from_string(SAMPLE_RATINGS[0])
@@ -209,10 +252,19 @@ def test_evaluations():
     assert sample_rating.s == 2876
     sample_evaluation_center = EvaluationCenter(SAMPLE_WORKFLOWS)
     assert sample_evaluation_center.evaluate_workflows(sample_rating) == "A"
-    sample_evaluation_center.evaluate_ratings(SAMPLE_RATINGS) == 19114
+    assert sample_evaluation_center.evaluate_ratings(SAMPLE_RATINGS) == 19114
+    result = sample_evaluation_center.evaluate_partitions()
+    print(f"{result=} should be 167409079868000")
+    assert result == 167409079868000
 
     my_evaluation_center = EvaluationCenter(MY_WORKFLOWS)
-    print(my_evaluation_center.evaluate_ratings(MY_RATINGS))
+    part1 = my_evaluation_center.evaluate_ratings(MY_RATINGS)
+    assert part1 == 346230
+
+    part2 = my_evaluation_center.evaluate_partitions()
+    print(part2)
+    # assert part2 ==
+    # 124705248812592 was too hight and needed to run for over 1 day
 
 
 test_evaluations()
