@@ -108,6 +108,9 @@ class Puzzle:
     Elves wanted you to sort is no longer relevant. How many distinct
     combinations of ratings will be accepted by the Elves' workflows?
 
+    Your puzzle answer was 124693661917133.
+
+    Both parts of this puzzle are complete! They provide two gold stars: **
     """
 
 
@@ -138,6 +141,127 @@ SAMPLE_RATINGS = [
     "{x=2461,m=1339,a=466,s=291}",
     "{x=2127,m=1623,a=2188,s=1013}",
 ]
+
+
+class B(NamedTuple):
+    # edge conditions are same as ranges, e.g. [x_min,x_max)
+    x_min: int
+    x_max: int
+    m_min: int
+    m_max: int
+    a_min: int
+    a_max: int
+    s_min: int
+    s_max: int
+
+    def vol(self):
+        return (
+            (self.x_max - self.x_min)
+            * (self.m_max - self.m_min)
+            * (self.a_max - self.a_min)
+            * (self.s_max - self.s_min)
+        )
+
+    def split(self, axis, lower_max):
+        lower, upper = None, None
+        if axis == "x":
+            if self.x_min < lower_max:
+                lower = B(
+                    self.x_min,
+                    min(lower_max, self.x_max),
+                    self.m_min,
+                    self.m_max,
+                    self.a_min,
+                    self.a_max,
+                    self.s_min,
+                    self.s_max,
+                )
+            if lower_max <= self.x_max:
+                upper = B(
+                    max(self.x_min, lower_max),
+                    self.x_max,
+                    self.m_min,
+                    self.m_max,
+                    self.a_min,
+                    self.a_max,
+                    self.s_min,
+                    self.s_max,
+                )
+            return lower, upper
+        elif axis == "m":
+            if self.m_min < lower_max:
+                lower = B(
+                    self.x_min,
+                    self.x_max,
+                    self.m_min,
+                    min(lower_max, self.m_max),
+                    self.a_min,
+                    self.a_max,
+                    self.s_min,
+                    self.s_max,
+                )
+            if lower_max <= self.m_max:
+                upper = B(
+                    self.x_min,
+                    self.x_max,
+                    max(self.m_min, lower_max),
+                    self.m_max,
+                    self.a_min,
+                    self.a_max,
+                    self.s_min,
+                    self.s_max,
+                )
+            return lower, upper
+        elif axis == "a":
+            if self.a_min < lower_max:
+                lower = B(
+                    self.x_min,
+                    self.x_max,
+                    self.m_min,
+                    self.m_max,
+                    self.a_min,
+                    min(lower_max, self.a_max),
+                    self.s_min,
+                    self.s_max,
+                )
+            if lower_max <= self.a_max:
+                upper = B(
+                    self.x_min,
+                    self.x_max,
+                    self.m_min,
+                    self.m_max,
+                    max(self.a_min, lower_max),
+                    self.a_max,
+                    self.s_min,
+                    self.s_max,
+                )
+            return lower, upper
+        elif axis == "s":
+            if self.s_min < lower_max:
+                lower = B(
+                    self.x_min,
+                    self.x_max,
+                    self.m_min,
+                    self.m_max,
+                    self.a_min,
+                    self.a_max,
+                    self.s_min,
+                    min(lower_max, self.s_max),
+                )
+            if lower_max <= self.s_max:
+                upper = B(
+                    self.x_min,
+                    self.x_max,
+                    self.m_min,
+                    self.m_max,
+                    self.a_min,
+                    self.a_max,
+                    max(self.s_min, lower_max),
+                    self.s_max,
+                )
+            return lower, upper
+        else:
+            raise Exception(f"Invalid {axis=}")
 
 
 class R(NamedTuple):
@@ -179,20 +303,57 @@ class R(NamedTuple):
 class EvaluationCenter:
     def __init__(self, workflows) -> None:
         self.workflow = dict()
-        self.partition = {"x": [], "m": [], "a": [], "s": []}
+        self.parsed_rules = dict()
         for workflow in workflows:
-            # "px{a<2006:qkq,m>2090:A,rfg}",
+            # sample "px{a<2006:qkq,m>2090:A,rfg}",
             name, raw_rules, _ = re.split("[{}]", workflow)
             rules = raw_rules.split(",")
             self.workflow[name] = rules
-            for rule in rules:
+            for i, rule in enumerate(rules):
                 if rule.count(":") == 0:
-                    continue
-                condition, _ = rule.split(":")
+                    condition = "x>-1"
+                    next_name = rule
+                else:
+                    condition, next_name = rule.split(":")
                 attribute = condition[0]
-                self.partition[attribute].append((int(condition[2:]), condition[1]))
-        for a in "xmas":
-            self.partition[a].sort()
+                test = condition[1]
+                cut_plane = int(condition[2:])
+                if test == "<":
+                    self.parsed_rules[(name, i)] = (
+                        attribute,
+                        cut_plane,
+                        (next_name, 0),
+                        (name, i + 1),
+                    )
+                else:
+                    self.parsed_rules[(name, i)] = (
+                        attribute,
+                        cut_plane + 1,
+                        (name, i + 1),
+                        (next_name, 0),
+                    )
+
+    def passing(self, initial_workflow=("in", 0), initial_box=None):
+        if initial_box is None:
+            initial_box = B(1, 4001, 1, 4001, 1, 4001, 1, 4001)
+        regions = [(initial_workflow, initial_box)]
+        total = 0
+        while regions:
+            current_workflow, current_box = regions.pop()
+            if current_workflow[0] == "R":
+                continue
+            if current_workflow[0] == "A":
+                total += current_box.vol()
+                continue
+            attribute, cut_plane, lower_target, upper_target = self.parsed_rules[
+                current_workflow
+            ]
+            (lower_box, upper_box) = current_box.split(attribute, cut_plane)
+            if lower_box:
+                regions.append((lower_target, lower_box))
+            if upper_box:
+                regions.append((upper_target, upper_box))
+        return total
 
     def evaluate_workflows(self, rating: R) -> str:
         station = "in"
@@ -208,42 +369,9 @@ class EvaluationCenter:
                 total += rating.x + rating.m + rating.a + rating.s
         return total
 
-    def evaluate_partitions(self) -> int:
-        total = 0
-        grid = {"x": [], "m": [], "a": [], "s": []}
-        # 1, 4000 plus stuff in partition
-        for a in "xmas":
-            last_pt = 1
-            last_counted = 0  # if prev pt is included below
-            for next_pt, next_op in self.partition[a]:
-                if next_pt >= 4000:
-                    raise Exception("unexpected partition")
-                if next_op == "<":
-                    next_counted = 0
-                elif next_op == ">":
-                    next_counted = 1
-                else:
-                    raise Exception("unexpected operation")
-                grid[a].append(
-                    (
-                        next_pt - 1,
-                        (next_pt - 1 + next_counted) - last_pt + 1 - last_counted,
-                    )
-                )
-                last_pt = next_pt
-                last_counted = next_counted
-            grid[a].append((4000, 4000 - last_pt + 1 - last_counted))
-        for x, dx in grid["x"]:
-            for m, dm in grid["m"]:
-                for a, da in grid["a"]:
-                    for s, ds in grid["s"]:
-                        rating = R(x=x, m=m, a=a, s=s)
-                        if self.evaluate_workflows(rating) == "A":
-                            total += dx * dm * da * ds
-        return total
-
 
 def test_evaluations():
+    # part 1
     sample_rating = R.from_string(SAMPLE_RATINGS[0])
     # "{x=787,m=2655,a=1222,s=2876}",
     assert sample_rating.x == 787
@@ -253,18 +381,14 @@ def test_evaluations():
     sample_evaluation_center = EvaluationCenter(SAMPLE_WORKFLOWS)
     assert sample_evaluation_center.evaluate_workflows(sample_rating) == "A"
     assert sample_evaluation_center.evaluate_ratings(SAMPLE_RATINGS) == 19114
-    result = sample_evaluation_center.evaluate_partitions()
-    print(f"{result=} should be 167409079868000")
-    assert result == 167409079868000
 
     my_evaluation_center = EvaluationCenter(MY_WORKFLOWS)
     part1 = my_evaluation_center.evaluate_ratings(MY_RATINGS)
     assert part1 == 346230
 
-    part2 = my_evaluation_center.evaluate_partitions()
-    print(part2)
-    # assert part2 ==
+    # part2
+    result = sample_evaluation_center.passing()
+    assert result == 167409079868000
+    part2 = my_evaluation_center.passing()
+    assert part2 == 124693661917133
     # 124705248812592 was too hight and needed to run for over 1 day
-
-
-test_evaluations()
