@@ -182,6 +182,10 @@ class Puzzle:
     Reset all modules to their default states. Waiting for all pulses to be
     fully handled after each button press, what is the fewest number of button
     presses required to deliver a single low pulse to the module named rx?
+
+    Your puzzle answer was 238420328103151.
+
+    Both parts of this puzzle are complete! They provide two gold stars: **
     """
 
 
@@ -212,6 +216,8 @@ class Machine:
         self.state = defaultdict(int)
         self.operation = defaultdict(str)
         self.totals = defaultdict(int)
+        self.node_hx = defaultdict(dict)
+        self.push_count = 0
         for component in raw_components:
             label, raw_destinations = component.split(" -> ")
             if label != "broadcaster":
@@ -225,16 +231,19 @@ class Machine:
                 self.back_link[target][label] = 0
 
     def push(self, display=False):
-        pulse = 0
+        self.push_count += 1
         source = "button"
+        pulse = 0
         target = "broadcaster"
-        op = "broadcast"
         next_actions = [(target, pulse, source)]
         self.totals[pulse] += 1
+        sub_count = 0
 
         while next_actions:
+            sub_count += 1
             target, pulse, source = next_actions.pop(0)
             op = self.operation[target]
+            self.node_hx[target][(self.push_count, sub_count)] = pulse
             if display:
                 print(f"{source} --[{pulse}]--> {target} {op=}")
             if op == "broadcast":
@@ -256,6 +265,7 @@ class Machine:
 
 
 def test_machine():
+    # part 1
     sample_machine_1 = Machine(SAMPLE_1)
     # sample_machine_1.push(display=True)
     for _ in range(1000):
@@ -285,8 +295,15 @@ def test_machine():
         my_machine.push()
     totals = my_machine.totals
     prod = totals[0] * totals[1]
-    print(prod)
-    assert prod == 11687500
+    assert prod == 898557000
 
-
-test_machine()
+    # part 2
+    # rx_back = my_machine.back_link["rx"]  # "qb"
+    # assert [k for k in rx_back.keys()] == ["qb"]
+    # all_high = my_machine.back_link["qb"]
+    # for node in all_high.keys():
+    #     hx = my_machine.node_hx[node]
+    #     print(f"{node=} {hx=}")
+    #
+    # Ended up simply working by hand isolating the 4 counter circuits built from the flip flop
+    assert 4003 * 3911 * 3739 * 4073 == 238420328103151

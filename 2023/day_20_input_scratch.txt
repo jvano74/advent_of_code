@@ -1,0 +1,76 @@
+broadcaster -> xk, rj, gf, cn
+
+# counter 1 = 1+8+32+64+128+256+512+1024+2048 = 4073
+%xk -> sv, zv 
+%zv -> dz
+%dz -> fr
+%fr -> sv, mx
+%mx -> bn
+%bn -> sv, cf
+%cf -> sv, tz
+%tz -> sv, ng
+%ng -> sv, bc 
+%bc -> sv, tp
+%tp -> sv, lm
+%lm -> sv
+
+&sv -> rz, xk, zv, dz, mx
+
+# counter 2 = 1+2+8+16+128+512+1024+2048 = 3739
+%rj -> qz, lx
+%lx -> qz, qm 
+%qm -> nt
+%nt -> qz, px
+%px -> qz, tk
+%tk -> hq
+%hq -> bz
+%bz -> qz, vk
+%vk -> lz
+%lz -> qz, df
+%df -> qz, jd
+%jd -> qz
+
+&qz -> kv, rj, qm, tk, hq, vk
+
+# counter 3 = 1+2+4+64+256+512+1024+2048 = 3911
+%gf -> sk, rl
+%rl -> sk, bv
+%bv -> sk, kf
+%kf -> rd
+%rd -> qv
+%qv -> cx
+%cx -> sk, qh
+%qh -> xp
+%xp -> sk, br
+%br -> sk, hc
+%hc -> sk, nf
+%nf -> sk
+
+&sk -> jg, gf, qv, kf, rd, qh
+
+# counter 4 = 1+2+32+128+256+512+1024+2048 = 4003
+%cn -> dr, mq
+%mq -> dr, jz 
+%jz -> ct
+%ct -> ks
+%ks -> fc
+%fc -> dr, tq
+%tq -> tj
+%tj -> dr, dx
+%dx -> dr, gt 
+%gt -> dr, nd
+%nd -> dr, nk
+%nk -> dr
+
+&dr -> mr, cn, jz, tq, ks, ct
+
+# want rx low
+&qb -> rx
+# need all inputs to qb high
+
+# need following all high
+&rz -> qb
+&kv -> qb
+&jg -> qb
+&mr -> qb
+
