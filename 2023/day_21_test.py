@@ -178,6 +178,10 @@ class Puzzle:
     However, the step count the Elf needs is much larger! Starting from the
     garden plot marked S on your infinite map, how many garden plots could the
     Elf reach in exactly 26501365 steps?
+
+    Your puzzle answer was 623540829615589.
+
+    Both parts of this puzzle are complete! They provide two gold stars: **
     """
 
 
@@ -230,11 +234,14 @@ class Garden:
                 elif c == "S":
                     self.start = pt
 
-    def step_range(self, generations=1, boundary=None, finite_board=True):
+    def step_range(
+        self, generations=1, boundary=None, finite_board=True, fit_count=False
+    ):
         if boundary is None:
             boundary = {
                 self.start,
             }
+        counts = [0]
         even_odd = [boundary, set()]
         for n in range(generations):
             new_boundary = set()
@@ -252,30 +259,73 @@ class Garden:
                         new_boundary.add(nbh)
                         even_odd[(n + 1) % 2].add(nbh)
             boundary = new_boundary
+            counts.append(len(even_odd[(n + 1) % 2]))
+        if fit_count:
+            return counts
         return len(even_odd[generations % 2])
 
 
+def extrapolate_second_diff(x, dx, y, dy, second_diff, number_of_cycles):
+    for _ in range(number_of_cycles):
+        x += dx
+        dy += second_diff
+        y += dy
+    return x, y, dy
+
+
 def test_garden():
+    # part 1
     sample = Garden(SAMPLE)
     count = sample.step_range(6)
     assert count == 16
-
-    for steps, expected in [
-        (6, 16),
-        (10, 50),
-        (50, 1594),
-        (100, 6536),
-        (500, 167004),
-        (1000, 668697),
-        (5000, 16733044),
-    ]:
-        count = sample.step_range(steps, finite_board=False)
-        print(f"{steps=} {count} == {expected}")
-        assert count == expected
 
     my_garden = Garden(RAW_INPUT)
     count = my_garden.step_range(64)
     assert count == 3746
 
+    # part 2
+    for steps, expected in [
+        (6, 16),
+        (10, 50),
+        (50, 1594),
+        (100, 6536),
+        # (500, 167004),
+        # (1000, 668697),
+        # (5000, 16733044),
+    ]:
+        count = sample.step_range(steps, finite_board=False)
+        # print(f"{steps=} {count} == {expected}")
+        assert count == expected
 
-test_garden()
+    TOTAL_STEPS = 26501365
+    # In order to get to the this total step count we will need
+    # to somehow optimize
+    #
+    # If there were no obstacles the count would grow as a quadratic function
+    # so we start checking if there is a quadratic growth if we take steps
+    # in multiples of the grid size (don't forget that length is +1 since x_min,
+    # y_min start at 0)
+    # print(f"{my_garden.x_max+1=} {my_garden.y_max+1=}")
+    GRID_SIZE = my_garden.x_max + 1
+    STARTING_OFFSET = TOTAL_STEPS % GRID_SIZE
+
+    steps = 1000
+    count_fit = my_garden.step_range(steps, finite_board=False, fit_count=True)
+
+    # print("i, count_fit[i], delta -> delta-old_delta")
+    # old_delta = 0
+    # for i in range(STARTING_OFFSET, steps, GRID_SIZE):
+    #     delta = count_fit[i] - count_fit[i - GRID_SIZE]
+    #     print(f"{i}, {count_fit[i]}, {delta} -> {delta-old_delta}")
+    #     old_delta = delta
+    # looks like the 2nd delta is constant at 469 every 131 steps, lets check with correct initial offset
+    SECOND_DIFF = 30472
+    # print(f"{extrapolate_second_diff(327, GRID_SIZE, 95591, 61087, 30472, 1)=}")
+    # print(f"{extrapolate_second_diff(327, GRID_SIZE, 95591, 61087, 30472, 2)=}")
+    # print(f"{extrapolate_second_diff(327, GRID_SIZE, 95591, 61087, 30472, 3)=}")
+    ITERATIONS = (TOTAL_STEPS - 327) // GRID_SIZE
+    TOTAL_PLOTS = extrapolate_second_diff(
+        327, GRID_SIZE, 95591, 61087, SECOND_DIFF, ITERATIONS
+    )
+    # print(f"{TOTAL_PLOTS=}")
+    assert TOTAL_PLOTS[1] == 623540829615589
