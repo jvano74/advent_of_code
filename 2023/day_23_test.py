@@ -1,3 +1,4 @@
+from collections import defaultdict
 from heapq import heappush, heappop
 from typing import NamedTuple
 
@@ -128,6 +129,10 @@ class Puzzle:
 
     Find the longest hike you can take through the surprisingly dry hiking
     trails listed on your map. How many steps long is the longest hike?
+
+    Your puzzle answer was 6226.
+
+    Both parts of this puzzle are complete! They provide two gold stars: **
     """
 
 
@@ -166,19 +171,22 @@ class Pt(NamedTuple):
     y: int
 
     def adjacent(self):
-        return [
+        return {
             Pt(self.x - 1, self.y),
             Pt(self.x + 1, self.y),
             Pt(self.x, self.y + 1),
             Pt(self.x, self.y - 1),
-        ]
+        }
 
 
 class Trails:
     def __init__(self, raw_map) -> None:
         self.trail = set()
-        self.branch = set()
         self.hill = dict()
+        self.branch = set()
+        self.dead_ends = set()
+        self.connections = defaultdict(dict)
+        self.connections_directed = defaultdict(dict)
         self.end_y = 0
         for y, raw_row in enumerate(raw_map):
             self.end_y = max(y, self.end_y)
@@ -195,9 +203,46 @@ class Trails:
                     self.hill[pt] = Pt(x, y + 1)
                 elif c == "^":
                     self.hill[pt] = Pt(x, y - 1)
+        # Further processing
         for pt in self.trail:
-            if len(pt.adjacent().interesting(self.trail)) > 1:
+            branch_count = len(pt.adjacent().intersection(self.trail))
+            if branch_count == 1:
+                self.dead_ends.add(pt)
+            elif branch_count > 2:
                 self.branch.add(pt)
+
+        for pt in self.dead_ends:
+            end_pt, length = self.move_to_branch(pt)
+            if end_pt:
+                self.connections[pt][end_pt] = length
+                self.connections[end_pt][pt] = length
+                self.connections_directed[pt][end_pt] = length
+
+        for branch_pt in self.branch:
+            for pt in branch_pt.adjacent().intersection(self.trail):
+                hx = set([branch_pt])
+                end_pt, length = self.move_to_branch(pt, hx)
+                if end_pt:
+                    self.connections[branch_pt][end_pt] = length + 1
+                    self.connections[end_pt][branch_pt] = length + 1
+                    self.connections_directed[branch_pt][end_pt] = length + 1
+
+    def move_to_branch(self, starting_pt, hx=None):
+        pt = starting_pt
+        length = 0
+        if hx is None:
+            hx = set()
+        hx.add(pt)
+        next_set = starting_pt.adjacent().intersection(self.trail) - hx
+        while len(next_set) == 1:
+            next_pt = next_set.pop()
+            if pt in self.hill and self.hill[pt] != next_pt:
+                return None, 0
+            length += 1
+            pt = next_pt
+            hx.add(pt)
+            next_set = pt.adjacent().intersection(self.trail) - hx
+        return next_pt, length
 
     def find_longest(self, slippery=True):
         hikes = []
@@ -227,23 +272,56 @@ class Trails:
                         heappush(boundary, (neg_length - 1, potential_pt, new_history))
         return hikes
 
+    def fast_find_longest(self, slippery=True):
+        hikes = []
+        boundary = []
+        heappush(
+            boundary,
+            (
+                0,
+                Pt(1, 0),
+                [Pt(1, 0)],
+            ),
+        )
+        while boundary:
+            (neg_length, pt, path_hx) = heappop(boundary)
+            if pt.y == self.end_y:
+                hikes.append(-neg_length)
+            else:
+                if slippery:
+                    potential_pts = self.connections_directed[pt]
+                else:
+                    potential_pts = self.connections[pt]
+                for potential_pt, additional_dist in potential_pts.items():
+                    if potential_pt not in path_hx:
+                        new_history = path_hx[:]
+                        new_history.append(potential_pt)
+                        heappush(
+                            boundary,
+                            (neg_length - additional_dist, potential_pt, new_history),
+                        )
+        return hikes
+
 
 def test_trails():
     # Part 1
     sample_trail = Trails(SAMPLE)
     lengths = sample_trail.find_longest()
     assert max(lengths) == 94
+    lengths = sample_trail.fast_find_longest()
+    assert max(lengths) == 94
     # Part 2
     lengths = sample_trail.find_longest(slippery=False)
+    assert max(lengths) == 154
+    lengths = sample_trail.fast_find_longest(slippery=False)
     assert max(lengths) == 154
 
     # Part 1
     my_trail = Trails(RAW_INPUT)
     lengths = my_trail.find_longest()
     assert max(lengths) == 2202  # 2212 is too high (incorrect starting pt)
+    lengths = my_trail.fast_find_longest()
+    assert max(lengths) == 2202
     # Part 2
-    lengths = my_trail.find_longest(slippery=False)
-    print(max(lengths))
-
-
-test_trails()
+    lengths = my_trail.fast_find_longest(slippery=False)
+    assert max(lengths) == 6226
