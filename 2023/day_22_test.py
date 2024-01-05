@@ -191,6 +191,10 @@ class Puzzle:
     For each brick, determine how many other bricks would fall if that brick
     were disintegrated. What is the sum of the number of other bricks that would
     fall?
+
+    Your puzzle answer was 98431.
+
+    Both parts of this puzzle are complete! They provide two gold stars: **
     """
 
 
@@ -247,39 +251,59 @@ class B(NamedTuple):
         return True
 
 
+def settle_stack(stack_dict: list, skip_block: B = None, count_only=False):
+    settled = defaultdict(set)
+    sits_on = defaultdict(set)
+    holds_up = defaultdict(set)
+
+    stack = []
+    for z, blocks in stack_dict.items():
+        for block in blocks:
+            if block != skip_block:
+                stack.append((z, block))
+    stack = sorted(stack)
+    blocks_moved = 0
+    z, b = stack.pop(0)
+    if z > 1:
+        blocks_moved += 1
+    first = b.down(b.z - 1)
+    settled[first.z + first.dz].add(first)
+    for z, b in stack:
+        z_0 = b.z
+        still_falling = True
+        while still_falling:
+            if b.z == 1:
+                still_falling = False
+            else:
+                for r in settled[b.z - 1]:
+                    if b.rest_on(r):
+                        sits_on[b].add(r)
+                        holds_up[r].add(b)
+                        still_falling = False
+            if still_falling:
+                b = b.down(1)
+                if b.z <= 0:
+                    raise Exception("Something fell through")
+            else:
+                settled[b.z + b.dz].add(b)
+                if b.z < z_0:
+                    blocks_moved += 1
+    if count_only:
+        return blocks_moved
+    return settled, sits_on, holds_up
+
+
 class BlockTower:
     def __init__(self, RAW_BLOCKS) -> None:
-        self.sits_on = defaultdict(set)
-        self.holds_up = defaultdict(set)
         self.settled = defaultdict(set)
         self.all = set()
-        stack = []
+        raw_stack = defaultdict(set)
         for raw_block in RAW_BLOCKS:
             b = B.raw(raw_block)
-            stack.append((b.z, b))
-        stack = sorted(stack)
-        z, b = stack.pop(0)
-        first = b.down(z - 1)
-        self.settled[first.z + first.dz].add(first)
-        self.all.add(first)
-        for z, b in stack:
-            still_falling = True
-            while still_falling:
-                if b.z == 1:
-                    still_falling = False
-                else:
-                    for r in self.settled[b.z - 1]:
-                        if b.rest_on(r):
-                            self.sits_on[b].add(r)
-                            self.holds_up[r].add(b)
-                            still_falling = False
-                if still_falling:
-                    b = b.down(1)
-                    if b.z <= 0:
-                        raise Exception("Something fell through")
-                else:
-                    self.settled[b.z + b.dz].add(b)
-                    self.all.add(b)
+            raw_stack[b.z].add(b)
+        self.settled, self.sits_on, self.holds_up = settle_stack(raw_stack)
+        for fixed_level in self.settled.values():
+            self.all = self.all.union(fixed_level)
 
     def safe_to_remove(self, b):
         for upper in self.holds_up[b]:
@@ -296,10 +320,15 @@ def test_blocks():
     sample_tower = BlockTower(SAMPLE)
     removable = [b for b in sample_tower.all if sample_tower.safe_to_remove(b)]
     assert len(removable) == 5
+    total = sum(
+        settle_stack(sample_tower.settled, b, count_only=True) for b in sample_tower.all
+    )
+    assert total == 7
 
     my_tower = BlockTower(RAW_INPUT)
     removable = [b for b in my_tower.all if my_tower.safe_to_remove(b)]
     assert len(removable) == 503
-
-
-test_blocks()
+    total = sum(
+        settle_stack(my_tower.settled, b, count_only=True) for b in my_tower.all
+    )
+    assert total == 98431
