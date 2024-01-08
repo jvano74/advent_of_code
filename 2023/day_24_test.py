@@ -1,4 +1,6 @@
 from typing import NamedTuple
+from fractions import Fraction
+from operator import sub
 
 
 class Puzzle:
@@ -163,6 +165,10 @@ class Puzzle:
     Determine the exact position and velocity the rock needs to have at time 0
     so that it perfectly collides with every hailstone. What do you get if you
     add up the X, Y, and Z coordinates of that initial position?
+
+    Your puzzle answer was 557743507346379.
+
+    Both parts of this puzzle are complete! They provide two gold stars: **
     """
 
 
@@ -186,12 +192,28 @@ class PV(NamedTuple):
     dy: int
     dz: int
 
+    @property
+    def p(self):
+        return self.x, self.y, self.z
+
+    @property
+    def v(self):
+        return self.dx, self.dy, self.dz
+
     @classmethod
     def from_string(cls, raw_str):
         raw_p, raw_v = raw_str.split(" @ ")
         x, y, z = (int(d) for d in raw_p.split(", "))
         dx, dy, dz = (int(d) for d in raw_v.split(", "))
         return cls(x, y, z, dx, dy, dz)
+
+
+def cross(v_i, v_j):
+    return [
+        v_i[1] * v_j[2] - v_i[2] * v_j[1],
+        v_i[2] * v_j[0] - v_i[0] * v_j[2],
+        v_i[0] * v_j[1] - v_i[1] * v_j[0],
+    ]
 
 
 def intersect_xy(a: PV, b: PV, x_min, x_max, y_min, y_max):
@@ -223,31 +245,112 @@ def check_intersections(pvs, x_min, x_max, y_min, y_max):
     for a in pvs:
         hx.add(a)
         for b in pvs:
-            if b in hx:
-                continue
-            if intersect_xy(a, b, x_min=x_min, x_max=x_max, y_min=y_min, y_max=y_max):
+            if b not in hx and intersect_xy(
+                a, b, x_min=x_min, x_max=x_max, y_min=y_min, y_max=y_max
+            ):
                 # print(f"{a=}, {b=} PASS")
                 intersections.append((a, b))
-            else:
-                # print(f"{a=}, {b=} FAIL")
-                pass
     return len(intersections)
 
 
-def test_intersections():
-    results = check_intersections(
-        [PV.from_string(s) for s in SAMPLE], x_min=7, x_max=27, y_min=7, y_max=27
-    )
-    assert results == 2
+################################################################################
+#                                                                              #
+# NOTE: For part 2 ended up basically copying solution from                    #
+# https://github.com/jmd-dk/advent-of-code/blob/main/2023/solution/24/solve.py #
+#                                                                              #
+################################################################################
 
+
+def construct_system(hails):
+    matrix = []
+    b = []
+    for i in range(2):
+        j = i + 1
+        hail_i, hail_j = hails[i], hails[j]
+        b += list(
+            map(
+                sub,
+                cross(hail_i.p, hail_i.v),
+                cross(hail_j.p, hail_j.v),
+            )
+        )[::-1]
+
+        row_v = [+(hail_i.v[1] - hail_j.v[1]), -(hail_i.v[0] - hail_j.v[0]), 0]
+        row_p = [-(hail_i.p[1] - hail_j.p[1]), +(hail_i.p[0] - hail_j.p[0]), 0]
+        matrix.append(row_v + row_p)
+
+        row_v = [-(hail_i.v[2] - hail_j.v[2]), 0, +(hail_i.v[0] - hail_j.v[0])]
+        row_p = [+(hail_i.p[2] - hail_j.p[2]), 0, -(hail_i.p[0] - hail_j.p[0])]
+        matrix.append(row_v + row_p)
+
+        row_v = [0, +(hail_i.v[2] - hail_j.v[2]), -(hail_i.v[1] - hail_j.v[1])]
+        row_p = [0, -(hail_i.p[2] - hail_j.p[2]), +(hail_i.p[1] - hail_j.p[1])]
+        matrix.append(row_v + row_p)
+
+    augment(matrix, b)
+    return matrix
+
+
+def augment(matrix, b):
+    for row, el in zip(matrix, b):
+        row.append(el)
+
+
+def gauss(matrix):
+    n = len(matrix)
+    for i in range(n):
+        i_pivot = i
+        pivot = matrix[i_pivot][i]
+        for j in range(i + 1, n):
+            if abs(matrix[j][i]) > pivot:
+                pivot = matrix[j][i]
+                i_pivot = j
+        if matrix[i][i_pivot] == 0:
+            return True
+        for j in range(n + 1):
+            matrix[i][j], matrix[i_pivot][j] = matrix[i_pivot][j], matrix[i][j]
+        for j in range(i + 1, n):
+            ratio = matrix[j][i] / matrix[i][i]
+            for k in range(i + 1, n + 1):
+                matrix[j][k] -= matrix[i][k] * ratio
+            matrix[j][i] = 0
+
+
+def back_substitute(matrix):
+    n = len(matrix)
+    x = [None for _ in range(n)]
+    for i in range(n - 1, -1, -1):
+        x[i] = (
+            matrix[i][n] - sum(matrix[i][j] * x[j] for j in range(i + 1, n))
+        ) / matrix[i][i]
+    return x
+
+
+def solve_part2(sample):
+    matrix = construct_system(sample)
+    for row in matrix:
+        for i, el in enumerate(row):
+            row[i] = Fraction(el)
+        if gauss(matrix):
+            return
+        return type(sample[0])(*back_substitute((matrix)))
+
+
+def test_intersections():
+    sample_paths = [PV.from_string(s) for s in SAMPLE]
+    results = check_intersections(sample_paths, x_min=7, x_max=27, y_min=7, y_max=27)
+    assert results == 2
+    part2 = solve_part2([sample_paths[0], sample_paths[1], sample_paths[2]])
+    assert sum(part2.p) == 47
+
+    my_paths = [PV.from_string(s) for s in RAW_INPUT]
     results = check_intersections(
-        [PV.from_string(s) for s in RAW_INPUT],
+        my_paths,
         x_min=200000000000000,
         x_max=400000000000000,
         y_min=200000000000000,
         y_max=400000000000000,
     )
     assert results == 17867
-
-
-test_intersections()
+    part2 = solve_part2([my_paths[0], my_paths[10], my_paths[12]])
+    assert sum(part2.p) == 557743507346379
