@@ -1,0 +1,9 @@
+{
+    "python.testing.unittestEnabled": false,
+    "python.testing.pytestEnabled": true,
+    "python.testing.cwd": ".",
+    "python.testing.pytestArgs": [
+        "2023",
+        "2024"
+    ],
+}

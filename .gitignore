@@ -1,6 +1,2 @@
-.idea
-env/
-/venv/
-.vscode
 .pytest_cache
 */__pycache__/
