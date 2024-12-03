@@ -144,6 +144,7 @@ class Puzzle:
     Your puzzle answer was 18934359.
 
     Both parts of this puzzle are complete! They provide two gold stars: **
+
     """
 
 
