@@ -165,21 +165,20 @@ class WordSearch:
         x_mas = defaultdict(list)
         for mas in self.find("MAS"):
             mas_dir = mas[0]
-            a_loc = mas[2]
-            x_mas[a_loc].append(mas_dir)
+            if mas_dir.x != 0 and mas_dir.y != 0:
+                a_loc = mas[2]
+                x_mas[a_loc].append(mas_dir)
         total_found = 0
         for mas_list in x_mas.values():
             match len(mas_list):
-                case 4:
-                    total_found += 2
-                case 3:
-                    total_found += 1
-                case 2:
-                    dot = mas_list[0].x * mas_list[1].x + mas_list[0].y * mas_list[1].y
-                    if dot == 0:
-                        total_found += 1
                 case 1:
                     pass
+                case 2:
+                    total_found += 1
+                case 4:
+                    raise Exception("What?")
+                case 3:
+                    raise Exception("What?")
 
         return total_found
 
@@ -195,6 +194,6 @@ def test_word_search_find_x():
     sample = WordSearch(SAMPLE)
     assert sample.find_x() == 9
     my_puzzle = WordSearch(RAW_INPUT)
-    assert my_puzzle.find_x() == 2642
+    assert my_puzzle.find_x() == 1974
     # Initial result was 2001 which was too high,
-    # turns out we only want diagonals
+    # turns out we only want diagonals which gives 1974
