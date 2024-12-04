@@ -1,3 +1,4 @@
+from pathlib import Path
 from collections import defaultdict
 import re
 import ast
@@ -69,7 +70,7 @@ class Solution:
     """
 
 
-with open("day_19_input.txt") as fp:
+with open(Path(__file__).parent / "2015_19_input.txt") as fp:
     raw = fp.read()
     reactions, STARTING = raw.split("\n\n")
     SUBMISSION = reactions.split("\n")

@@ -1,3 +1,6 @@
+from pathlib import Path
+
+
 def move(d, x, y):
     if d == ">":
         x += 1
@@ -98,7 +101,7 @@ def test_robot_houses_visited():
 
 
 def test_submission():
-    fp = open("./day_03_input.txt", "r")
+    fp = open(Path(__file__).parent / "2015_03_input.txt", "r")
     if fp.mode == "r":
         submission_input = fp.read()
     assert robot_ans(submission_input) == 2639

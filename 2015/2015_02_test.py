@@ -1,3 +1,6 @@
+from pathlib import Path
+
+
 def wrapping_paper_needed(input):
     """
     --- Day 2: I Was Told There Would Be No Math ---
@@ -41,7 +44,7 @@ def test_wrapping_paper_needed():
 
 
 def test_wrapping_paper_sub():
-    with open("./day_02_input.txt", "r") as fp:
+    with open(Path(__file__).parent / "2015_02_input.txt", "r") as fp:
         total = 0
         line = fp.readline()
         while line:
@@ -85,7 +88,7 @@ def test_ribbon_needed():
 
 
 def test_ribbon_needed_sub():
-    with open("./day_02_input.txt", "r") as fp:
+    with open(Path(__file__).parent / "2015_02_input.txt", "r") as fp:
         total = 0
         line = fp.readline()
         while line:

@@ -1,3 +1,4 @@
+from pathlib import Path
 import re
 import json
 
@@ -37,7 +38,15 @@ def test_sum():
 
 
 def test_submission():
-    assert sum([string_sum(line) for line in open("day_12_input.txt", "r")]) == 119433
+    assert (
+        sum(
+            [
+                string_sum(line)
+                for line in open(Path(__file__).parent / "2015_12_input.txt", "r")
+            ]
+        )
+        == 119433
+    )
 
 
 def non_red_sum(string):
@@ -132,11 +141,22 @@ def test_remove_red():
 
 
 def test_remove_red_submission():
-    assert [remove_red(line) for line in open("day_12_input.txt", "r")] == []
+    assert [
+        remove_red(line)
+        for line in open(Path(__file__).parent / "2015_12_input.txt", "r")
+    ] == []
 
 
 def test_submission2():
-    assert sum([non_red_sum(line) for line in open("day_12_input.txt", "r")]) == 77651
+    assert (
+        sum(
+            [
+                non_red_sum(line)
+                for line in open(Path(__file__).parent / "2015_12_input.txt", "r")
+            ]
+        )
+        == 77651
+    )
 
 
 # ===== SOLUTION FROM REDDIT =====
@@ -164,6 +184,6 @@ def sum_object(obj):
 
 
 def test_from_redit():
-    with open("day_12_input.txt") as f:
+    with open(Path(__file__).parent / "2015_12_input.txt") as f:
         obj = json.loads(f.read())
         assert sum_object(obj) == 68466

@@ -1,3 +1,4 @@
+from pathlib import Path
 import re
 
 
@@ -70,7 +71,7 @@ def test_submission():
     max_time = 2503
     reindeer = {
         re.split(" ", ln)[0]: Reindeer(*re.findall(r"\d+", ln))
-        for ln in open("day_14_input.txt", "r")
+        for ln in open(Path(__file__).parent / "2015_14_input.txt", "r")
     }
     assert len(reindeer) == 9
     race = {}
@@ -108,7 +109,7 @@ class Race:
         self.max_time = 2503
         self.reindeer = {
             re.split(" ", ln)[0]: Reindeer(*re.findall(r"\d+", ln))
-            for ln in open("day_14_input.txt", "r")
+            for ln in open(Path(__file__).parent / "2015_14_input.txt", "r")
         }
 
     def runners_take_your_marks(self):

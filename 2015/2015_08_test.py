@@ -1,4 +1,4 @@
-import re
+from pathlib import Path
 
 
 class Puzzle:
@@ -89,7 +89,7 @@ def test_submission():
     file_total = 0
     mem_total = 0
     extra = 0
-    with open("./day_08_input.txt", "r") as fp:
+    with open(Path(__file__).parent / "2015_08_input.txt", "r") as fp:
         line = fp.readline().rstrip()
         while line:
             file_total += len(line)

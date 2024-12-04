@@ -1,3 +1,4 @@
+from pathlib import Path
 import numpy as np
 import re
 from collections import defaultdict
@@ -182,12 +183,16 @@ class Kit:
             self.add_gate(
                 out_wire,
                 parse.group("gate"),
-                self.wires[parse.group("in1_wire")]
-                if parse.group("in1_wire")
-                else Signal(int(parse.group("in1_signal"))),
-                self.wires[parse.group("in2_wire")]
-                if parse.group("in2_wire")
-                else Signal(int(parse.group("in2_signal"))),
+                (
+                    self.wires[parse.group("in1_wire")]
+                    if parse.group("in1_wire")
+                    else Signal(int(parse.group("in1_signal")))
+                ),
+                (
+                    self.wires[parse.group("in2_wire")]
+                    if parse.group("in2_wire")
+                    else Signal(int(parse.group("in2_signal")))
+                ),
             )
             return
 
@@ -210,7 +215,7 @@ class Kit:
         out_wire.line_in = Wire(Gate(gate, in1_wire, in2_wire))
 
     def execute_directions(self):
-        with open("./day_07_input.txt", "r") as fp:
+        with open(Path(__file__).parent / "2015_07_input.txt", "r") as fp:
             line = fp.readline()
             while line:
                 self.wire_in(line)

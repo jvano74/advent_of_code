@@ -1,3 +1,6 @@
+from pathlib import Path
+
+
 class Solution:
     """
     --- Day 16: Aunt Sue ---
@@ -44,7 +47,7 @@ class Solution:
     """
 
 
-with open("day_16_input.txt") as fp:
+with open(Path(__file__).parent / "2015_16_input.txt") as fp:
     raw = fp.read()
 MY_AUNTS = raw.split("\n")
 

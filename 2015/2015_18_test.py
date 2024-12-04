@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import List, NamedTuple
 from collections import defaultdict
 
@@ -147,7 +148,7 @@ class Board:
 SAMPLE = [".#.#.#", "...##.", "#....#", "..#...", "#.#..#", "####.."]
 
 
-with open("day_18_input.txt") as fp:
+with open(Path(__file__).parent / "2015_18_input.txt") as fp:
     raw = fp.read()
     SUBMISSION = raw.split("\n")
 

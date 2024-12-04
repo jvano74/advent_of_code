@@ -1,3 +1,4 @@
+from pathlib import Path
 import numpy as np
 import re
 
@@ -63,10 +64,12 @@ class Lights:
                 self.grid[x][y] = self.f_toggle(self.grid[x][y])
 
     def execute_direction(self, direction):
-        exp = r"(?P<action>turn on|turn off|toggle)" \
-            + r" (?P<start_x>\d+),(?P<start_y>\d+)" \
-            + r" through" \
+        exp = (
+            r"(?P<action>turn on|turn off|toggle)"
+            + r" (?P<start_x>\d+),(?P<start_y>\d+)"
+            + r" through"
             + r" (?P<end_x>\d+),(?P<end_y>\d+)"
+        )
         m = re.match(exp, direction)
         if m:
             ul = (int(m.group("start_x")), int(m.group("start_y")))
@@ -79,7 +82,7 @@ class Lights:
                 self.on(ul, lr)
 
     def execute_directions(self):
-        with open("./day_06_input.txt", "r") as fp:
+        with open(Path(__file__).parent / "2015_06_input.txt", "r") as fp:
             line = fp.readline()
             while line:
                 self.execute_direction(line)

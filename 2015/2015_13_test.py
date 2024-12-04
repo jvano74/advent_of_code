@@ -1,5 +1,6 @@
-from typing import List, NamedTuple
-from collections import deque, defaultdict
+from pathlib import Path
+from typing import List
+from collections import defaultdict
 from heapq import heappush, heappop
 
 
@@ -133,7 +134,7 @@ def test_sample():
     assert table.max_happiness()[0] == -330
 
 
-with open("day_13_input.txt") as fp:
+with open(Path(__file__).parent / "2015_13_input.txt") as fp:
     SUBMISSION = fp.read()
 
 

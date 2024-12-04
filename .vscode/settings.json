@@ -3,6 +3,7 @@
     "python.testing.pytestEnabled": true,
     "python.testing.cwd": "${workspaceFolder}",
     "python.testing.pytestArgs": [
+        "2015",
         "2023",
         "2024"
     ],

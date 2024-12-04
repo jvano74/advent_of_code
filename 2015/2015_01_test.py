@@ -1,3 +1,6 @@
+from pathlib import Path
+
+
 def ans(input):
     """
     --- Day 1: Not Quite Lisp ---
@@ -79,7 +82,7 @@ def test_ans():
 
 
 def test_sub():
-    fp = open("./day_01_input.txt", "r")
+    fp = open(Path(__file__).parent / "2015_01_input.txt", "r")
     if fp.mode == "r":
         submission_input = fp.read()
     assert ans(submission_input) == (280, 1796)
