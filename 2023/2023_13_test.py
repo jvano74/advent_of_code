@@ -1,3 +1,6 @@
+from pathlib import Path
+
+
 class Puzzle:
     """--- Day 13: Point of Incidence ---
     With your help, the hot springs team locates an appropriate spring which
@@ -170,7 +173,7 @@ class Puzzle:
     """
 
 
-with open("day_13_input.txt") as fp:
+with open(Path(__file__).parent / "2023_13_input.txt") as fp:
     RAW_INPUT = [
         [raw_line for raw_line in raw_block.split("\n")]
         for raw_block in fp.read().split("\n\n")

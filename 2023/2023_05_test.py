@@ -1,3 +1,6 @@
+from pathlib import Path
+
+
 class Puzzle:
     """
     --- Day 5: If You Give A Seed A Fertilizer ---
@@ -182,7 +185,7 @@ class Puzzle:
     """
 
 
-with open("day_05_input.txt") as fp:
+with open(Path(__file__).parent / "2023_05_input.txt") as fp:
     RAW_INPUT = fp.read()
 
 

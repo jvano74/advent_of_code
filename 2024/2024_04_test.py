@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import List, NamedTuple
 from collections import defaultdict
 
@@ -95,10 +96,14 @@ class Puzzle:
     Flip the word search from the instructions back over to the word search side
     and try again. How many times does an X-MAS appear?
 
+    Your puzzle answer was 1974.
+
+    Both parts of this puzzle are complete! They provide two gold stars: **
+
     """
 
 
-with open("day_04_input.txt") as fp:
+with open(Path(__file__).parent / "2024_04_input.txt") as fp:
     RAW_INPUT = fp.read().split("\n")
 
 SAMPLE = [

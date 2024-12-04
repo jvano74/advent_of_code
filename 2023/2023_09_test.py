@@ -1,3 +1,6 @@
+from pathlib import Path
+
+
 class Puzzle:
     """
     --- Day 9: Mirage Maintenance ---
@@ -150,7 +153,7 @@ class Puzzle:
     """
 
 
-with open("day_09_input.txt") as fp:
+with open(Path(__file__).parent / "2023_09_input.txt") as fp:
     RAW_INPUT = [
         [int(d) for d in raw_line.split(" ")] for raw_line in fp.read().split("\n")
     ]

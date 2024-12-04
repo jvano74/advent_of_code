@@ -1,3 +1,6 @@
+from pathlib import Path
+
+
 class Puzzle:
     """
     --- Day 4: Scratchcards ---
@@ -126,7 +129,7 @@ class Puzzle:
     """
 
 
-with open("day_04_input.txt") as fp:
+with open(Path(__file__).parent / "2023_04_input.txt") as fp:
     RAW_INPUT = fp.read()
 
 

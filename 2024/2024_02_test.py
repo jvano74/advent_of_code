@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import List
 
 
@@ -87,7 +88,7 @@ class Puzzle:
     """
 
 
-with open("day_02_input.txt") as fp:
+with open(Path(__file__).parent / "2024_02_input.txt") as fp:
     RAW_INPUT = fp.read().split("\n")
 
 SAMPLE = ["7 6 4 2 1", "1 2 7 8 9", "9 7 6 2 1", "1 3 2 4 5", "8 6 4 4 1", "1 3 6 7 9"]

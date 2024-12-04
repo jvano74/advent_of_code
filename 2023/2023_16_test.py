@@ -1,3 +1,4 @@
+from pathlib import Path
 from collections import defaultdict
 from typing import NamedTuple
 
@@ -164,7 +165,7 @@ class Pt(NamedTuple):
         return Pt(self.x + other.x, self.y + other.y)
 
 
-with open("day_16_input.txt") as fp:
+with open(Path(__file__).parent / "2023_16_input.txt") as fp:
     RAW_INPUT = fp.read().split("\n")
 
 

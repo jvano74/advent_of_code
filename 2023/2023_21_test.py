@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import NamedTuple
 
 
@@ -185,7 +186,7 @@ class Puzzle:
     """
 
 
-with open("day_21_input.txt") as fp:
+with open(Path(__file__).parent / "2023_21_input.txt") as fp:
     RAW_INPUT = fp.read().split("\n")
 
 SAMPLE = [

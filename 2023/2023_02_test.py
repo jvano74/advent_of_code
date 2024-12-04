@@ -1,12 +1,13 @@
 from collections import defaultdict
+from pathlib import Path
 
 
 class Puzzle:
     """
     --- Day 2: Cube Conundrum ---
 
-    You're launched high into the atmosphere! The apex of your trajectory just 
-    barely reaches the surface of a large island floating in the sky. You 
+    You're launched high into the atmosphere! The apex of your trajectory just
+    barely reaches the surface of a large island floating in the sky. You
     gently land in a fluffy pile of leaves. It's quite cold, but you
     don't see much snow. An Elf runs over to greet you.
 
@@ -100,7 +101,7 @@ class Puzzle:
     """
 
 
-with open("day_02_input.txt") as fp:
+with open(Path(__file__).parent / "2023_02_input.txt") as fp:
     RAW_INPUT = fp.read()
 
 RAW_SAMPLE = """Game 1: 3 blue, 4 red; 1 red, 2 green, 6 blue; 2 green
@@ -119,9 +120,10 @@ def parse_input(raw_string):
     for game in game_list:
         raw_game, raw_draws = game.split(": ")
         game = int(raw_game.replace("Game ", ""))
-        draws = [{m.split(" ")[1]: int(m.split(" ")[0])
-                  for m in raw_marbles.split(", ")}
-                 for raw_marbles in raw_draws.split("; ")]
+        draws = [
+            {m.split(" ")[1]: int(m.split(" ")[0]) for m in raw_marbles.split(", ")}
+            for raw_marbles in raw_draws.split("; ")
+        ]
         formatted_games.append((game, draws))
     return formatted_games
 
@@ -170,20 +172,32 @@ def find_min_power_sum(game_list):
 def test_parse_input():
     sample_games = parse_input(RAW_SAMPLE)
     assert sample_games == [
-        (1, [{"blue": 3, "red": 4},
-             {"red": 1, "green": 2, "blue": 6},
-             {"green": 2}]),
-        (2, [{'blue': 1, 'green': 2},
-             {'green': 3, 'blue': 4, 'red': 1},
-             {'green': 1, 'blue': 1}]),
-        (3, [{'green': 8, 'blue': 6, 'red': 20},
-             {'blue': 5, 'red': 4, 'green': 13},
-             {'green': 5, 'red': 1}]),
-        (4, [{'green': 1, 'red': 3, 'blue': 6},
-             {'green': 3, 'red': 6},
-             {'green': 3, 'blue': 15, 'red': 14}]),
-        (5, [{'red': 6, 'blue': 1, 'green': 3},
-             {'blue': 2, 'red': 1, 'green': 2}])
+        (1, [{"blue": 3, "red": 4}, {"red": 1, "green": 2, "blue": 6}, {"green": 2}]),
+        (
+            2,
+            [
+                {"blue": 1, "green": 2},
+                {"green": 3, "blue": 4, "red": 1},
+                {"green": 1, "blue": 1},
+            ],
+        ),
+        (
+            3,
+            [
+                {"green": 8, "blue": 6, "red": 20},
+                {"blue": 5, "red": 4, "green": 13},
+                {"green": 5, "red": 1},
+            ],
+        ),
+        (
+            4,
+            [
+                {"green": 1, "red": 3, "blue": 6},
+                {"green": 3, "red": 6},
+                {"green": 3, "blue": 15, "red": 14},
+            ],
+        ),
+        (5, [{"red": 6, "blue": 1, "green": 3}, {"blue": 2, "red": 1, "green": 2}]),
     ]
     assert sum(find_valid_games(sample_games)) == 8
     assert find_min_power_sum(sample_games) == 2286

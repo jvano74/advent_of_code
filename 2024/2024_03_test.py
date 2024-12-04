@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import List
 import re
 
@@ -83,7 +84,7 @@ class Puzzle:
     """
 
 
-with open("day_03_input.txt") as fp:
+with open(Path(__file__).parent / "2024_03_input.txt") as fp:
     RAW_INPUT = fp.read().split("\n")
 
 SAMPLE1 = "xmul(2,4)%&mul[3,7]!@^do_not_mul(5,5)+mul(32,64]then(mul(11,8)mul(8,5))"

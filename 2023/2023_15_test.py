@@ -1,3 +1,4 @@
+from pathlib import Path
 from collections import defaultdict
 
 
@@ -243,7 +244,7 @@ class Puzzle:
 
 SAMPLE = "rn=1,cm-,qp=3,cm=2,qp-,pc=4,ot=9,ab=5,pc-,pc=6,ot=7".split(",")
 
-with open("day_15_input.txt") as fp:
+with open(Path(__file__).parent / "2023_15_input.txt") as fp:
     RAW_INPUT = fp.read().split(",")
 
 

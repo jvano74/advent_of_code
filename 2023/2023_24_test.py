@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import NamedTuple
 from fractions import Fraction
 from operator import sub
@@ -180,7 +181,7 @@ SAMPLE = [
     "20, 19, 15 @  1, -5, -3",
 ]
 
-with open("day_24_input.txt") as fp:
+with open(Path(__file__).parent / "2023_24_input.txt") as fp:
     RAW_INPUT = fp.read().split("\n")
 
 

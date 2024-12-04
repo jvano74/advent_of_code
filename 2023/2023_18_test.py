@@ -1,3 +1,4 @@
+from pathlib import Path
 from collections import defaultdict
 from heapq import heappush, heappop
 from typing import NamedTuple
@@ -123,7 +124,7 @@ class Puzzle:
     """
 
 
-with open("day_18_input.txt") as fp:
+with open(Path(__file__).parent / "2023_18_input.txt") as fp:
     MY_INPUT = fp.read().split("\n")
 
 SAMPLE = [

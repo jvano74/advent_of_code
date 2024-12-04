@@ -1,5 +1,5 @@
+from pathlib import Path
 from typing import NamedTuple
-from collections import defaultdict
 
 
 class Puzzle:
@@ -276,7 +276,7 @@ INBOUND_DIRECTIONS = {
 }
 
 
-with open("day_10_input.txt") as fp:
+with open(Path(__file__).parent / "2023_10_input.txt") as fp:
     RAW_INPUT = fp.read().split("\n")
 
 

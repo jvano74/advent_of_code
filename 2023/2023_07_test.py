@@ -1,3 +1,4 @@
+from pathlib import Path
 from collections import defaultdict
 
 
@@ -160,7 +161,7 @@ class Puzzle:
 
 RAW_SAMPLE = ["32T3K 765", "T55J5 684", "KK677 28", "KTJJT 220", "QQQJA 483"]
 
-with open("day_07_input.txt") as fp:
+with open(Path(__file__).parent / "2023_07_input.txt") as fp:
     RAW_INPUT = fp.read().split("\n")
 
 HAND_TYPE_STRENGTHS = {

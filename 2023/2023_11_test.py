@@ -1,3 +1,4 @@
+from pathlib import Path
 from itertools import combinations
 
 
@@ -183,7 +184,7 @@ class Galaxy:
         return total
 
 
-with open("day_11_input.txt") as fp:
+with open(Path(__file__).parent / "2023_11_input.txt") as fp:
     RAW_INPUT = fp.read().split("\n")
 
 RAW_GALAXY = [

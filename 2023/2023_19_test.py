@@ -1,5 +1,6 @@
-import re
+from pathlib import Path
 from typing import NamedTuple
+import re
 
 
 class Puzzle:
@@ -114,7 +115,7 @@ class Puzzle:
     """
 
 
-with open("day_19_input.txt") as fp:
+with open(Path(__file__).parent / "2023_19_input.txt") as fp:
     RAW_WORKFLOWS, RAW_RATINGS = fp.read().split("\n\n")
     MY_WORKFLOWS = RAW_WORKFLOWS.split("\n")
     MY_RATINGS = RAW_RATINGS.split("\n")

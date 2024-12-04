@@ -1,3 +1,4 @@
+from pathlib import Path
 from collections import defaultdict
 
 
@@ -205,7 +206,7 @@ SAMPLE_2 = [
     "&con -> output",
 ]
 
-with open("day_20_input.txt") as fp:
+with open(Path(__file__).parent / "2023_20_input.txt") as fp:
     RAW_INPUT = fp.read().split("\n")
 
 
