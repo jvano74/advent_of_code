@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import NamedTuple
 from collections import defaultdict
 
@@ -105,13 +106,13 @@ class Puzzle:
     --- Part Two ---
     How many pixels stay on after 18 iterations?
     """
+
     pass
 
 
-SAMPLE = ['../.# => ##./#../...',
-          '.#./..#/### => #..#/..../..../#..#']
+SAMPLE = ["../.# => ##./#../...", ".#./..#/### => #..#/..../..../#..#"]
 
-with open('day_21_input.txt') as fp:
+with open(Path(__file__).parent / "2017_21_input.txt") as fp:
     INPUTS = [line.strip() for line in fp]
 
 
@@ -136,8 +137,9 @@ def merge_grid(input_blocks, block_size):
     result = set()
     for index_pt, block in input_blocks.items():
         for pt in block:
-            result.add(Pt(block_size * index_pt.x + pt.x,
-                          block_size * index_pt.y + pt.y))
+            result.add(
+                Pt(block_size * index_pt.x + pt.x, block_size * index_pt.y + pt.y)
+            )
     return result
 
 
@@ -167,7 +169,9 @@ class FractalArt:
     #    ###  Pt(0, 2) Pt(1, 2) Pt(2, 2)
     STARTING_IMAGE = {Pt(1, 0), Pt(2, 1), Pt(0, 2), Pt(1, 2), Pt(2, 2)}
 
-    def __init__(self, raw_rules, starting_size=3, starting_image=None, maintain_orientation=True):
+    def __init__(
+        self, raw_rules, starting_size=3, starting_image=None, maintain_orientation=True
+    ):
         self.rules = FractalArt.build_additional_rules(raw_rules, maintain_orientation)
         if starting_image is None:
             self.image = FractalArt.STARTING_IMAGE.copy()
@@ -186,30 +190,34 @@ class FractalArt:
     def build_additional_rules(raw_input, maintain_orientation=True):
         rules = {}
         for r_id, line in enumerate(raw_input):
-            raw_input_grid, raw_output_grid = line.split(' => ')
+            raw_input_grid, raw_output_grid = line.split(" => ")
             in_size, in_grid = FractalArt.parse_raw_grid(raw_input_grid)
             out_size, out_grid = FractalArt.parse_raw_grid(raw_output_grid)
-            rotations = FractalArt.get_rotations(in_size, in_grid, out_size, out_grid, maintain_orientation)
+            rotations = FractalArt.get_rotations(
+                in_size, in_grid, out_size, out_grid, maintain_orientation
+            )
             for rot in rotations:
                 r_input_grid, r_output_grid = rotations[rot]
-                rules[(in_size, r_input_grid)] = (r_output_grid, f'{r_id}{rot}')
+                rules[(in_size, r_input_grid)] = (r_output_grid, f"{r_id}{rot}")
         return rules
 
     @staticmethod
     def parse_raw_grid(raw_input):
-        input_rows = raw_input.split('/')
+        input_rows = raw_input.split("/")
         size = len(input_rows)
         grid = set()
         for y, row in enumerate(input_rows):
             for x, c in enumerate(row):
-                if c == '#':
+                if c == "#":
                     grid.add(Pt(x, y))
         return size, frozenset(grid)
 
     @staticmethod
     def get_rotations(size_a, pattern_a, size_b, pattern_b, maintain_orientation=True):
         results = {}
-        for f, r in [(flips, cw_rotations) for flips in range(2) for cw_rotations in range(4)]:
+        for f, r in [
+            (flips, cw_rotations) for flips in range(2) for cw_rotations in range(4)
+        ]:
             new_pattern_a = flip_and_rotate(pattern_a, size_a, f, r)
             if maintain_orientation:
                 new_pattern_b = flip_and_rotate(pattern_b, size_b, f, r)
@@ -221,14 +229,14 @@ class FractalArt:
     def print_image(self, indent=3):
         result = []
         for y in range(0, self.size):
-            line = [''.rjust(indent, ' ')]
+            line = ["".rjust(indent, " ")]
             for x in range(0, self.size):
                 if Pt(x, y) in self.image:
-                    line.append('#')
+                    line.append("#")
                 else:
-                    line.append('.')
-            result.append(''.join(line))
-        print('\n'.join(result))
+                    line.append(".")
+            result.append("".join(line))
+        print("\n".join(result))
 
     def print_grids(self, size, grid, indent=6):
         result = []
@@ -236,26 +244,26 @@ class FractalArt:
         for y in range(0, size):
             index_y = y // block_size
             if y % block_size == 0:
-                line = ['+'.rjust(indent + 1, ' ')]
+                line = ["+".rjust(indent + 1, " ")]
                 extra = []
                 for index_x in (pt.x for pt in grid if pt.y == 0):
                     pt = Pt(index_x, index_y)
-                    extra.append(f' {self.grid_ids[pt]},')
-                    line.append(''.ljust(block_size, '-'))
-                    line.append('+')
+                    extra.append(f" {self.grid_ids[pt]},")
+                    line.append("".ljust(block_size, "-"))
+                    line.append("+")
                 line.extend(extra)
-                result.append(''.join(line))
-            line = [''.rjust(indent, ' ')]
+                result.append("".join(line))
+            line = ["".rjust(indent, " ")]
             for x in range(0, size):
                 if x % block_size == 0:
-                    line.append('|')
+                    line.append("|")
                 pt = Pt(x // block_size, index_y)
                 if Pt(x % block_size, y % block_size) in grid[pt]:
-                    line.append('#')
+                    line.append("#")
                 else:
-                    line.append('.')
-            result.append(''.join(line))
-        print('\n'.join(result))
+                    line.append(".")
+            result.append("".join(line))
+        print("\n".join(result))
 
     @staticmethod
     def block_size(in_size, out_size=False):
@@ -282,19 +290,21 @@ class FractalArt:
         self.grid_size_out = self.size
 
         for index_pt, block in self.grid_in.items():
-            self.grid_out[index_pt], self.grid_ids[index_pt] = self.rules[(block_size_in, frozenset(block))]
+            self.grid_out[index_pt], self.grid_ids[index_pt] = self.rules[
+                (block_size_in, frozenset(block))
+            ]
         self.image = merge_grid(self.grid_out, block_size_out)
 
     def do_art(self, steps, print_steps=False, print_partial=False):
         if print_steps:
             print()
-            print(f'gen {self.generation} size {self.size}')
+            print(f"gen {self.generation} size {self.size}")
             self.print_image()
         for _ in range(steps):
             self.step()
             if print_steps:
                 print()
-                print(f'gen {self.generation} size {self.size}')
+                print(f"gen {self.generation} size {self.size}")
                 if print_partial:
                     self.print_grids(self.grid_size_in, self.grid_in)
                     print()

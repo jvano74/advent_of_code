@@ -1,3 +1,4 @@
+from pathlib import Path
 from collections import defaultdict
 
 
@@ -39,16 +40,18 @@ class Puzzle:
     that it can decide how much memory to allocate to these operations. For example, in the above instructions,
     the highest value ever held was 10 (in register c after the third instruction was evaluated).
     """
+
     pass
 
 
 SAMPLE = [
-    'b inc 5 if a > 1',
-    'a inc 1 if b < 5',
-    'c dec -10 if a >= 1',
-    'c inc -20 if c == 10']
+    "b inc 5 if a > 1",
+    "a inc 1 if b < 5",
+    "c dec -10 if a >= 1",
+    "c inc -20 if c == 10",
+]
 
-with open('day_08_input.txt') as fp:
+with open(Path(__file__).parent / "2017_08_input.txt") as fp:
     INPUT = [line.strip() for line in fp]
 
 
@@ -56,37 +59,37 @@ def process_registers(instructions):
     registers = defaultdict(int)
     max_reg_value = 0
     for inst in instructions:
-        change, condition = inst.split(' if ')
-        check_loc, comparison, value = condition.split(' ')
+        change, condition = inst.split(" if ")
+        check_loc, comparison, value = condition.split(" ")
 
-        if comparison == '<':
-            ok = (registers[check_loc] < int(value))
-        elif comparison == '>':
-            ok = (registers[check_loc] > int(value))
-        elif comparison == '<=':
-            ok = (registers[check_loc] <= int(value))
-        elif comparison == '>=':
-            ok = (registers[check_loc] >= int(value))
-        elif comparison == '==':
-            ok = (registers[check_loc] == int(value))
-        elif comparison == '!=':
-            ok = (registers[check_loc] != int(value))
+        if comparison == "<":
+            ok = registers[check_loc] < int(value)
+        elif comparison == ">":
+            ok = registers[check_loc] > int(value)
+        elif comparison == "<=":
+            ok = registers[check_loc] <= int(value)
+        elif comparison == ">=":
+            ok = registers[check_loc] >= int(value)
+        elif comparison == "==":
+            ok = registers[check_loc] == int(value)
+        elif comparison == "!=":
+            ok = registers[check_loc] != int(value)
 
         if ok:
-            change_loc, direction, value = change.split(' ')
-            if direction == 'inc':
+            change_loc, direction, value = change.split(" ")
+            if direction == "inc":
                 registers[change_loc] += int(value)
-            elif direction == 'dec':
+            elif direction == "dec":
                 registers[change_loc] -= int(value)
-            max_reg_value = max(registers[change_loc],max_reg_value)
+            max_reg_value = max(registers[change_loc], max_reg_value)
     return registers, max_reg_value
 
 
 def test_process_registers():
     sample_result = process_registers(SAMPLE)
-    assert max( v for k,v in sample_result[0].items()) == 1
+    assert max(v for k, v in sample_result[0].items()) == 1
     assert sample_result[1] == 10
     #
     puzzle_result = process_registers(INPUT)
-    assert max( v for k,v in puzzle_result[0].items()) == 4647
+    assert max(v for k, v in puzzle_result[0].items()) == 4647
     assert puzzle_result[1] == 5590

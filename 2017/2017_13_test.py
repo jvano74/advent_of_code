@@ -1,3 +1,6 @@
+from pathlib import Path
+
+
 class Puzzle:
     """
     --- Day 13: Packet Scanners ---
@@ -302,19 +305,20 @@ class Puzzle:
     What is the fewest number of picoseconds that you need to delay the packet to pass through the firewall without
     being caught?
     """
+
     pass
 
 
-SAMPLE = ['0: 3', '1: 2', '4: 4', '6: 4']
+SAMPLE = ["0: 3", "1: 2", "4: 4", "6: 4"]
 
-with open('day_13_input.txt') as fp:
+with open(Path(__file__).parent / "2017_13_input.txt") as fp:
     INPUTS = [line.strip() for line in fp]
 
 
 def parse_input(lines):
     results = []
     for ln in lines:
-        a, b = ln.split(': ')
+        a, b = ln.split(": ")
         results.append((int(a), 2 * int(b) - 2, int(b)))
     return results
 
@@ -335,5 +339,5 @@ def test_severity():
     t = 0
     puzzle_arrangement = parse_input(INPUTS)
     while severity(puzzle_arrangement, t, never_caught=True) > 0:
-        t = t+1
+        t = t + 1
     assert t == 3907994

@@ -1,3 +1,4 @@
+from pathlib import Path
 import re
 
 
@@ -49,22 +50,17 @@ class Puzzle:
 
     What is the sum of each row's result in your puzzle input?
     """
+
     pass
 
 
-with open('day_02_input.txt') as f:
-    INPUTS = [[int(d) for d in re.split('[ \t]+', line)] for line in f]
+with open(Path(__file__).parent / "2017_02_input.txt") as f:
+    INPUTS = [[int(d) for d in re.split("[ \t]+", line)] for line in f]
 
 
-SAMPLE = [
-    [5, 1, 9, 5],
-    [7, 5, 3],
-    [2, 4, 6, 8]]
+SAMPLE = [[5, 1, 9, 5], [7, 5, 3], [2, 4, 6, 8]]
 
-SAMPLE2 = [
-    [5, 9, 2, 8],
-    [9, 4, 7, 3],
-    [3, 8, 6, 5]]
+SAMPLE2 = [[5, 9, 2, 8], [9, 4, 7, 3], [3, 8, 6, 5]]
 
 
 def checksum(input):
@@ -77,9 +73,9 @@ def checksum(input):
 def even_division(list):
     olist = sorted(list, reverse=True)
     for i, a in enumerate(olist):
-        for b in olist[i+1:]:
+        for b in olist[i + 1 :]:
             if a % b == 0:
-                return a//b
+                return a // b
     return 0
 
 
@@ -92,4 +88,3 @@ def test_even_division():
     assert even_division(SAMPLE2[0]) == 4
     assert sum([even_division(lst) for lst in SAMPLE2]) == 9
     assert sum([even_division(lst) for lst in INPUTS]) == 242
-

@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import NamedTuple
 from collections import defaultdict
 
@@ -208,14 +209,13 @@ class Puzzle:
     Given your actual map, after 10_000_000 bursts of activity, how many bursts cause a node to become infected?
     (Do not count nodes that begin infected.)
     """
+
     pass
 
 
-SAMPLE = ['..#',
-          '#..',
-          '...']
+SAMPLE = ["..#", "#..", "..."]
 
-with open('day_22_input.txt') as fp:
+with open(Path(__file__).parent / "2017_22_input.txt") as fp:
     INPUTS = [line.strip() for line in fp]
 
 
@@ -275,8 +275,8 @@ class Sporifica:
         self.infections = 0
         for y, line in enumerate(raw_inputs):
             for x, c in enumerate(line):
-                if c == '#':
-                    self.initial_infections[Pt(x, y)] = '#'
+                if c == "#":
+                    self.initial_infections[Pt(x, y)] = "#"
         self.current = self.initial_infections.copy()
 
     def reset(self):
@@ -295,39 +295,39 @@ class Sporifica:
             line = []
             for x in range(x_min - boarder, x_max + boarder + 1):
                 if y == self.t.loc.y and x + 1 == self.t.loc.x:
-                    pad = '['
+                    pad = "["
                 elif y == self.t.loc.y and x == self.t.loc.x:
-                    pad = ']'
+                    pad = "]"
                 else:
-                    pad = ' '
+                    pad = " "
                 if Pt(x, y) in self.current:
                     c = self.current[Pt(x, y)]
                 else:
-                    c = '.'
-                line.append(f'{c}{pad}')
-            result.append(''.join(line))
+                    c = "."
+                line.append(f"{c}{pad}")
+            result.append("".join(line))
         return result
 
     def step(self):
         t = self.t
         if t.loc not in self.current:
             if self.evolved:
-                self.current[t.loc] = 'W'
+                self.current[t.loc] = "W"
             else:
-                self.current[t.loc] = '#'
+                self.current[t.loc] = "#"
                 self.infections += 1
             self.t = t.left().step()
-        elif self.current[t.loc] == '#':
+        elif self.current[t.loc] == "#":
             if self.evolved:
-                self.current[t.loc] = 'F'
+                self.current[t.loc] = "F"
             else:
                 self.current.pop(t.loc)
             self.t = t.right().step()
-        elif self.current[t.loc] == 'W':
-            self.current[t.loc] = '#'
+        elif self.current[t.loc] == "W":
+            self.current[t.loc] = "#"
             self.infections += 1
             self.t = t.step()
-        elif self.current[t.loc] == 'F':
+        elif self.current[t.loc] == "F":
             self.current.pop(t.loc)
             self.t = t.right().right().step()
 
@@ -347,7 +347,7 @@ def test_sample_sporifica():
             sporifica.step()
         print()
         print(s, sporifica.t)
-        print('\n'.join(sporifica.print_current()))
+        print("\n".join(sporifica.print_current()))
 
     sporifica.reset()
     assert sporifica.run(1) == 1
@@ -368,4 +368,3 @@ def test_puzzle_sporifica():
     assert sporifica.run(10000) == 5447
     sporifica = Sporifica(INPUTS, evolved=True)
     assert sporifica.run(10_000_000) == 2511705
-

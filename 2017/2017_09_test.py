@@ -1,3 +1,6 @@
+from pathlib import Path
+
+
 class Puzzle:
     """
     --- Day 9: Stream Processing ---
@@ -78,20 +81,22 @@ class Puzzle:
 
     How many non-canceled characters are within the garbage in your puzzle input?
     """
+
     pass
 
 
 SAMPLES = [
-    ('{}', 1),
-    ('{{{}}}', 6),
-    ('{{},{}}', 5),
-    ('{{{},{},{{}}}}', 16),
-    ('{<a>,<a>,<a>,<a>}', 1),
-    ('{{<ab>},{<ab>},{<ab>},{<ab>}}', 9),
-    ('{{<!!>},{<!!>},{<!!>},{<!!>}}', 9),
-    ('{{<a!>},{<a!>},{<a!>},{<ab>}}', 3)]
+    ("{}", 1),
+    ("{{{}}}", 6),
+    ("{{},{}}", 5),
+    ("{{{},{},{{}}}}", 16),
+    ("{<a>,<a>,<a>,<a>}", 1),
+    ("{{<ab>},{<ab>},{<ab>},{<ab>}}", 9),
+    ("{{<!!>},{<!!>},{<!!>},{<!!>}}", 9),
+    ("{{<a!>},{<a!>},{<a!>},{<ab>}}", 3),
+]
 
-with open('day_09_input.txt') as fp:
+with open(Path(__file__).parent / "2017_09_input.txt") as fp:
     INPUT = fp.read()
 
 
@@ -104,18 +109,18 @@ def score_stream(stream):
     for c in stream:
         if skip:
             skip = False
-        elif garbage and c == '!':
+        elif garbage and c == "!":
             skip = True
-        elif garbage and c == '>':
+        elif garbage and c == ">":
             garbage = False
         elif garbage:
             count_garbage += 1
-        elif c == '<':
+        elif c == "<":
             garbage = True
-        elif c == '{':
+        elif c == "{":
             depth += 1
             score += depth
-        elif c == '}':
+        elif c == "}":
             depth -= 1
     return score, count_garbage
 

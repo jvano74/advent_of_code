@@ -12,7 +12,7 @@ class Puzzle:
     After doing this many times, the order of the marks is used to build the resulting hash.
 
       4--5   pinch   4  5           4   1
-     /    \  5,0,1  / \/ \  twist  / \ / \
+     /    \  5,0,1  / \/ \  twist  / \ / \\
     3      0  -->  3      0  -->  3   X   0
      \    /         \ /\ /         \ / \ /
       2--1           2  1           2   5
@@ -113,6 +113,7 @@ class Puzzle:
     Treating your puzzle input as a string of ASCII characters, what is the Knot Hash of your puzzle input?
     Ignore any leading or trailing whitespace you might encounter.
     """
+
     pass
 
 
@@ -121,7 +122,8 @@ SAMPLE_SCRAMBLE = [3, 4, 1, 5]
 
 INPUT = list(range(256))
 INPUT_SCRAMBLE = [212, 254, 178, 237, 2, 0, 1, 54, 167, 92, 117, 125, 255, 61, 159, 164]
-INPUT_AS_STRING = '212,254,178,237,2,0,1,54,167,92,117,125,255,61,159,164'
+INPUT_AS_STRING = "212,254,178,237,2,0,1,54,167,92,117,125,255,61,159,164"
+
 
 def scramble(data, length_list, position=0, skip=0):
     tmp = list()
@@ -149,7 +151,7 @@ def encode(string):
 
 
 def test_encode():
-    assert encode('1,2,3') == [49, 44, 50, 44, 51, 17, 31, 73, 47, 23]
+    assert encode("1,2,3") == [49, 44, 50, 44, 51, 17, 31, 73, 47, 23]
 
 
 def knot_hash(string):
@@ -162,15 +164,15 @@ def knot_hash(string):
     data.append(0)
     for i, d in enumerate(data):
         if i > 0 and i % 16 == 0:
-            result.append(hex(256+tmp)[-2:])
+            result.append(hex(256 + tmp)[-2:])
             tmp = 0
         tmp ^= d
-    return ''.join(result)
+    return "".join(result)
 
 
 def test_knot_hash():
-    assert knot_hash('') == 'a2582a3a0e66e6e86e3812dcb672a272'
-    assert knot_hash('AoC 2017') == '33efeb34ea91902bb2f59c9920caa6cd'
-    assert knot_hash('1,2,3') == '3efbe78a8d82f29979031a4aa0b16a9d'
-    assert knot_hash('1,2,4') == '63960835bcdc130f0b66d7ff4f6a5a8e'
-    assert knot_hash(INPUT_AS_STRING) == '96de9657665675b51cd03f0b3528ba26'
+    assert knot_hash("") == "a2582a3a0e66e6e86e3812dcb672a272"
+    assert knot_hash("AoC 2017") == "33efeb34ea91902bb2f59c9920caa6cd"
+    assert knot_hash("1,2,3") == "3efbe78a8d82f29979031a4aa0b16a9d"
+    assert knot_hash("1,2,4") == "63960835bcdc130f0b66d7ff4f6a5a8e"
+    assert knot_hash(INPUT_AS_STRING) == "96de9657665675b51cd03f0b3528ba26"

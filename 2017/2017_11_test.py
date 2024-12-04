@@ -1,3 +1,4 @@
+from pathlib import Path
 from collections import defaultdict
 
 
@@ -16,11 +17,11 @@ class Puzzle:
 
       \ n  /
     nw +--+ ne
-      /    \
+      /    \\
     -+      +-
       \    /
     sw +--+ se
-      / s  \
+      / s  \\
 
     You have the path the child process took. Starting where he started, you need to determine the fewest
     number of steps required to reach him. (A "step" means to move from the hex you are in to any adjacent hex.)
@@ -35,11 +36,12 @@ class Puzzle:
     --- Part Two ---
     How many steps away is the furthest he ever got from his starting position?
     """
+
     pass
 
 
-with open('day_11_input.txt') as f:
-    INPUTS = f.read().split(',')
+with open(Path(__file__).parent / "2017_11_input.txt") as f:
+    INPUTS = f.read().split(",")
 
 
 def hex_dist(totals):
@@ -67,9 +69,9 @@ def hex_dist(totals):
     dx = nw + n, dy = ne + n
 
     """
-    ne = (totals['ne'] - totals['sw'])
-    nw = (totals['nw'] - totals['se'])
-    n = totals['n'] - totals['s']
+    ne = totals["ne"] - totals["sw"]
+    nw = totals["nw"] - totals["se"]
+    n = totals["n"] - totals["s"]
     x = nw + n
     y = ne + n
     if x > 0 and y > 0:
@@ -90,8 +92,8 @@ def dist_from_end_of_path(steps):
 
 
 def test_dist_from_end_of_path():
-    assert dist_from_end_of_path(['ne', 'ne', 'ne']) == (3, 3)
-    assert dist_from_end_of_path(['ne', 'ne', 'sw', 'sw']) == (0, 2)
-    assert dist_from_end_of_path(['ne', 'ne', 's', 's']) == (2, 2)
-    assert dist_from_end_of_path(['se', 'sw', 'se', 'sw', 'sw']) == (3, 3)
+    assert dist_from_end_of_path(["ne", "ne", "ne"]) == (3, 3)
+    assert dist_from_end_of_path(["ne", "ne", "sw", "sw"]) == (0, 2)
+    assert dist_from_end_of_path(["ne", "ne", "s", "s"]) == (2, 2)
+    assert dist_from_end_of_path(["se", "sw", "se", "sw", "sw"]) == (3, 3)
     assert dist_from_end_of_path(INPUTS) == (877, 1622)

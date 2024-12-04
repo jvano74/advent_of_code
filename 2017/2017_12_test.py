@@ -1,3 +1,4 @@
+from pathlib import Path
 from collections import defaultdict
 
 
@@ -55,22 +56,30 @@ class Puzzle:
 
     How many groups are there in total?
     """
+
     pass
 
 
-SAMPLE = ['0 <-> 2', '1 <-> 1', '2 <-> 0, 3, 4', '3 <-> 2, 4',
-          '4 <-> 2, 3, 6', '5 <-> 6', '6 <-> 4, 5']
+SAMPLE = [
+    "0 <-> 2",
+    "1 <-> 1",
+    "2 <-> 0, 3, 4",
+    "3 <-> 2, 4",
+    "4 <-> 2, 3, 6",
+    "5 <-> 6",
+    "6 <-> 4, 5",
+]
 
 
-with open('day_12_input.txt') as fp:
+with open(Path(__file__).parent / "2017_12_input.txt") as fp:
     INPUTS = [line.strip() for line in fp]
 
 
 def parse_input(raw_data):
     graph = defaultdict(set)
     for raw_line in raw_data:
-        program, raw_dest = raw_line.split(' <-> ')
-        graph[int(program)] = set(int(p) for p in raw_dest.split(', '))
+        program, raw_dest = raw_line.split(" <-> ")
+        graph[int(program)] = set(int(p) for p in raw_dest.split(", "))
     return graph
 
 
@@ -101,7 +110,15 @@ def get_groups(graph):
 
 def test_sample():
     sample_graph = parse_input(SAMPLE)
-    assert sample_graph == {0: {2}, 1: {1}, 2: {0, 3, 4}, 3: {2, 4}, 4: {2, 3, 6}, 5: {6}, 6: {4, 5}}
+    assert sample_graph == {
+        0: {2},
+        1: {1},
+        2: {0, 3, 4},
+        3: {2, 4},
+        4: {2, 3, 6},
+        5: {6},
+        6: {4, 5},
+    }
     assert get_component(sample_graph, 0) == {0, 2, 3, 4, 5, 6}
     assert get_groups(sample_graph) == {frozenset({1}), frozenset({0, 2, 3, 4, 5, 6})}
 

@@ -1,3 +1,6 @@
+from pathlib import Path
+
+
 class Puzzle:
     """
     --- Day 4: High-Entropy Passphrases ---
@@ -29,21 +32,19 @@ class Puzzle:
 
     Under this new system policy, how many passphrases are valid?
     """
+
     pass
 
 
-with open('day_04_input.txt') as f:
+with open(Path(__file__).parent / "2017_04_input.txt") as f:
     INPUTS = [line.strip() for line in f]
 
-SAMPLE = [
-    'aa bb cc dd ee',
-    'aa bb cc dd aa',
-    'aa bb cc dd aaa']
+SAMPLE = ["aa bb cc dd ee", "aa bb cc dd aa", "aa bb cc dd aaa"]
 
 
 def check_passphrase(phrase):
     used = set()
-    for w in phrase.split(' '):
+    for w in phrase.split(" "):
         if w in used:
             return False
         used.add(w)
@@ -52,8 +53,8 @@ def check_passphrase(phrase):
 
 def check_passphrase2(phrase):
     used = set()
-    for w in phrase.split(' '):
-        nw = ''.join(sorted(w))
+    for w in phrase.split(" "):
+        nw = "".join(sorted(w))
         if nw in used:
             return False
         used.add(nw)

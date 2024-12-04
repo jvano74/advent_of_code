@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import NamedTuple
 import re
 
@@ -79,10 +80,11 @@ class Puzzle:
 
     How many particles are left after all collisions are resolved?
     """
+
     pass
 
 
-with open('day_20_input.txt') as fp:
+with open(Path(__file__).parent / "2017_20_input.txt") as fp:
     INPUTS = [line.strip() for line in fp]
 
 
@@ -114,10 +116,7 @@ class Ptc(NamedTuple):
     a: Pt
 
     def tick(self):
-        return Ptc(id=self.id,
-                   p=self.p + self.v + self.a,
-                   v=self.v + self.a,
-                   a=self.a)
+        return Ptc(id=self.id, p=self.p + self.v + self.a, v=self.v + self.a, a=self.a)
 
 
 def test_pt_operations():
@@ -132,21 +131,27 @@ class Swarm:
         self.positions = {}
         self.min_acceleration = None
         # p=<-923,1506,2445>, v=<-131,215,346>, a=<9,-15,-26>
-        pv = re.compile(r'p=<(-?\d+),(-?\d+),(-?\d+)>, v=<(-?\d+),(-?\d+),(-?\d+)>, a=<(-?\d+),(-?\d+),(-?\d+)>')
+        pv = re.compile(
+            r"p=<(-?\d+),(-?\d+),(-?\d+)>, v=<(-?\d+),(-?\d+),(-?\d+)>, a=<(-?\d+),(-?\d+),(-?\d+)>"
+        )
         particle_count = 0
         collisions = set()
         for spva in raw_input:
             matches = pv.match(spva)
             if matches:
                 x, y, z, vx, vy, vz, ax, ay, az = matches.groups()
-                ptc = Ptc(id=particle_count,
-                          p=Pt(int(x), int(y), int(z)),
-                          v=Pt(int(vx), int(vy), int(vz)),
-                          a=Pt(int(ax), int(ay), int(az)))
+                ptc = Ptc(
+                    id=particle_count,
+                    p=Pt(int(x), int(y), int(z)),
+                    v=Pt(int(vx), int(vy), int(vz)),
+                    a=Pt(int(ax), int(ay), int(az)),
+                )
                 if self.min_acceleration is None:
                     self.min_acceleration = ptc.a.dist(), particle_count
                 else:
-                    self.min_acceleration = min(self.min_acceleration, (ptc.a.dist(), particle_count))
+                    self.min_acceleration = min(
+                        self.min_acceleration, (ptc.a.dist(), particle_count)
+                    )
                 if ptc.p in self.positions:
                     collisions.add(ptc.p)
                 else:

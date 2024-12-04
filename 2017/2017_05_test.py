@@ -1,3 +1,6 @@
+from pathlib import Path
+
+
 class Puzzle:
     """
     --- Day 5: A Maze of Twisty Trampolines, All Alike ---
@@ -49,10 +52,11 @@ class Puzzle:
 
     How many steps does it now take to reach the exit?
     """
+
     pass
 
 
-with open('day_05_input.txt') as f:
+with open(Path(__file__).parent / "2017_05_input.txt") as f:
     INPUTS = [int(line.strip()) for line in f]
 
 SAMPLE = [0, 3, 0, 1, -3]
@@ -75,18 +79,19 @@ def test_run_to_exit():
 
 
 def run_to_exit2(instructions):
-        count = 0
-        pos = 0
-        while 0 <= pos < len(instructions):
-            count += 1
-            new_pos = pos + instructions[pos]
-            if instructions[pos] >= 3:
-                instructions[pos] -= 1
-            else:
-                instructions[pos] += 1
-            pos = new_pos
-        return count
+    count = 0
+    pos = 0
+    while 0 <= pos < len(instructions):
+        count += 1
+        new_pos = pos + instructions[pos]
+        if instructions[pos] >= 3:
+            instructions[pos] -= 1
+        else:
+            instructions[pos] += 1
+        pos = new_pos
+    return count
+
 
 def test_run_to_exit2():
-        assert run_to_exit2(SAMPLE) == 10
-        assert run_to_exit2(INPUTS) == 25608480
+    assert run_to_exit2(SAMPLE) == 10
+    assert run_to_exit2(INPUTS) == 25608480

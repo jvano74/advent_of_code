@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import NamedTuple
 
 
@@ -62,18 +63,21 @@ class Puzzle:
 
     How many steps does the packet need to go?
     """
+
     pass
 
 
-SAMPLE = ['     |         ',
-          '     |  +--+   ',
-          '     A  |  C   ',
-          ' F---|----E|--+',
-          '     |  |  |  D',
-          '     +B-+  +--+']
+SAMPLE = [
+    "     |         ",
+    "     |  +--+   ",
+    "     A  |  C   ",
+    " F---|----E|--+",
+    "     |  |  |  D",
+    "     +B-+  +--+",
+]
 
-with open('day_19_input.txt') as fp:
-    INPUTS = fp.read().split('\n')
+with open(Path(__file__).parent / "2017_19_input.txt") as fp:
+    INPUTS = fp.read().split("\n")
 
 
 class Pt(NamedTuple):
@@ -92,23 +96,23 @@ class Route:
         self.map = {}
         for y, raw_line in enumerate(raw_lines):
             for x, c in enumerate(raw_line):
-                if c != ' ':
+                if c != " ":
                     self.map[Pt(x, y)] = c
                     if y == 0:
                         self.start = Pt(x, y)
 
     def follow_path(self, loc=None, direction=Pt(0, 1)):
-        dir_orientation = {Pt(1, 0): '-', Pt(0, 1): '|', Pt(-1, 0): '-', Pt(0, -1): '|'}
+        dir_orientation = {Pt(1, 0): "-", Pt(0, 1): "|", Pt(-1, 0): "-", Pt(0, -1): "|"}
         ans = []
         dist = 0
         if loc is None:
             loc = self.start
         loc_c = self.map[loc]
-        while loc_c != ' ':
-            if loc_c not in {'|', '-', '+'}:
+        while loc_c != " ":
+            if loc_c not in {"|", "-", "+"}:
                 ans.append(loc_c)
 
-            if loc_c != '+':
+            if loc_c != "+":
                 loc += direction
                 dist += 1
             else:
@@ -120,17 +124,17 @@ class Route:
                         dist += 1
                         break
             if loc not in self.map:
-                loc_c = ' '
+                loc_c = " "
             else:
                 loc_c = self.map[loc]
-        return ''.join(ans), dist
+        return "".join(ans), dist
 
 
 def test_route():
     route = Route(SAMPLE)
-    assert route.follow_path() == ('ABCDEF', 38)
+    assert route.follow_path() == ("ABCDEF", 38)
 
 
 def test_puzzle_route():
     route = Route(INPUTS)
-    assert route.follow_path() == ('EPYDUXANIT', 17544)
+    assert route.follow_path() == ("EPYDUXANIT", 17544)

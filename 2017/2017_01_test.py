@@ -1,3 +1,6 @@
+from pathlib import Path
+
+
 class Problem:
     """
     --- Day 1: Inverse Captcha ---
@@ -55,44 +58,47 @@ class Problem:
     What is the solution to your new captcha?
 
     """
+
     pass
 
 
-with open('day_01_input.txt') as f:
+with open(Path(__file__).parent / "2017_01_input.txt") as f:
     for line in f:
         INPUTS = line.strip()
+
 
 def next_sum(digit_list):
     previous = digit_list[-1]
     sum = 0
     for d in digit_list:
         if d == previous:
-           sum += int(d)
+            sum += int(d)
         previous = d
     return sum
 
 
 def half_sum(digit_list):
     modulus = len(digit_list)
-    delta = modulus//2
+    delta = modulus // 2
     sum = 0
     for pos in range(modulus):
         if digit_list[pos] == digit_list[(pos + delta) % modulus]:
-           sum += int(digit_list[pos])
+            sum += int(digit_list[pos])
     return sum
 
 
 def test_next_sum():
-    assert next_sum('1122') == 3
-    assert next_sum('1111') == 4
-    assert next_sum('1234') == 0
-    assert next_sum('91212129') == 9
+    assert next_sum("1122") == 3
+    assert next_sum("1111") == 4
+    assert next_sum("1234") == 0
+    assert next_sum("91212129") == 9
     assert next_sum(INPUTS) == 1228
 
+
 def test_half_sum():
-    assert half_sum('1212') == 6
-    assert half_sum('1221') == 0
-    assert half_sum('123425') == 4
-    assert half_sum('123123') == 12
-    assert half_sum('12131415') == 4
+    assert half_sum("1212") == 6
+    assert half_sum("1221") == 0
+    assert half_sum("123425") == 4
+    assert half_sum("123123") == 12
+    assert half_sum("12131415") == 4
     assert half_sum(INPUTS) == 1238

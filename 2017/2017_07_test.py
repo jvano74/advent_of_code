@@ -1,4 +1,4 @@
-from typing import NamedTuple
+from pathlib import Path
 
 
 class Puzzle:
@@ -89,25 +89,27 @@ class Puzzle:
 
     Given that exactly one program is the wrong weight, what would its weight need to be to balance the entire tower?
     """
+
     pass
 
 
 SAMPLE = [
-    'pbga (66)',
-    'xhth (57)',
-    'ebii (61)',
-    'havc (66)',
-    'ktlj (57)',
-    'fwft (72) -> ktlj, cntj, xhth',
-    'qoyq (66)',
-    'padx (45) -> pbga, havc, qoyq',
-    'tknk (41) -> ugml, padx, fwft',
-    'jptl (61)',
-    'ugml (68) -> gyxo, ebii, jptl',
-    'gyxo (61)',
-    'cntj (57)']
+    "pbga (66)",
+    "xhth (57)",
+    "ebii (61)",
+    "havc (66)",
+    "ktlj (57)",
+    "fwft (72) -> ktlj, cntj, xhth",
+    "qoyq (66)",
+    "padx (45) -> pbga, havc, qoyq",
+    "tknk (41) -> ugml, padx, fwft",
+    "jptl (61)",
+    "ugml (68) -> gyxo, ebii, jptl",
+    "gyxo (61)",
+    "cntj (57)",
+]
 
-with open('day_07_input.txt') as fp:
+with open(Path(__file__).parent / "2017_07_input.txt") as fp:
     INPUT = [line.strip() for line in fp]
 
 
@@ -121,11 +123,11 @@ class Node:
 def build_graph(lines):
     graph = {}
     for line in lines:
-        bits = line.split(' ')
+        bits = line.split(" ")
         name = bits[0]
         weight = int(bits[1][1:-1])
         if len(bits) > 2:
-            children = ''.join(bits[3:]).split(',')
+            children = "".join(bits[3:]).split(",")
         else:
             children = []
         graph[name] = Node(weight, children)
@@ -138,18 +140,18 @@ def find_root_node(graph):
         for child in graph[name].children:
             nodes.discard(child)
     if len(nodes) > 1:
-        raise Exception('Multiple roots found')
+        raise Exception("Multiple roots found")
     return nodes.pop()
 
 
 def balance_graph(graph, starting):
     if graph[starting].total > 0:
-        return ''
+        return ""
     children = graph[starting].children
     if len(children) == 0:
         graph[starting].total = graph[starting].weight
-        return ''
-    adjustments = ''.join(balance_graph(graph, c) for c in children)
+        return ""
+    adjustments = "".join(balance_graph(graph, c) for c in children)
     child_weights = [graph[c].total for c in children]
     delta = max(child_weights) - min(child_weights)
     child_total = sum(child_weights)
@@ -165,8 +167,8 @@ def balance_graph(graph, starting):
             graph[c].orig_wt = graph[c].weight
             graph[c].weight -= delta
             graph[c].total -= delta
-            adjustments = f'{c},{graph[c].orig_wt} to {graph[c].weight}{adjustments}'
-            print(f'node {c} is off {graph[c].orig_wt} to {graph[c].weight}')
+            adjustments = f"{c},{graph[c].orig_wt} to {graph[c].weight}{adjustments}"
+            print(f"node {c} is off {graph[c].orig_wt} to {graph[c].weight}")
     graph[starting].total = child_total - delta + graph[starting].weight
     return adjustments
 
@@ -174,13 +176,13 @@ def balance_graph(graph, starting):
 def test_stuff():
     graph = build_graph(SAMPLE)
     root = find_root_node(graph)
-    assert root == 'tknk'
+    assert root == "tknk"
     print()
     print()
-    assert balance_graph(graph, root) == 'ugml,68 to 60'
+    assert balance_graph(graph, root) == "ugml,68 to 60"
 
     # And for Part 1 & 2
     graph = build_graph(INPUT)
     root = find_root_node(graph)
-    assert root == 'aapssr'
-    assert balance_graph(graph, root) == 'tlskukk,1464 to 1458'
+    assert root == "aapssr"
+    assert balance_graph(graph, root) == "tlskukk,1464 to 1458"
