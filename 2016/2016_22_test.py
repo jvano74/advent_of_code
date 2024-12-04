@@ -1,6 +1,7 @@
-import re
+from pathlib import Path
 from typing import NamedTuple
 from queue import PriorityQueue
+import re
 
 
 class Puzzle:
@@ -130,23 +131,25 @@ class Puzzle:
 
     What is the fewest number of steps required to move your goal data to node-x0-y0?
     """
+
     pass
 
 
 SAMPLE = [
-    'Filesystem            Size  Used  Avail  Use%',
-    '/dev/grid/node-x0-y0   10T    8T     2T   80%',
-    '/dev/grid/node-x0-y1   11T    6T     5T   54%',
-    '/dev/grid/node-x0-y2   32T   28T     4T   87%',
-    '/dev/grid/node-x1-y0    9T    7T     2T   77%',
-    '/dev/grid/node-x1-y1    8T    0T     8T    0%',
-    '/dev/grid/node-x1-y2   11T    7T     4T   63%',
-    '/dev/grid/node-x2-y0   10T    6T     4T   60%',
-    '/dev/grid/node-x2-y1    9T    8T     1T   88%',
-    '/dev/grid/node-x2-y2    9T    6T     3T   66%']
+    "Filesystem            Size  Used  Avail  Use%",
+    "/dev/grid/node-x0-y0   10T    8T     2T   80%",
+    "/dev/grid/node-x0-y1   11T    6T     5T   54%",
+    "/dev/grid/node-x0-y2   32T   28T     4T   87%",
+    "/dev/grid/node-x1-y0    9T    7T     2T   77%",
+    "/dev/grid/node-x1-y1    8T    0T     8T    0%",
+    "/dev/grid/node-x1-y2   11T    7T     4T   63%",
+    "/dev/grid/node-x2-y0   10T    6T     4T   60%",
+    "/dev/grid/node-x2-y1    9T    8T     1T   88%",
+    "/dev/grid/node-x2-y2    9T    6T     3T   66%",
+]
 
 
-with open('day_22_input.txt') as fp:
+with open(Path(__file__).parent / "2016_22_input.txt") as fp:
     INPUTS = [line.strip() for line in fp]
 
 
@@ -180,9 +183,11 @@ class Node(NamedTuple):
     def move(self, new_node):
         """To call: node, new_node = node.move(new_node)"""
         if new_node.used == 0 and self.used <= new_node.size:
-            return Node(self.size, 0, new_node.label), Node(new_node.size, self.used, self.label)
+            return Node(self.size, 0, new_node.label), Node(
+                new_node.size, self.used, self.label
+            )
         else:
-            raise Exception(f'Cannot move node {self} to {new_node}')
+            raise Exception(f"Cannot move node {self} to {new_node}")
 
 
 class Path(NamedTuple):
@@ -196,13 +201,15 @@ class Path(NamedTuple):
 def parse_raw(lines):
     nodes = {}
     for line in lines:
-        if line[0] == '/':
-            result = re.findall(r'/dev/grid/node-x(\d+)-y(\d+)\s+(\d+)T\s+(\d+)T\s+(\d+)T', line)
+        if line[0] == "/":
+            result = re.findall(
+                r"/dev/grid/node-x(\d+)-y(\d+)\s+(\d+)T\s+(\d+)T\s+(\d+)T", line
+            )
             x, y, size, used, avail = result[0]
-            node = Node(int(size), int(used), f'o=x{x},y{y}')
+            node = Node(int(size), int(used), f"o=x{x},y{y}")
             nodes[Pt(int(x), int(y))] = node
             if int(avail) != node.avail():
-                raise Exception(f'Invalid node input at {Pt(x,y)}')
+                raise Exception(f"Invalid node input at {Pt(x,y)}")
     return nodes
 
 
@@ -214,8 +221,8 @@ def print_nodes(nodes, large=100):
         line = []
         for x in range(max_x + 1):
             node = nodes[Pt(x, y)]
-            line.append('_' if node.used == 0 else '#' if node.used > large else '.')
-        results.append(''.join(line))
+            line.append("_" if node.used == 0 else "#" if node.used > large else ".")
+        results.append("".join(line))
     return results
 
 
@@ -227,7 +234,9 @@ def find_pairs(nodes, any_pairs=True, large=100):
     node_locs = set(nodes.keys())
     for node_a in nodes:
         if nodes[node_a].used > 0:
-            nearby_nodes = node_locs - {node_a} if any_pairs else node_a.neighbors(node_locs)
+            nearby_nodes = (
+                node_locs - {node_a} if any_pairs else node_a.neighbors(node_locs)
+            )
             for node_b in nearby_nodes:
                 if nodes[node_a].used <= nodes[node_b].avail():
                     if any_pairs and nodes[node_b].used > 0:
@@ -287,16 +296,24 @@ def move_node_to_origin(nodes, target_label):
 
 def test_sample_inputs():
     nodes = parse_raw(SAMPLE)
-    pairs, non_zero_pairs, non_fitting_small_pairs, non_fitting_large_pairs = find_pairs(nodes, large=20)
+    pairs, non_zero_pairs, non_fitting_small_pairs, non_fitting_large_pairs = (
+        find_pairs(nodes, large=20)
+    )
     assert len(pairs) == 7
     # additional checks
     assert len(non_zero_pairs) == 0  # e.g. cannot move any full to a partially full
     assert len(non_fitting_small_pairs) == 0  # e.g. can move any full to any empty
-    assert len(non_fitting_large_pairs) == 8  # e.g. 1 node can't move to any other 8 (e.g. 1 cannot move)
+    assert (
+        len(non_fitting_large_pairs) == 8
+    )  # e.g. 1 node can't move to any other 8 (e.g. 1 cannot move)
     assert len(set(a for a, b in non_fitting_large_pairs)) == 1  # 1 large nodes
-    assert find_pairs(nodes, any_pairs=False) == {(Pt(x=0, y=1), Pt(x=1, y=1)), (Pt(x=1, y=0), Pt(x=1, y=1)),
-                                                  (Pt(x=1, y=2), Pt(x=1, y=1)), (Pt(x=2, y=1), Pt(x=1, y=1))}
-    assert move_node_to_origin(nodes, 'o=x2,y0') == 7
+    assert find_pairs(nodes, any_pairs=False) == {
+        (Pt(x=0, y=1), Pt(x=1, y=1)),
+        (Pt(x=1, y=0), Pt(x=1, y=1)),
+        (Pt(x=1, y=2), Pt(x=1, y=1)),
+        (Pt(x=2, y=1), Pt(x=1, y=1)),
+    }
+    assert move_node_to_origin(nodes, "o=x2,y0") == 7
 
 
 def test_puzzle_grid_test():
@@ -305,22 +322,32 @@ def test_puzzle_grid_test():
     assert max(pt.y for pt in nodes.keys() if pt.x == 0) == 25
     assert all(Pt(x, y) in nodes for x in range(38) for y in range(26))
     assert nodes[Pt(37, 25)].used == 66  # lets see if size on target node is unique
-    assert sum(1 for v in nodes.values() if v.used == 66) == 100  # nope, looks like multiple
+    assert (
+        sum(1 for v in nodes.values() if v.used == 66) == 100
+    )  # nope, looks like multiple
 
 
 def test_puzzle_inputs():
     nodes = parse_raw(INPUTS)
-    pairs, non_zero_pairs, non_fitting_small_pairs, non_fitting_large_pairs = find_pairs(nodes, large=100)
+    pairs, non_zero_pairs, non_fitting_small_pairs, non_fitting_large_pairs = (
+        find_pairs(nodes, large=100)
+    )
     assert len(pairs) == 950
     # additional checks
     assert len(non_zero_pairs) == 0  # e.g. cannot move any full to a partially full
     assert len(non_fitting_small_pairs) == 0  # e.g. can move any full to any empty
     assert len(non_fitting_large_pairs) == 35187  # I think there are 37 large nodes?
-    assert len(set(a for a, b in non_fitting_large_pairs)) == 37  # There are 37 large nodes?
-    assert find_pairs(nodes, any_pairs=False) == {(Pt(x=16, y=22), Pt(x=17, y=22)), (Pt(x=17, y=21), Pt(x=17, y=22)),
-                                                  (Pt(x=17, y=23), Pt(x=17, y=22)), (Pt(x=18, y=22), Pt(x=17, y=22))}
+    assert (
+        len(set(a for a, b in non_fitting_large_pairs)) == 37
+    )  # There are 37 large nodes?
+    assert find_pairs(nodes, any_pairs=False) == {
+        (Pt(x=16, y=22), Pt(x=17, y=22)),
+        (Pt(x=17, y=21), Pt(x=17, y=22)),
+        (Pt(x=17, y=23), Pt(x=17, y=22)),
+        (Pt(x=18, y=22), Pt(x=17, y=22)),
+    }
     print()
-    print('\n'.join(print_nodes(nodes)))
+    print("\n".join(print_nodes(nodes)))
     # looking at the output of this we can determine solution by hand
     # ...................................... <= 75 to get left of goal
     # ......................................

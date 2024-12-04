@@ -1,3 +1,6 @@
+from pathlib import Path
+
+
 class Puzzle:
     """
     --- Day 21: Scrambled Letters and Hash ---
@@ -52,10 +55,11 @@ class Puzzle:
 
     What is the un-scrambled version of the scrambled password fbgdceah?
     """
+
     pass
 
 
-with open('day_21_input.txt') as fp:
+with open(Path(__file__).parent / "2016_21_input.txt") as fp:
     INPUTS = [line.strip() for line in fp]
 
 
@@ -64,44 +68,44 @@ def scramble(input_string, instruction_list, un_scramble=False):
     if un_scramble:
         instruction_list = [i for i in reversed(instruction_list)]
     for instruction in instruction_list:
-        ins_parsed = instruction.split(' ')
-        ins = f'{ins_parsed[0]} {ins_parsed[1]}'
-        if un_scramble and ins == 'rotate left':
-            ins = 'rotate right'
-        elif un_scramble and ins == 'rotate right':
-            ins = 'rotate left'
-        if ins == 'swap position':
+        ins_parsed = instruction.split(" ")
+        ins = f"{ins_parsed[0]} {ins_parsed[1]}"
+        if un_scramble and ins == "rotate left":
+            ins = "rotate right"
+        elif un_scramble and ins == "rotate right":
+            ins = "rotate left"
+        if ins == "swap position":
             x = int(ins_parsed[2])
             y = int(ins_parsed[5])
             str_array[x], str_array[y] = str_array[y], str_array[x]
-        elif ins == 'swap letter':
+        elif ins == "swap letter":
             x = str_array.index(ins_parsed[2])
             y = str_array.index(ins_parsed[5])
             str_array[x], str_array[y] = str_array[y], str_array[x]
-        elif ins == 'rotate left':
+        elif ins == "rotate left":
             x = int(ins_parsed[2])
             to_end = str_array[0:x]
             str_array = str_array[x:]
             str_array.extend(to_end)
-        elif ins == 'rotate right':
+        elif ins == "rotate right":
             x = len(str_array) - int(ins_parsed[2])
             to_end = str_array[0:x]
             str_array = str_array[x:]
             str_array.extend(to_end)
-        elif ins == 'reverse positions':
+        elif ins == "reverse positions":
             x = int(ins_parsed[2])
             y = int(ins_parsed[4])
-            rev_array = str_array[x:y+1]
+            rev_array = str_array[x : y + 1]
             for i in range(y - x + 1):
                 str_array[y - i] = rev_array[i]
-        elif ins == 'move position':
+        elif ins == "move position":
             x = int(ins_parsed[2])
             y = int(ins_parsed[5])
             if un_scramble:
                 x, y = y, x
             char_moved = str_array.pop(x)
             str_array.insert(y, char_moved)
-        elif ins == 'rotate based':
+        elif ins == "rotate based":
             if un_scramble:
                 rot_index = str_array.index(ins_parsed[6])
                 # going for brute force here with length 8
@@ -122,61 +126,84 @@ def scramble(input_string, instruction_list, un_scramble=False):
                 to_end = str_array[0:x]
                 str_array = str_array[x:]
                 str_array.extend(to_end)
-    return ''.join(str_array)
+    return "".join(str_array)
 
 
 def test_example_scramble():
-    assert scramble('abcde', ['swap position 4 with position 0']) == 'ebcda'
-    assert scramble('ebcda', ['swap letter d with letter b']) == 'edcba'
-    assert scramble('edcba', ['reverse positions 0 through 4']) == 'abcde'
-    assert scramble('abcde', ['rotate left 1 step']) == 'bcdea'
+    assert scramble("abcde", ["swap position 4 with position 0"]) == "ebcda"
+    assert scramble("ebcda", ["swap letter d with letter b"]) == "edcba"
+    assert scramble("edcba", ["reverse positions 0 through 4"]) == "abcde"
+    assert scramble("abcde", ["rotate left 1 step"]) == "bcdea"
     # not in example but check rotate right
-    assert scramble('abcde', ['rotate right 2 step']) == 'deabc'
+    assert scramble("abcde", ["rotate right 2 step"]) == "deabc"
     # resuming example
-    assert scramble('bcdea', ['move position 1 to position 4']) == 'bdeac'
-    assert scramble('bdeac', ['move position 3 to position 0']) == 'abdec'
-    assert scramble('abdec', ['rotate based on position of letter b']) == 'ecabd'
-    assert scramble('ecabd', ['rotate based on position of letter d']) == 'decab'
+    assert scramble("bcdea", ["move position 1 to position 4"]) == "bdeac"
+    assert scramble("bdeac", ["move position 3 to position 0"]) == "abdec"
+    assert scramble("abdec", ["rotate based on position of letter b"]) == "ecabd"
+    assert scramble("ecabd", ["rotate based on position of letter d"]) == "decab"
 
 
 def helper_rotate_test(char, unscrambled, scrambled):
-    scrambled_observed = scramble(unscrambled, [f'rotate based on position of letter {char}'])
+    scrambled_observed = scramble(
+        unscrambled, [f"rotate based on position of letter {char}"]
+    )
     assert scrambled_observed == scrambled
-    unscrambled_observed = scramble(scrambled, [f'rotate based on position of letter {char}'], un_scramble=True)
+    unscrambled_observed = scramble(
+        scrambled, [f"rotate based on position of letter {char}"], un_scramble=True
+    )
     assert unscrambled_observed == unscrambled
 
 
 def test_unrotate():
-    helper_rotate_test('a', 'abcdefgh', 'habcdefg')
-    helper_rotate_test('b', 'abcdefgh', 'ghabcdef')
-    helper_rotate_test('c', 'abcdefgh', 'fghabcde')
-    helper_rotate_test('d', 'abcdefgh', 'efghabcd')
-    helper_rotate_test('e', 'abcdefgh', 'cdefghab')
-    helper_rotate_test('f', 'abcdefgh', 'bcdefgha')
-    helper_rotate_test('g', 'abcdefgh', 'abcdefgh')
-    helper_rotate_test('h', 'abcdefgh', 'habcdefg')
+    helper_rotate_test("a", "abcdefgh", "habcdefg")
+    helper_rotate_test("b", "abcdefgh", "ghabcdef")
+    helper_rotate_test("c", "abcdefgh", "fghabcde")
+    helper_rotate_test("d", "abcdefgh", "efghabcd")
+    helper_rotate_test("e", "abcdefgh", "cdefghab")
+    helper_rotate_test("f", "abcdefgh", "bcdefgha")
+    helper_rotate_test("g", "abcdefgh", "abcdefgh")
+    helper_rotate_test("h", "abcdefgh", "habcdefg")
 
 
 def test_example_un_scramble():
-    assert scramble('ebcda', ['swap position 4 with position 0'], un_scramble=True) == 'abcde'
-    assert scramble('edcba', ['swap letter d with letter b'], un_scramble=True) == 'ebcda'
-    assert scramble('abcde', ['reverse positions 0 through 4'], un_scramble=True) == 'edcba'
-    assert scramble('bcdea', ['rotate left 1 step'], un_scramble=True) == 'abcde'
+    assert (
+        scramble("ebcda", ["swap position 4 with position 0"], un_scramble=True)
+        == "abcde"
+    )
+    assert (
+        scramble("edcba", ["swap letter d with letter b"], un_scramble=True) == "ebcda"
+    )
+    assert (
+        scramble("abcde", ["reverse positions 0 through 4"], un_scramble=True)
+        == "edcba"
+    )
+    assert scramble("bcdea", ["rotate left 1 step"], un_scramble=True) == "abcde"
     # not in example but check rotate right
-    assert scramble('deabc', ['rotate right 2 step'], un_scramble=True) == 'abcde'
+    assert scramble("deabc", ["rotate right 2 step"], un_scramble=True) == "abcde"
     # resuming example
-    assert scramble('bdeac', ['move position 1 to position 4'], un_scramble=True) == 'bcdea'
-    assert scramble('abdec', ['move position 3 to position 0'], un_scramble=True) == 'bdeac'
-    assert scramble('ecabd', ['rotate based on position of letter b'], un_scramble=True) == 'abdec'
-    assert scramble('decab', ['rotate based on position of letter d'], un_scramble=True) == 'ecabd'
+    assert (
+        scramble("bdeac", ["move position 1 to position 4"], un_scramble=True)
+        == "bcdea"
+    )
+    assert (
+        scramble("abdec", ["move position 3 to position 0"], un_scramble=True)
+        == "bdeac"
+    )
+    assert (
+        scramble("ecabd", ["rotate based on position of letter b"], un_scramble=True)
+        == "abdec"
+    )
+    assert (
+        scramble("decab", ["rotate based on position of letter d"], un_scramble=True)
+        == "ecabd"
+    )
 
 
 def test_puzzle_scramble():
-    assert scramble('abcdefgh', INPUTS) == 'agcebfdh'
+    assert scramble("abcdefgh", INPUTS) == "agcebfdh"
 
 
 def test_puzzle_un_scramble():
-    assert scramble('fbgdceah', INPUTS, un_scramble=True) == 'afhdbegc'
+    assert scramble("fbgdceah", INPUTS, un_scramble=True) == "afhdbegc"
     # check
-    assert scramble('afhdbegc', INPUTS) == 'fbgdceah'
-
+    assert scramble("afhdbegc", INPUTS) == "fbgdceah"

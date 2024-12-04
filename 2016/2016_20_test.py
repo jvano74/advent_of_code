@@ -1,3 +1,6 @@
+from pathlib import Path
+
+
 class Puzzle:
     """
     --- Day 20: Firewall Rules ---
@@ -23,17 +26,18 @@ class Puzzle:
     --- Part Two ---
     How many IPs are allowed by the blacklist?
     """
+
     pass
 
 
-with open('day_20_input.txt') as fp:
-    INPUTS = [tuple(int(d) for d in line.strip().split('-')) for line in fp]
+with open(Path(__file__).parent / "2016_20_input.txt") as fp:
+    INPUTS = [tuple(int(d) for d in line.strip().split("-")) for line in fp]
 
 
 def lowest_non_blocked(blocked_ranges, current_min=0):
     for block_low, block_high in blocked_ranges:
         if block_low <= current_min < block_high:
-            return lowest_non_blocked(blocked_ranges,block_high + 1)
+            return lowest_non_blocked(blocked_ranges, block_high + 1)
     return current_min
 
 

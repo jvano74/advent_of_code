@@ -1,3 +1,6 @@
+from pathlib import Path
+
+
 class Puzzle:
     """
     --- Day 8: Two-Factor Authentication ---
@@ -123,7 +126,7 @@ def test_tinyscreen_update():
     assert sum([sum([1 for c in row if c == "#"]) for row in ts.display]) == 6
 
 
-with open("day_08_input.txt") as f:
+with open(Path(__file__).parent / "2016_08_input.txt") as f:
     INPUTS = [line.strip() for line in f]
 
 

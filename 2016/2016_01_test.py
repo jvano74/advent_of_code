@@ -1,3 +1,4 @@
+from pathlib import Path
 import pytest
 
 
@@ -49,7 +50,7 @@ class Problem:
     pass
 
 
-with open("day_01_input.txt") as f:
+with open(Path(__file__).parent / "2016_01_input.txt") as f:
     for line in f:
         INPUTS = line.strip().split(", ")
 

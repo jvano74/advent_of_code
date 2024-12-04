@@ -1,3 +1,6 @@
+from pathlib import Path
+
+
 class Puzzle:
     """
     --- Day 2: Bathroom Security ---
@@ -52,7 +55,7 @@ class Puzzle:
     pass
 
 
-with open("day_02_input.txt") as f:
+with open(Path(__file__).parent / "2016_02_input.txt") as f:
     INPUTS = [line.strip() for line in f]
 
 SAMPLE = ["ULL", "RRDDD", "LURDL", "UUUUD"]

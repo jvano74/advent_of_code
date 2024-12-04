@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import NamedTuple
 from queue import PriorityQueue
 from collections import defaultdict
@@ -47,17 +48,14 @@ class Puzzle:
     What is the fewest number of steps required to start at 0, visit every non-0 number marked on the map at least
     once, and then return to 0?
     """
+
     pass
 
 
-SAMPLE = ['###########',
-          '#0.1.....2#',
-          '#.#######.#',
-          '#4.......3#',
-          '###########']
+SAMPLE = ["###########", "#0.1.....2#", "#.#######.#", "#4.......3#", "###########"]
 
 
-with open('day_24_input.txt') as fp:
+with open(Path(__file__).parent / "2016_24_input.txt") as fp:
     INPUTS = [line.strip() for line in fp]
 
 
@@ -86,12 +84,12 @@ class Maze:
 
         for y, line in enumerate(raw_input):
             for x, v in enumerate(line):
-                if v != '#' and v != 'x':
+                if v != "#" and v != "x":
                     self.max_x = max(x, self.max_x)
                     self.max_y = max(y, self.max_y)
                     pt = Pt(x, y)
                     self.grid.add(pt)
-                    if v != '.':
+                    if v != ".":
                         self.goals[pt] = v
 
     def prune_grid(self):
@@ -113,12 +111,12 @@ class Maze:
             line = []
             for x in range(self.max_x + 2):
                 pt = Pt(x, y)
-                line.append('.' if pt in self.grid else '#')
+                line.append("." if pt in self.grid else "#")
                 if include_map and pt in self.map:
-                    line[-1] = '+'
+                    line[-1] = "+"
                 if include_goals and pt in self.goals:
                     line[-1] = self.goals[pt]
-            result.append(''.join(line))
+            result.append("".join(line))
         return result
 
     def neighbors(self, pt):
@@ -147,7 +145,10 @@ class Maze:
                 prev_pt = pt
                 dist = 1
                 while current_pt not in first_pass_choices:
-                    current_pt, prev_pt = self.next_step(current_pt, prev_pt), current_pt
+                    current_pt, prev_pt = (
+                        self.next_step(current_pt, prev_pt),
+                        current_pt,
+                    )
                     if current_pt == prev_pt:
                         break
                     dist += 1
@@ -191,9 +192,9 @@ class Maze:
 
     def shortest_grid_dist(self, start, end):
         if start not in self.grid:
-            raise Exception(f'Start {start} not in grid')
+            raise Exception(f"Start {start} not in grid")
         if end not in self.grid:
-            raise Exception(f'End {end} not in grid')
+            raise Exception(f"End {end} not in grid")
         boundary = PriorityQueue()
         boundary.put((0, start))
         points_visited = set(start)
@@ -205,13 +206,13 @@ class Maze:
                 if new_pt not in points_visited:
                     points_visited.add(new_pt)
                     boundary.put((moves + 1, new_pt))
-        raise Exception(f'Unable to get from {start} to {end}')
+        raise Exception(f"Unable to get from {start} to {end}")
 
     def shortest_map_dist(self, start, end):
         if start not in self.map:
-            raise Exception(f'Start {start} not in map')
+            raise Exception(f"Start {start} not in map")
         if end not in self.map:
-            raise Exception(f'End {end} not in map')
+            raise Exception(f"End {end} not in map")
         boundary = PriorityQueue()
         boundary.put((0, start, [start]))
         points_visited = set(start)
@@ -225,29 +226,36 @@ class Maze:
                     new_path = path.copy()
                     new_path.append(new_pt)
                     boundary.put((moves + self.map[pt][new_pt], new_pt, new_path))
-        raise Exception(f'Unable to get from {start} to {end}')
+        raise Exception(f"Unable to get from {start} to {end}")
 
     def build_goal_map(self):
         for start_goal, start_goal_id in self.goals.items():
             for end_goal, end_goal_id in self.goals.items():
-                if start_goal != end_goal and self.goals_map[start_goal_id][end_goal_id] == 0:
+                if (
+                    start_goal != end_goal
+                    and self.goals_map[start_goal_id][end_goal_id] == 0
+                ):
                     goal_dist = self.shortest_dist(start_goal, end_goal)
                     self.goals_map[start_goal_id][end_goal_id] = goal_dist
                     self.goals_map[end_goal_id][start_goal_id] = goal_dist
 
     def shortest_path_to_goals(self, start, return_to_start=False):
         if start not in self.goals_map:
-            raise Exception(f'Start {start} not in goal map')
+            raise Exception(f"Start {start} not in goal map")
         boundary = PriorityQueue()
         boundary.put((0, start, [start]))
         while not boundary.empty():
             moves, goal, path = boundary.get()
-            if set(path) == set(self.goals.values()) and (goal == start or not return_to_start):
+            if set(path) == set(self.goals.values()) and (
+                goal == start or not return_to_start
+            ):
                 return moves, path
             for new_goal in self.goals_map[goal]:
                 new_path = path.copy()
                 new_path.append(new_goal)
-                boundary.put((moves + self.goals_map[goal][new_goal], new_goal, new_path))
+                boundary.put(
+                    (moves + self.goals_map[goal][new_goal], new_goal, new_path)
+                )
 
 
 def test_sample_get_goals():
@@ -261,8 +269,14 @@ def test_sample_get_goals():
     assert sample_maze.dead_ends == 0
     assert sample_maze.map[Pt(1, 1)][Pt(1, 3)] == 2
     assert sample_maze.map[Pt(9, 1)][Pt(3, 1)] == 6
-    assert sample_maze.shortest_dist(Pt(9, 1), Pt(1, 3)) == (10, [Pt(x=9, y=1), Pt(x=9, y=3), Pt(x=1, y=3)])
-    assert sample_maze.shortest_path_to_goals('0') == (14, ['0', '4', '0', '1', '2', '3'])
+    assert sample_maze.shortest_dist(Pt(9, 1), Pt(1, 3)) == (
+        10,
+        [Pt(x=9, y=1), Pt(x=9, y=3), Pt(x=1, y=3)],
+    )
+    assert sample_maze.shortest_path_to_goals("0") == (
+        14,
+        ["0", "4", "0", "1", "2", "3"],
+    )
 
 
 def test_puzzle_get_goals():
@@ -287,15 +301,22 @@ def test_puzzle_get_goals():
         assert puzzle_maze.map_no_stops == 80  # without pruning was 190
         assert puzzle_maze.map_loops == 2  # without pruning was 1
         assert puzzle_maze.map_trim_iterations == 4
-        assert len(puzzle_maze.map) == 612  # 630  # nodes, down from 845 without trimming
+        assert (
+            len(puzzle_maze.map) == 612
+        )  # 630  # nodes, down from 845 without trimming
 
     puzzle_maze.build_goal_map()
 
     if print_puzzle:
         print()
-        print('\n'.join(puzzle_maze.print_grid(include_goals=True, include_map=True)))
+        print("\n".join(puzzle_maze.print_grid(include_goals=True, include_map=True)))
 
-    assert puzzle_maze.shortest_path_to_goals('0') == (502, ['0', '1', '7', '6', '3', '2', '4', '5'])
+    assert puzzle_maze.shortest_path_to_goals("0") == (
+        502,
+        ["0", "1", "7", "6", "3", "2", "4", "5"],
+    )
     # Looks like I was making things way too complicated...
-    assert puzzle_maze.shortest_path_to_goals('0', return_to_start=True) == (724, ['0', '1', '7', '6',
-                                                                                   '3', '2', '5', '4', '0'])
+    assert puzzle_maze.shortest_path_to_goals("0", return_to_start=True) == (
+        724,
+        ["0", "1", "7", "6", "3", "2", "5", "4", "0"],
+    )

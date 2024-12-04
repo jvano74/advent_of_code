@@ -1,3 +1,6 @@
+from pathlib import Path
+
+
 class Puzzle:
     """
     --- Day 9: Explosives in Cyberspace ---
@@ -93,7 +96,7 @@ SAMPLE_RESULT = [
     "X(3x3)ABC(3x3)ABCY",
 ]
 
-with open("day_09_input.txt") as f:
+with open(Path(__file__).parent / "2016_09_input.txt") as f:
     INPUT = f.read().strip()
 
 

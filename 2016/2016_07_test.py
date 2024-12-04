@@ -1,3 +1,6 @@
+from pathlib import Path
+
+
 class Puzzle:
     """
     --- Day 7: Internet Protocol Version 7 ---
@@ -63,7 +66,7 @@ SAMPLE_RESULTS = [True, False, False, True]
 SAMPLE2 = ["aba[bab]xyz", "xyx[xyx]xyx", "aaa[kek]eke", "zazbz[bzb]cdb"]
 SAMPLE2_RESULTS = [True, False, True, True]
 
-with open("day_07_input.txt") as f:
+with open(Path(__file__).parent / "2016_07_input.txt") as f:
     INPUTS = [line.strip() for line in f]
 
 
@@ -100,9 +103,9 @@ def supports_ssl(ip):
             hyernet = False
         elif b != "[" and b != "]" and a == c != b:
             if hyernet:
-                possible_bab[ip[i:i + 3]] = i
+                possible_bab[ip[i : i + 3]] = i
             else:
-                possible_aba[ip[i:i + 3]] = i
+                possible_aba[ip[i : i + 3]] = i
     for aba in possible_aba:
         bab = "".join([aba[1], aba[0], aba[1]])
         if bab in possible_bab:

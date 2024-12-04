@@ -1,4 +1,5 @@
 from __future__ import annotations
+from pathlib import Path
 from collections import defaultdict
 
 
@@ -112,7 +113,7 @@ SAMPLE = [
 ]
 
 
-with open("day_10_input.txt") as f:
+with open(Path(__file__).parent / "2016_10_input.txt") as f:
     INPUTS = [line.strip() for line in f]
 
 

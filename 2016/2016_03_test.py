@@ -1,3 +1,6 @@
+from pathlib import Path
+
+
 class Puzzle:
     """
     --- Day 3: Squares With Three Sides ---
@@ -40,7 +43,7 @@ class Puzzle:
     pass
 
 
-with open("day_03_input.txt") as f:
+with open(Path(__file__).parent / "2016_03_input.txt") as f:
     INPUTS = [[int(s) for s in line.strip().split()] for line in f]
 
 SAMPLE = [5, 10, 25]
