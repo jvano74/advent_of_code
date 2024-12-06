@@ -243,6 +243,10 @@ class Puzzle:
     obstruction. How many different positions could you choose for this
     obstruction?
 
+    Your puzzle answer was 1984.
+
+    Both parts of this puzzle are complete! They provide two gold stars: **
+
     """
 
 
@@ -284,7 +288,7 @@ class Factory:
         self.max_x, self.may_y = 0, 0
         self.obstacles = set()
 
-        self.patrolled = set()
+        self.patrolled = defaultdict(set)
         self.loop_obstacles = set()
 
         for y, line in enumerate(map):
@@ -298,12 +302,9 @@ class Factory:
                     self.guard = Pt(x, y)
                     self.guard_dir = Pt(0, -1)
 
-    def run_guard(self, with_direction=False):
+    def run_guard(self):
         while 0 <= self.guard.x <= self.max_x and 0 <= self.guard.y <= self.max_y:
-            if with_direction:
-                self.patrolled.add((self.guard, self.guard_dir))
-            else:
-                self.patrolled.add(self.guard)
+            self.patrolled[self.guard].add(self.guard_dir)
 
             candidate_step = self.guard + self.guard_dir
             if candidate_step in self.obstacles:
@@ -313,21 +314,28 @@ class Factory:
                 next_dir = self.guard_dir
                 next_step = candidate_step
 
+            if (
+                candidate_step not in self.patrolled
+                and candidate_step not in self.obstacles
+                and 0 <= candidate_step.x <= self.max_x
+                and 0 <= candidate_step.y <= self.max_y
+            ):
                 alt_next_dir = RIGHT_TURN[self.guard_dir]
                 alt_next_step = self.guard
-                alt_patrolled = set()
+                alt_patrolled = defaultdict(set)
                 while (
                     candidate_step != self.guard_start
                     and 0 <= alt_next_step.x <= self.max_x
                     and 0 <= alt_next_step.y <= self.max_y
                 ):
-                    if (alt_next_step, alt_next_dir) in self.patrolled or (
-                        (alt_next_step, alt_next_dir) in alt_patrolled
-                    ):
+                    if (
+                        alt_next_step in self.patrolled
+                        and alt_next_dir in self.patrolled[alt_next_step]
+                    ) or alt_next_dir in alt_patrolled[alt_next_step]:
                         self.loop_obstacles.add(candidate_step)
                         break
-                    alt_patrolled.add((alt_next_step, alt_next_dir))
-                    if alt_next_step + alt_next_dir in self.loop_obstacles or (
+                    alt_patrolled[alt_next_step].add(alt_next_dir)
+                    if alt_next_step + alt_next_dir in self.obstacles or (
                         alt_next_step + alt_next_dir == candidate_step
                     ):
                         alt_next_dir = RIGHT_TURN[alt_next_dir]
@@ -345,20 +353,20 @@ def test_obstacle_count():
     assert len(my_factory.obstacles) == 817
 
 
-def test_patrolled_size():
+def test_patrolled_size_and_loop_obstacles():
     sample_factory = Factory(SAMPLE_MAP)
     sample_factory.run_guard()
     assert len(sample_factory.patrolled) == 41
+    assert len(sample_factory.loop_obstacles) == 6
     my_factory = Factory(MY_MAP)
     my_factory.run_guard()
     assert len(my_factory.patrolled) == 5404
-
-
-def test_loop_obstacles():
-    sample_factory = Factory(SAMPLE_MAP)
-    sample_factory.run_guard(with_direction=True)
-    assert len(sample_factory.loop_obstacles) == 6
-    my_factory = Factory(MY_MAP)
-    my_factory.run_guard(with_direction=True)
-    assert len(my_factory.loop_obstacles) == 912
+    assert len(my_factory.loop_obstacles) == 1984
     # First answer 912 was too low
+    # Realized alt_next_step was checking loop_obstacles, not obstacles
+    # Fixed but second answer 2133 was too high
+    # Realized was also allowing loop_obstacles to be placed after earlier
+    # path passed through location which would have diverted
+    # Fixed but third answer 1985 was still too high
+    # Realized wasn't checking loop_obstacles within range
+    # Fixed and got 1984 which was finally right
