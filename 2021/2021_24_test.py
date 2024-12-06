@@ -241,16 +241,16 @@ class Monad:
         ], m_settings
 
 
-def test_run_monad():
-    monad = Monad(INPUT)
-    n = 0
-    result = 1
-    runs_before_heat_death_of_universe = False
-    assert runs_before_heat_death_of_universe
-    while result != 0:
-        n += 1
-        result = monad.run(100_000_000_000_000 - n)
-    assert (100_000_000_000_000 - n) == 99999999999999
+# def test_run_monad():
+#     monad = Monad(INPUT)
+#     n = 0
+#     result = 1
+#     runs_before_heat_death_of_universe = False
+#     assert runs_before_heat_death_of_universe
+#     while result != 0:
+#         n += 1
+#         result = monad.run(100_000_000_000_000 - n)
+#     assert (100_000_000_000_000 - n) == 99999999999999
 
 
 def test_analyze_monad():
@@ -344,15 +344,15 @@ def test_direct_monad():
         assert result_slow == result_fast
 
 
-def test_fast_monad():
-    test_n = 100_000_000_000_000
-    runs_before_heat_death_of_universe = False
-    assert runs_before_heat_death_of_universe
-    while True:
-        test_n -= 1
-        if my_function(test_n) == 0:
-            break
-    assert test_n == 99999999999999
+# def test_fast_monad():
+#     test_n = 100_000_000_000_000
+#     runs_before_heat_death_of_universe = False
+#     assert runs_before_heat_death_of_universe
+#     while True:
+#         test_n -= 1
+#         if my_function(test_n) == 0:
+#             break
+#     assert test_n == 99999999999999
 
 
 def find_zeros_forward(max_depth=None, find_lowest=False):

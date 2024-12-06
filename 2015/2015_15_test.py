@@ -145,4 +145,5 @@ def test_submission():
                         "chocolate": d,
                     }
                     my_cookie.new_receipt(my_receipt)
-    assert my_cookie.high_score == 222870
+    assert my_cookie.high_score == 117936
+    # Oops, forgot to correct to right answer from previous value of 222870

@@ -338,20 +338,20 @@ def parse_enhanced_string(eh):
     return head
 
 
-def test_submission2():
-    # Too slow
-    # unformulary = build_unformulary(SUBMISSION)
-    # assert defabricate(STARTING, unformulary) == 6
-    nof, rnf = build_interesting_unformulary(SUBMISSION)
-    working_bits = split_by_RnY(STARTING)
-    eh = enhance_string(STARTING)
-    eh2 = parse_enhanced_string(eh)
-    print()
-    print(nof)
-    print(rnf)
-    print()
-    print(working_bits)
-    print()
-    for x in eh2:
-        x.display("")
-    assert False
+# def test_submission2():
+#     # Too slow
+#     # unformulary = build_unformulary(SUBMISSION)
+#     # assert defabricate(STARTING, unformulary) == 6
+#     nof, rnf = build_interesting_unformulary(SUBMISSION)
+#     working_bits = split_by_RnY(STARTING)
+#     eh = enhance_string(STARTING)
+#     eh2 = parse_enhanced_string(eh)
+#     print()
+#     print(nof)
+#     print(rnf)
+#     print()
+#     print(working_bits)
+#     print()
+#     for x in eh2:
+#         x.display("")
+#     assert False

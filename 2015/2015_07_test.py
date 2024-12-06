@@ -135,7 +135,8 @@ class Gate:
 
 
 class Kit:
-    wires = defaultdict(Wire)
+    def __init__(self):
+        self.wires = defaultdict(Wire)
 
     def wire_in(self, instruction):
         parse = re.match(r"(?P<inputs>.*) -> (?P<out_wire>[a-z]+)", instruction)

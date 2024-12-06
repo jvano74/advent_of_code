@@ -113,8 +113,6 @@ def test_aunts():
     assert classify_aunts(MY_AUNTS, RESULTS) == {
         40: {"akitas": 0, "cats": 7, "vizslas": 0}
     }
-    assert (
-        updated_classify_aunts(MY_AUNTS, RESULTS)
-        == {241: {"cars": 2, "pomeranians": 1, "samoyeds": 2}}
-        == ""
-    )
+    assert updated_classify_aunts(MY_AUNTS, RESULTS) == {
+        241: {"cars": 2, "pomeranians": 1, "samoyeds": 2}
+    }
