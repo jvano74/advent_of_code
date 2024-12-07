@@ -1,5 +1,5 @@
 from pathlib import Path
-from collections import defaultdict
+from collections import defaultdict, Counter
 
 
 class Puzzle:
@@ -32,6 +32,8 @@ class Puzzle:
 
     What is the sum of the sector IDs of the real rooms?
 
+    Your puzzle answer was 185371.
+
     --- Part Two ---
     With all the decoy data out of the way, it's time to decrypt this list and
     get moving.
@@ -48,14 +50,20 @@ class Puzzle:
     For example, the real name for qzmt-zixmtkozy-ivhz-343 is very encrypted name.
 
     What is the sector ID of the room where North Pole objects are stored?
-    """
 
-    pass
+    Your puzzle answer was 984.
+
+    Both parts of this puzzle are complete! They provide two gold stars: **
+
+    """
 
 
 with open(Path(__file__).parent / "2016_04_input.txt") as f:
     INPUTS = [line.strip() for line in f]
 
+
+# format: encrypted-name-with-spaces-as-dashes-DDDD[checksum]
+#         where the DDDD are digits that make up the sector id
 
 SAMPLES = [
     "aaaaa-bbb-z-y-x-123[abxyz]",
@@ -66,28 +74,30 @@ SAMPLES = [
 
 
 def parse_encrypted(encrypted):
-    a, b = encrypted.split("[")
-    a = a.split("-")
-    checksum = b[:-1]
-    sector_id = int(a[-1])
-    words = a[0:-1]
-    letter_list = sorted("".join(a))
+    enc_name_and_sector_id, checksum = encrypted.split("[")
+    enc_name_and_sector_id = enc_name_and_sector_id.split("-")
+    checksum = checksum[:-1]
+    sector_id = int(enc_name_and_sector_id[-1])
+    words = enc_name_and_sector_id[0:-1]
+    letter_list = sorted("".join(words))
     return sector_id, checksum, letter_list, words
 
 
 def generate_frequency_string(letter_list):
-    letter_current = letter_list[0]
-    letter_count = 0
-    frequency = defaultdict(str)
-    for c in letter_list:
-        if c == letter_current:
-            letter_count += 1
-        else:
-            frequency[letter_count] += letter_current
-            letter_current = c
-            letter_count = 1
-    frequency[letter_count] += letter_current
-    return "".join([s for (_, s) in sorted(frequency.items(), key=lambda x: -x[0])])
+    # letter_current = letter_list[0]
+    # letter_count = 0
+    # frequency = defaultdict(str)
+    # for c in letter_list:
+    #     if c == letter_current:
+    #         letter_count += 1
+    #     else:
+    #         frequency[letter_count] += letter_current
+    #         letter_current = c
+    #         letter_count = 1
+    # frequency[letter_count] += letter_current
+    # return "".join([s for (_, s) in sorted(frequency.items(), key=lambda x: -x[0])])
+    frequency = Counter(letter_list).most_common()
+    return "".join(c for c, _ in frequency)
 
 
 def shift_letter(c, amount):

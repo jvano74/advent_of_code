@@ -46,6 +46,8 @@ class Puzzle:
     What is the decompressed length of the file (your puzzle input)? Don't count
     whitespace.
 
+    Your puzzle answer was 183269.
+
     --- Part Two ---
     Apparently, the file actually uses version two of the format.
 
@@ -74,6 +76,11 @@ class Puzzle:
     get its decompressed length.
 
     What is the decompressed length of the file using this improved format?
+
+    Your puzzle answer was 11317278863.
+
+    Both parts of this puzzle are complete! They provide two gold stars: **
+
     """
 
     pass
@@ -112,6 +119,12 @@ def decompress(in_string, out_string=""):
     out_string += chunk * int(repeat)
     rest = rest[int(chunk_size) :]
     return out_string + decompress(rest)
+
+
+def test_decompress():
+    for raw, out in zip(SAMPLE, SAMPLE_RESULT):
+        assert decompress(raw) == out
+    assert len(decompress(INPUT)) == 183269
 
 
 def parse_first(remaining_string, result_len=0):
@@ -167,4 +180,4 @@ def test_decompress2_len():
         decompress2_len("(25x3)(3x3)ABC(2x3)XY(5x2)PQRSTX(18x9)(3x2)TWO(5x7)SEVEN")
         == 445
     )
-    assert decompress2_len(INPUT) == 1
+    assert decompress2_len(INPUT) == 11317278863

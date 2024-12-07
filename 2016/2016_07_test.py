@@ -29,6 +29,8 @@ class Puzzle:
 
     How many IPs in your puzzle input support TLS?
 
+    Your puzzle answer was 118.
+
     --- Part Two ---
     You would also like to know which IPs support SSL (super-secret listening).
 
@@ -55,6 +57,13 @@ class Puzzle:
     corresponding bzb, even though zaz and zbz overlap).
 
     How many IPs in your puzzle input support SSL?
+
+    How many IPs in your puzzle input support SSL?
+
+    Your puzzle answer was 260.
+
+    Both parts of this puzzle are complete! They provide two gold stars: **
+
     """
 
     pass
@@ -87,7 +96,7 @@ def supports_tls(ip):
 
 def test_supports_tls():
     assert [supports_tls(s) for s in SAMPLE] == SAMPLE_RESULTS
-    assert sum([supports_tls(s) for s in INPUTS]) == 1
+    assert sum([supports_tls(s) for s in INPUTS]) == 118
 
 
 def supports_ssl(ip):
@@ -116,4 +125,5 @@ def supports_ssl(ip):
 def test_supports_ssl():
     print("Closer looks")
     assert [supports_ssl(s) for s in SAMPLE2] == SAMPLE2_RESULTS
-    assert sum([supports_ssl(s) for s in INPUTS]) == 378  # 378 too high?
+    assert sum([supports_ssl(s) for s in INPUTS]) == 260
+    # first guess of 378 was too high

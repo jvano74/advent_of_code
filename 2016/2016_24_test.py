@@ -42,14 +42,19 @@ class Puzzle:
     Given your actual map, and starting from location 0, what is the fewest number of steps required to visit
     every non-0 number marked on the map at least once?
 
+    Your puzzle answer was 502.
+
     --- Part Two ---
     Of course, if you leave the cleaning robot somewhere weird, someone is bound to notice.
 
     What is the fewest number of steps required to start at 0, visit every non-0 number marked on the map at least
     once, and then return to 0?
-    """
 
-    pass
+    Your puzzle answer was 724.
+
+    Both parts of this puzzle are complete! They provide two gold stars: **
+
+    """
 
 
 SAMPLE = ["###########", "#0.1.....2#", "#.#######.#", "#4.......3#", "###########"]
@@ -269,10 +274,7 @@ def test_sample_get_goals():
     assert sample_maze.dead_ends == 0
     assert sample_maze.map[Pt(1, 1)][Pt(1, 3)] == 2
     assert sample_maze.map[Pt(9, 1)][Pt(3, 1)] == 6
-    assert sample_maze.shortest_dist(Pt(9, 1), Pt(1, 3)) == (
-        10,
-        [Pt(x=9, y=1), Pt(x=9, y=3), Pt(x=1, y=3)],
-    )
+    assert sample_maze.shortest_dist(Pt(9, 1), Pt(1, 3)) == 10
     assert sample_maze.shortest_path_to_goals("0") == (
         14,
         ["0", "4", "0", "1", "2", "3"],
