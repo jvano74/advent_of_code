@@ -63,6 +63,7 @@ SAMPLE = [0, 3, 0, 1, -3]
 
 
 def run_to_exit(instructions):
+    instructions = instructions[:]
     count = 0
     pos = 0
     while 0 <= pos < len(instructions):
@@ -79,6 +80,7 @@ def test_run_to_exit():
 
 
 def run_to_exit2(instructions):
+    instructions = instructions[:]
     count = 0
     pos = 0
     while 0 <= pos < len(instructions):
@@ -94,4 +96,5 @@ def run_to_exit2(instructions):
 
 def test_run_to_exit2():
     assert run_to_exit2(SAMPLE) == 10
+    # why 8 not 10?
     assert run_to_exit2(INPUTS) == 25608480

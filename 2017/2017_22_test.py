@@ -340,7 +340,7 @@ class Sporifica:
 def test_sample_sporifica():
     sporifica = Sporifica(SAMPLE)
     assert sporifica.start == Pt(1, 1)
-    assert sporifica.initial_infections == {Pt(2, 0), Pt(0, 1)}
+    assert sporifica.initial_infections.keys() == {Pt(2, 0), Pt(0, 1)}
 
     for s in range(15):
         if s > 0:

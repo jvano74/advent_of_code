@@ -126,9 +126,9 @@ def shuffle(moves, initial, split=False):
 
 
 def test_shuffle():
-    assert shuffle(["s1"], "abcde") == "eabcd"
-    assert shuffle(["s1", "x3/4"], "abcde") == "eabdc"
-    assert shuffle(["s1", "x3/4", "pe/b"], "abcde") == "baedc"
+    assert shuffle(["s1"], "abcde") == ("eabcd", "abcde")
+    assert shuffle(["s1", "x3/4"], "abcde") == ("eabdc", "abcde")
+    assert shuffle(["s1", "x3/4", "pe/b"], "abcde") == ("baedc", "abcde")
 
 
 def get_cycles(initial, final):

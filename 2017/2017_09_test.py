@@ -128,4 +128,4 @@ def score_stream(stream):
 def test_score_stream():
     for sample in SAMPLES:
         assert score_stream(sample[0])[0] == sample[1]
-    assert score_stream(INPUT) == 16869, 7284
+    assert score_stream(INPUT) == (16869, 7284)
