@@ -96,5 +96,4 @@ def run_to_exit2(instructions):
 
 def test_run_to_exit2():
     assert run_to_exit2(SAMPLE) == 10
-    # why 8 not 10?
     assert run_to_exit2(INPUTS) == 25608480

@@ -183,7 +183,7 @@ def count_grid(grid):
 
 def test_count_grid():
     pts, min_pt, max_pt = points_on_boarder(SAMPLE)
-    assert count_grid(make_grid(SAMPLE, pts, min_pt, max_pt)) == ((5, 5), 17)
+    assert count_grid(make_grid(SAMPLE, pts, min_pt, max_pt))[0] == ((5, 5), 17)
 
 
 def test_submission_count_grid():

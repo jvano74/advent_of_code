@@ -71,11 +71,17 @@ class MarbleGame:
 
     What is the winning Elf's score?
 
+    Your puzzle answer was 439341.
+
     --- Part Two ---
     Amused by the speed of your answer, the Elves are curious:
 
     What would the new winning Elf's score be if the number of the last marble were 100 times larger?
+
+    Your puzzle answer was 3566801385.
+
     """
+
     def __init__(self, num_players, num_marbles):
         self.num_players = num_players
         self.ring = [0]
@@ -93,13 +99,17 @@ class MarbleGame:
             if marble % 23 == 0:
                 self.player_scores[player % self.num_players] += marble
                 self.player_scores_details[player % self.num_players].append(marble)
-                second_marble_position = (self.current_marble_position - 7)
+                second_marble_position = self.current_marble_position - 7
                 second_marble_position %= len(self.ring)
                 second_marble = self.ring.pop(second_marble_position)
                 if print_game_stage:
-                    print(f'SCORING {marble} and second marble {second_marble} from {second_marble_position}')
+                    print(
+                        f"SCORING {marble} and second marble {second_marble} from {second_marble_position}"
+                    )
                 self.player_scores[player % self.num_players] += second_marble
-                self.player_scores_details[player % self.num_players].append(second_marble)
+                self.player_scores_details[player % self.num_players].append(
+                    second_marble
+                )
                 self.current_marble_position = second_marble_position
             else:
                 self.current_marble_position += 1
@@ -108,10 +118,12 @@ class MarbleGame:
                 self.ring.insert(self.current_marble_position, marble)
             if print_game_stage:
                 fancy_ring = [str(m) for m in self.ring]
-                fancy_ring[self.current_marble_position] = f'({fancy_ring[self.current_marble_position]})'
+                fancy_ring[self.current_marble_position] = (
+                    f"({fancy_ring[self.current_marble_position]})"
+                )
                 print(f'[{(player % self.num_players) + 1}] {" ".join(fancy_ring)}')
         if print_game_stage:
-            print(f'last marble {marble}')
+            print(f"last marble {marble}")
         return max(self.player_scores)
 
 
@@ -122,19 +134,20 @@ SAMPLES = [
     [13, 7999, False, 146373],
     [17, 1104, False, 2764],
     [21, 6111, False, 54718],
-    [30, 5807, False, 37305]]
+    [30, 5807, False, 37305],
+]
 
 
 def test_marble_game():
     print()
     for test_case in SAMPLES:
-        print(f'=== GAME {test_case[0]}, {test_case[1]} ===')
+        print(f"=== GAME {test_case[0]}, {test_case[1]} ===")
         sample_game = MarbleGame(test_case[0], test_case[1])
         assert sample_game.play(test_case[2]) == test_case[3]
         print(sample_game.player_scores)
         print(sample_game.player_scores_details)
     # my game
-    print('\n=== MY GAME ===')
+    print("\n=== MY GAME ===")
     # game = MarbleGame(INPUT[0], INPUT[1])
     game = MarbleGame(416, 71975)
     assert game.play() == 439341
@@ -168,5 +181,5 @@ def play_game(max_players, last_marble):
 
 
 def test_play_game():
-    max_players, last_marble = (416, 71975*100)
-    assert play_game(max_players, last_marble) == 1
+    max_players, last_marble = (416, 71975 * 100)
+    assert play_game(max_players, last_marble) == 3566801385

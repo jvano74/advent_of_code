@@ -40,6 +40,8 @@ def day02():
 
     What is the checksum for your list of box IDs?
 
+    Your puzzle answer was 7221.
+
     --- Part Two ---
 
     Confident that your list of box IDs is complete, you're ready to find the boxes full of prototype fabric.
@@ -60,6 +62,9 @@ def day02():
 
     What letters are common between the two correct box IDs? (In the example above, this is found by removing the
     differing character from either ID, producing fgij.)
+
+    Your puzzle answer was mkcdflathzwsvjxrevymbdpoq.
+
     """
 
 
@@ -123,7 +128,7 @@ def test_part2():
     assert not off_by_one_character("foo", "bar")
     assert off_by_one_character("foo", "fod") == (True, "fo")
     assert find_similar(SAMPLE2) == "fgij"
-    assert find_similar(INPUTS) == "fgij"
+    assert find_similar(INPUTS) == "mkcdflathzwsvjxrevymbdpoq"
 
 
 def test_part1():
