@@ -133,7 +133,7 @@ class Puzzle:
     Decode the structure of your hexadecimal-encoded BITS transmission; what do you get if you add up the
     version numbers in all packets?
 
-    To begin, get your puzzle input.
+    Your puzzle answer was 866.
 
     --- Part Two ---
     No
@@ -178,6 +178,10 @@ class Puzzle:
     9C0141080250320F1802104A08 produces 1, because 1 + 3 = 2 * 2.
 
     What do you get if you evaluate the expression represented by your hexadecimal-encoded BITS transmission?
+
+    Your puzzle answer was 1392637195518.
+
+    Both parts of this puzzle are complete! They provide two gold stars: **
 
     """
 
@@ -232,14 +236,14 @@ class Bits:
     @staticmethod
     def parse(bit_stream):
         if len(bit_stream) < 6:
-            return None, None, None, bit_stream
+            return (None, None, None, bit_stream)
 
         version = int(bit_stream[:3], 2)
         type_id = int(bit_stream[3:6], 2)
 
         if type_id == 4:
             value, remaining = Bits.parse_literal(bit_stream)
-            return version, type_id, value, remaining
+            return (version, type_id, value, remaining)
 
         length_type_id = int(bit_stream[6], 2)
 
@@ -248,24 +252,16 @@ class Bits:
             sub_packets, rest = Bits.parse_packet_length(
                 bit_stream[22:], sub_packet_bit_length
             )
-            return (
-                version,
-                type_id,
-                sub_packets,
-                rest,
-            )  # should not have to return remaining stream?
+            return (version, type_id, sub_packets, rest)
+            # should not have to return remaining stream?
 
         if length_type_id == 1:
             sub_packet_count = int(bit_stream[7 : 7 + 11], 2)
             sub_packets, rest = Bits.parse_packet_count(
                 bit_stream[18:], sub_packet_count
             )
-            return (
-                version,
-                type_id,
-                sub_packets,
-                rest,
-            )  # should not have to return remaining stream?
+            return (version, type_id, sub_packets, rest)
+            # should not have to return remaining stream?
 
     @staticmethod
     def version_sum(stream_nest):
@@ -335,13 +331,12 @@ def test_bits_raw_bin():
 
 def test_bits_parse():
     assert Bits.parse(SAMPLES[0][1]) == (6, 4, 2021, "000")
-    assert Bits.parse(SAMPLES[1][1]) == (1, 6, [(6, 4, 10), (2, 4, 20)], "")
-    assert Bits.parse(SAMPLES[2][1]) == (
-        7,
-        3,
-        [(2, 4, 1), (4, 4, 2), (1, 4, 3), (None, None, None)],
-        "",
-    )
+    assert Bits.parse(SAMPLES[1][1]) == (1, 6, [(6, 4, 10), (2, 4, 20)], "0000000")
+    sample3 = Bits.parse(SAMPLES[2][1])
+    assert sample3[0] == 7
+    assert sample3[1] == 3
+    assert sample3[2] == [(2, 4, 1), (4, 4, 2), (1, 4, 3)]
+    assert sample3[3] == "00000"
 
 
 def test_input_bits_parse():

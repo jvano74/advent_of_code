@@ -74,7 +74,7 @@ class Puzzle:
     in the result. What do you get if you take the quantity of the most common element and subtract the
     quantity of the least common element?
 
-    To begin, get your puzzle input.
+    Your puzzle answer was 3259.
 
     --- Part Two ---
     The resulting polymer isn't nearly strong enough to reinforce the submarine. You'll need to run more
@@ -86,6 +86,10 @@ class Puzzle:
     Apply 40 steps of pair insertion to the polymer template and find the most and least common elements in
     the result. What do you get if you take the quantity of the most common element and subtract the quantity
     of the least common element?
+
+    Your puzzle answer was 3459174981021.
+
+    Both parts of this puzzle are complete! They provide two gold stars: **
 
     """
 
@@ -190,4 +194,4 @@ def test_real_polymerization():
     replacements = [rl.strip() for rl in raw_replacements.split("\n")]
     sample_polymerization = Polymerization(replacements)
     assert Polymerization.analyze(sample_polymerization.run(base, 10)) == 3259
-    assert sample_polymerization.fast_steps(base, 40) == 3259
+    assert sample_polymerization.fast_steps(base, 40) == 3459174981021

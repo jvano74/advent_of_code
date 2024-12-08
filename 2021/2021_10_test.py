@@ -73,7 +73,7 @@ class Puzzle:
     Find the first illegal character in each corrupted line of the navigation subsystem.
     What is the total syntax error score for those errors?
 
-    To begin, get your puzzle input.
+    Your puzzle answer was 316851.
 
     --- Part Two ---
 
@@ -129,15 +129,19 @@ class Puzzle:
 
     What is the middle score?
 
+    Your puzzle answer was 2182912364.
+
+    Both parts of this puzzle are complete! They provide two gold stars: **
+
     """
 
 
 SAMPLE = [
     "[({(<(())[]>[[{[]{<()<>>",
     "[(()[<>])]({[<{<<[]>>(",
-    "{([(<{}[<>[]}>{[]{[(<()>",
+    "{([(<{}[<>[]}>{[]{[(<()>",  # Expected ], but found } instead.
     "(((({<>}<{<{<>}{[]{[]{}",
-    "[[<[([]))<([[{}[[()]]]",
+    "[[<[([]))<([[{}[[()]]]",  # Expected ], but found ) instead.
     "[{[{({}]{}}([{[{{{}}([]",
     "{<[[]]>}<{[{[{[]{()[[[]",
     "[<(<(<(<{}))><([]([]()",
@@ -160,14 +164,12 @@ def validate_line(line):
         elif close_char[next_char] == stack[-1]:
             stack.pop()
         else:
-            return cost[next_char], stack
-    if len(stack):
-        return -1, stack
-    return 0, stack
+            return (cost[next_char], stack)
+    return (0, stack)
 
 
 def test_validate_line():
-    assert validate_line(SAMPLE[2]) == 1197
+    assert validate_line(SAMPLE[2])[0] == 1197
     assert sum(validate_line(s)[0] for s in SAMPLE) == 26397
     assert sum(validate_line(s)[0] for s in INPUTS) == 316851
 
