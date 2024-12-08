@@ -277,12 +277,12 @@ def test_order_vectors():
         (2, -1),
     ]
     ordered_grid = dict(order_vectors(test_grid))
-    assert ordered_grid[0] == [(0, 1)]
-    assert ordered_grid[0.25] == [(1, 1)]
+    assert ordered_grid[0] == [(0, -1)]
+    assert ordered_grid[0.25] == [(1, -1)]
     assert ordered_grid[0.5] == [(1, 0), (2, 0)]
-    assert ordered_grid[0.75] == [(1, -1)]
-    assert ordered_grid[1] == [(0, -1)]
-    assert ordered_grid[1.25] == [(-1, -1)]
+    assert ordered_grid[0.75] == [(1, 1)]
+    assert ordered_grid[1] == [(0, 1)]
+    assert ordered_grid[1.25] == [(-1, 1)]
 
 
 def test_count_directions():

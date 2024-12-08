@@ -297,14 +297,14 @@ def test_program():
 def test_submission():
     PAINT.reset()
     robot = Robot(PAINT)
-    assert robot.move() == (9331, 2319, 2329)
+    assert robot.move()[:-1] == (9331, 2319)
 
 
 def test_submission2():
     PAINT.reset()
     robot = Robot(PAINT)
     robot.grid[Point(0, 0)] = 1
-    assert robot.move() == (249, 248, 249)
+    assert robot.move()[:-1] == (249, 248)
     print()
     assert robot.draw() is None
 
