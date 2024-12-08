@@ -45,6 +45,8 @@ class Puzzle:
     How many bag colors can eventually contain at least one shiny gold bag? (The list of rules is quite long; make
     sure you get all of it.)
 
+    Your puzzle answer was 144.
+
     --- Part Two ---
     It's getting pretty expensive to fly these days - not because of ticket prices, but because of the ridiculous
     number of bags you need to buy!
@@ -75,9 +77,12 @@ class Puzzle:
     In this example, a single shiny gold bag must contain 126 other bags.
 
     How many individual bags are required inside your single shiny gold bag?
-    """
 
-    pass
+    Your puzzle answer was 5956.
+
+    Both parts of this puzzle are complete! They provide two gold stars: **
+
+    """
 
 
 SAMPLE = [
@@ -109,7 +114,6 @@ with open(Path(__file__).parent / "2020_07_input.txt") as f:
 def split_line(line):
     line = line.strip(".").replace("bags", "bag").replace(" bag", "")
     outer_bag, inner_bags = line.split(" contain ")
-    outer_bag = outer_bag
     inner_bags = inner_bags.split(", ")
     return outer_bag, {
         " ".join(c.split(" ")[1:]): int(c.split(" ")[0])
@@ -142,7 +146,8 @@ def test_build_bag_graph():
     assert RESULT_CONTAINS["light red"] == {"bright white": 1, "muted yellow": 2}
     assert RESULT_CONTAINS["dotted black"] == {}
     assert RESULT_INSIDE["shiny gold"] == set(["bright white", "muted yellow"])
-    assert RESULT_INSIDE["other"] == set(["faded blue", "dotted black"])
+    # assert RESULT_INSIDE["other"] == set(["faded blue", "dotted black"])
+    # Updated split_line to suppress identifying the no other bags which removes this case
 
 
 def find_over_bags(bag_inside_graph, starting_color):
