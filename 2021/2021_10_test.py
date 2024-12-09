@@ -165,6 +165,8 @@ def validate_line(line):
             stack.pop()
         else:
             return (cost[next_char], stack)
+    # if len(stack):
+    #     return (0, stack)
     return (0, stack)
 
 
@@ -185,7 +187,9 @@ def completion_score(remaining):
 
 def find_completion_score(completions):
     raw_completions = [validate_line(s) for s in completions]
-    complete_scores = [completion_score(r) for s, r in raw_completions if s == -1]
+    complete_scores = [
+        completion_score(r) for s, r in raw_completions if s == 0 and len(r)
+    ]
     complete_scores.sort()
     midpoint = (len(complete_scores) - 1) // 2
     return complete_scores[midpoint]
@@ -193,7 +197,9 @@ def find_completion_score(completions):
 
 def test_completion_score():
     raw_completions = [validate_line(s) for s in SAMPLE]
-    complete_scores = [completion_score(r) for s, r in raw_completions if s == -1]
+    complete_scores = [
+        completion_score(r) for s, r in raw_completions if s == 0 and len(r)
+    ]
     assert complete_scores == [288957, 5566, 1480781, 995444, 294]
     assert find_completion_score(SAMPLE) == 288957
     assert find_completion_score(INPUTS) == 2182912364
