@@ -1,5 +1,3 @@
-from pathlib import Path
-from typing import List, NamedTuple
 from collections import defaultdict
 
 
@@ -94,6 +92,10 @@ class Puzzle:
 
     How many stones would you have after blinking a total of 75 times?
 
+     Your puzzle answer was 250783680217283.
+
+    Both parts of this puzzle are complete! They provide two gold stars: **
+
     """
 
 
@@ -120,6 +122,8 @@ def blink(stones, num_times=1):
 
 
 def count_fast_blink(stones, num_times=1):
+    # Key to note is we don't care about the order
+    # so any duplicates can be counted together
     stones = {s: 1 for s in stones}
     for _ in range(num_times):
         new_stones = defaultdict(int)
