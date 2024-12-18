@@ -1,8 +1,6 @@
 from queue import PriorityQueue
 from pathlib import Path
-from typing import List, Dict, NamedTuple
-from collections import defaultdict
-from fractions import Fraction
+from typing import NamedTuple
 
 
 class Puzzle:
