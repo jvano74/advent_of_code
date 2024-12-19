@@ -121,9 +121,9 @@ class Puzzle:
     """
 
 
-SAMPLE_TOWEL_PATTERNS = ["r", "wr", "b", "g", "bwu", "rb", "gb", "br"]
+SAMPLE_TOWELS = ["r", "wr", "b", "g", "bwu", "rb", "gb", "br"]
 
-SAMPLE_DESIRED_DESIGNS = [
+SAMPLE_DESIGNS = [
     "brwrr",
     "bggr",
     "gbbr",
@@ -134,27 +134,16 @@ SAMPLE_DESIRED_DESIGNS = [
     "bbrgwb",
 ]
 
-SAMPLE_DESIGN_OUTCOMES = [
-    "brwrr",
-    "bggr",
-    "gbbr",
-    "rrbgbr",
-    "",
-    "bwurrg",
-    "brgr",
-    "",
-]
-
 
 with open(Path(__file__).parent / "2024_19_input.txt") as fp:
-    TOWEL_PATTERNS, DESIRED_DESIGNS = fp.read().split("\n\n")
-    TOWEL_PATTERNS = TOWEL_PATTERNS.split(", ")
-    DESIRED_DESIGNS = DESIRED_DESIGNS.split("\n")
+    TOWELS, DESIGNS = fp.read().split("\n\n")
+    TOWELS = TOWELS.split(", ")
+    DESIGNS = DESIGNS.split("\n")
 
 
 def test_puzzle_input():
-    assert TOWEL_PATTERNS[:5] == ["gurwuurg", "ugwrrbuw", "ubr", "bbrurww", "wgw"]
-    assert DESIRED_DESIGNS[:5] == [
+    assert TOWELS[:5] == ["gurwuurg", "ugwrrbuw", "ubr", "bbrurww", "wgw"]
+    assert DESIGNS[:5] == [
         "gwwwgrbuwgrbgbwubrbwguwgubrwwurwrbrgwurgwgguww",
         "wwbwbbwubrbruubrwugurrbuuwuuwbrguubbwwbugbbgu",
         "gbwrrgruuurugwwurgwguguugbrggbrwugbugubuggu",
@@ -185,34 +174,47 @@ def make_match(patterns, design, all_combos=False):
     return version_count
 
 
-def test_match():
-    # for design, outcome in zip(SAMPLE_DESIRED_DESIGNS, SAMPLE_DESIGN_OUTCOMES):
-    #     assert "".join(make_match(SAMPLE_TOWEL_PATTERNS, design)) == outcome
-    assert (
-        sum(
-            make_match(SAMPLE_TOWEL_PATTERNS, design)
-            for design in SAMPLE_DESIRED_DESIGNS
-        )
-        == 6
-    )
+def make_fast_match(patterns, design):
+    if make_match(patterns, design) == 0:
+        return 0
 
-    assert (
-        sum(
-            make_match(SAMPLE_TOWEL_PATTERNS, design, all_combos=True)
-            for design in SAMPLE_DESIRED_DESIGNS
-        )
-        == 16
-    )
+    version_counts = {}
+    for pattern in patterns:
+        version_counts[pattern] = make_match(patterns, pattern, all_combos=True)
+
+    remaining_design = design
+    version_count = 1
+    while remaining_design:
+        match_len = 0
+        match_multi = 0
+        for key, count in version_counts.items():
+            if key == remaining_design[: len(key)] and len(key) > match_len:
+                match_len = len(key)
+                match_multi = count
+                match_key = key
+        if match_multi == 0:
+            return 0
+        version_count *= match_multi
+        remaining_design = remaining_design[match_len:]
+    return version_count
+
+
+def test_match():
+    sample_matches = [make_match(SAMPLE_TOWELS, design) for design in SAMPLE_DESIGNS]
+    assert sum(sample_matches) == 6
+
+    sample_matches = [
+        make_match(SAMPLE_TOWELS, design, all_combos=True) for design in SAMPLE_DESIGNS
+    ]
+    assert sum(sample_matches) == 16
+
+    assert make_fast_match(SAMPLE_TOWELS, "rrbgbr") == 6
+    sample_matches = [
+        make_fast_match(SAMPLE_TOWELS, design) for design in SAMPLE_DESIGNS
+    ]
+    assert sum(sample_matches) == 16
 
 
 def test_my_matches():
-    # for design, outcome in zip(SAMPLE_DESIRED_DESIGNS, SAMPLE_DESIGN_OUTCOMES):
-    #     assert "".join(make_match(SAMPLE_TOWEL_PATTERNS, design)) == outcome
-    assert sum(make_match(TOWEL_PATTERNS, design) for design in DESIRED_DESIGNS) == 216
-    assert (
-        sum(
-            make_match(TOWEL_PATTERNS, design, all_combos=True)
-            for design in DESIRED_DESIGNS
-        )
-        == 6
-    )
+    assert sum(make_match(TOWELS, design) for design in DESIGNS) == 216
+    assert sum(make_match(TOWELS, design, all_combos=True) for design in DESIGNS) == 6
