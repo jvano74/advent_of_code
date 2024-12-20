@@ -1,4 +1,6 @@
 from pathlib import Path
+from typing import NamedTuple
+from functools import cache
 from collections import defaultdict
 
 
@@ -118,6 +120,10 @@ class Puzzle:
     They'll let you into the onsen as soon as you have the list. What do you get
     if you add up the number of different ways you could make each design?
 
+    Your puzzle answer was 603191454138773.
+
+    Both parts of this puzzle are complete! They provide two gold stars: **
+
     """
 
 
@@ -152,11 +158,16 @@ def test_puzzle_input():
     ]
 
 
-def make_match(patterns, design, all_combos=False):
-    palette = defaultdict(set)
-    for pattern in patterns:
-        palette[pattern[0]].add(pattern)
+def make_palette(patterns):
+    # palette = defaultdict(set)
+    # for pattern in patterns:
+    #     palette[pattern[0]].add(pattern)
+    # return dict(palette)
+    return tuple(sorted(patterns))
 
+
+@cache
+def make_match(palette, design, all_combos=False, detect_overrun=False):
     version_count = 0
     boundary = [(design, [])]
     while boundary:
@@ -166,7 +177,13 @@ def make_match(patterns, design, all_combos=False):
                 return 1
             version_count += 1
             continue
-        for option in palette[remaining_design[0]]:
+        for option in palette:
+            if len(remaining_design) < len(option):
+                if (
+                    detect_overrun
+                    and remaining_design == option[: len(remaining_design)]
+                ):
+                    return -1
             if option == remaining_design[: len(option)]:
                 new_build = build[:]
                 new_build.append(option)
@@ -174,47 +191,134 @@ def make_match(patterns, design, all_combos=False):
     return version_count
 
 
-def make_fast_match(patterns, design):
-    if make_match(patterns, design) == 0:
-        return 0
+def test_match():
+    sample_palette = make_palette(SAMPLE_TOWELS)
+    sample_matches = [make_match(sample_palette, design) for design in SAMPLE_DESIGNS]
+    assert sum(sample_matches) == 6
+    palette = make_palette(TOWELS)
+    assert sum(make_match(palette, design) for design in DESIGNS) == 216
 
-    version_counts = {}
-    for pattern in patterns:
-        version_counts[pattern] = make_match(patterns, pattern, all_combos=True)
 
-    remaining_design = design
+def find_factor_towels(towels):
+    forward_factors = set()
+    end_factors = set()
+    full_factors = set()
+    for towel in towels:
+        passing_forward = True
+        passing_end = True
+        for test_towel in towels:
+            if towel not in test_towel:
+                continue
+            if towel != test_towel[: len(towel)]:
+                passing_forward = False
+            if towel != test_towel[-len(towel) :]:
+                passing_end = False
+            if not passing_forward and not passing_end:
+                break
+        if passing_forward and passing_end:
+            full_factors.add(towel)
+        elif passing_forward:
+            forward_factors.add(towel)
+        elif passing_end:
+            end_factors.add(towel)
+    palette = make_palette(towels)
+    full_factor_dict = {}
+    for fac in full_factors:
+        multiplicity = make_match(palette, fac, all_combos=True, detect_overrun=True)
+        if multiplicity > 0:
+            full_factor_dict[fac] = multiplicity
+
+    new_palette = make_palette(set(towels) - set(full_factor_dict.keys()))
+    return (full_factor_dict, forward_factors, end_factors, new_palette)
+
+
+def test_find_factor_towels():
+    # SAMPLE_TOWELS = ["r", "wr", "b", "g", "bwu", "rb", "gb", "br"]
+    sample_towel_factors = find_factor_towels(SAMPLE_TOWELS)
+    assert sample_towel_factors == (
+        {"bwu": 1, "wr": 1},
+        {"g"},
+        set(),
+        ("b", "br", "g", "gb", "r", "rb"),
+    )
+    towel_factors = find_factor_towels(TOWELS)
+    assert [len(fac) for fac in towel_factors] == [3, 29, 13, 444]
+
+
+def make_fast_match(factors, design):
+    new_design = design
+    full_factor_dict, forward_factors, end_factors, palette = factors
     version_count = 1
-    while remaining_design:
-        match_len = 0
-        match_multi = 0
-        for key, count in version_counts.items():
-            if key == remaining_design[: len(key)] and len(key) > match_len:
-                match_len = len(key)
-                match_multi = count
-                match_key = key
-        if match_multi == 0:
-            return 0
-        version_count *= match_multi
-        remaining_design = remaining_design[match_len:]
+    for factor, factor_multiple in full_factor_dict.items():
+        split_design = new_design.split(factor)
+        version_count *= factor_multiple ** (len(split_design) - 1)
+        new_design = "|".join(split_design)
+
+    for factor in forward_factors:
+        split_design = new_design.split(factor)
+        new_design = f"|{factor}".join(split_design)
+
+    for factor in end_factors:
+        split_design = new_design.split(factor)
+        new_design = f"{factor}|".join(split_design)
+
+    for remaining in new_design.split("|"):
+        version_count *= make_match(palette, remaining, all_combos=True)
+
     return version_count
 
 
-def test_match():
-    sample_matches = [make_match(SAMPLE_TOWELS, design) for design in SAMPLE_DESIGNS]
-    assert sum(sample_matches) == 6
-
+def test_fast_match():
+    sample_palette = make_palette(SAMPLE_TOWELS)
+    assert make_match(sample_palette, "", all_combos=True) == 1
     sample_matches = [
-        make_match(SAMPLE_TOWELS, design, all_combos=True) for design in SAMPLE_DESIGNS
+        make_match(sample_palette, design, all_combos=True) for design in SAMPLE_DESIGNS
     ]
     assert sum(sample_matches) == 16
 
-    assert make_fast_match(SAMPLE_TOWELS, "rrbgbr") == 6
+    sample_factors = find_factor_towels(SAMPLE_TOWELS)
+    assert make_fast_match(sample_factors, "rrbgbr") == 6
     sample_matches = [
-        make_fast_match(SAMPLE_TOWELS, design) for design in SAMPLE_DESIGNS
+        make_fast_match(sample_factors, design) for design in SAMPLE_DESIGNS
     ]
     assert sum(sample_matches) == 16
 
+    # The above approach worked but was not nearly fast enough - even after adding
+    # the @cache to the base factor count.  So comment out testing of full TOWELS
 
-def test_my_matches():
-    assert sum(make_match(TOWELS, design) for design in DESIGNS) == 216
-    assert sum(make_match(TOWELS, design, all_combos=True) for design in DESIGNS) == 6
+    # towel_factors = find_factor_towels(TOWELS)
+    # assert sum(make_fast_match(towel_factors, design) for design in DESIGNS) == 6
+
+    # and move on to idea from watching someone else who used recursion and
+    # simple look back
+
+
+@cache
+def recursive_match(towels, design):
+    if design == "":
+        return 1
+    total = 0
+    # for start_pos in range(len(design)):
+    start_pos = len(design) - 1
+    for towel in towels:
+        pattern_start = start_pos - (len(towel) - 1)
+        if pattern_start < 0:
+            continue
+        if towel == design[pattern_start : start_pos + 1]:
+            total += recursive_match(towels, design[:pattern_start])
+    return total
+
+
+def test_recursive_match():
+    # assert recursive_match(tuple(SAMPLE_TOWELS), "") == 1
+    assert recursive_match(tuple(SAMPLE_TOWELS), "rrbgbr") == 6
+
+    sample_matches = [
+        recursive_match(tuple(SAMPLE_TOWELS), design) for design in SAMPLE_DESIGNS
+    ]
+    assert sum(sample_matches) == 16
+
+    assert (
+        sum(recursive_match(tuple(TOWELS), design) for design in DESIGNS)
+        == 603191454138773
+    )
