@@ -298,13 +298,11 @@ def recursive_match(towels, design):
     if design == "":
         return 1
     total = 0
-    # for start_pos in range(len(design)):
-    start_pos = len(design) - 1
     for towel in towels:
-        pattern_start = start_pos - (len(towel) - 1)
+        pattern_start = len(design) - len(towel)
         if pattern_start < 0:
             continue
-        if towel == design[pattern_start : start_pos + 1]:
+        if towel == design[pattern_start:]:
             total += recursive_match(towels, design[:pattern_start])
     return total
 
