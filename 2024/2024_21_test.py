@@ -2,7 +2,7 @@ from queue import PriorityQueue
 from itertools import product
 from typing import NamedTuple
 from functools import cache
-from collections import defaultdict
+from collections import defaultdict, Counter
 
 
 class Puzzle:
@@ -228,6 +228,34 @@ DELTA = {
 MOVES = {v: k for k, v in DELTA.items()}
 
 
+def validate_instructions(instructions):
+    for invalid in (
+        "<^<",
+        "<^^<",
+        "<^^^<",
+        "<v<",
+        "<vv<",
+        "<vvv<",
+        ">^>",
+        ">^^>",
+        ">^^^>",
+        ">v>",
+        ">vv>",
+        ">vvv>",
+        "^<^",
+        "^<<^",
+        "^>^",
+        "^>>^",
+        "v<v",
+        "v<<v",
+        "v>v",
+        "v>>v",
+    ):
+        if invalid in instructions:
+            return False
+    return True
+
+
 class Robot:
     def __init__(self, keypad_type: str):
         self.min_transition = None
@@ -258,11 +286,10 @@ class Robot:
             self.arm = Pt(2, 3)
 
     def build_transition_map(self):
-        # min_transition = defaultdict(lambda: defaultdict(set))
         self.min_transition = dict()
         for start_pt, start_id in self.button.items():
             for end_pt, end_id in self.button.items():
-                self.min_transition[f"{start_id}{end_id}"] = set()
+                self.min_transition[f"{start_id}:{end_id}"] = set()
                 boundary = PriorityQueue()
                 min_steps = None
                 boundary.put((0, start_pt, [start_pt], ""))
@@ -275,9 +302,10 @@ class Robot:
                             min_steps = steps
                         if steps > min_steps:
                             continue
-                        self.min_transition[f"{start_id}{end_id}"].add(
-                            f"{instructions}A"
-                        )
+                        if validate_instructions(instructions):
+                            self.min_transition[f"{start_id}:{end_id}"].add(
+                                f"{instructions}A"
+                            )
                         continue
                     for next_pt in current_pt.nbhd():
                         if next_pt not in self.button:
@@ -289,343 +317,157 @@ class Robot:
                         new_instructions = f"{instructions}{MOVES[next_pt-current_pt]}"
                         boundary.put((steps + 1, next_pt, new_path, new_instructions))
 
-    def action(self, action):
-        if action == "A":
-            return self.button[self.arm]
-        new_arm = self.arm + DELTA[action]
-        if new_arm not in self.button:
-            raise Exception("Invalid state")
-        self.arm = new_arm
-
 
 ROBOT_TO_KEYPAD_TRANSITIONS = {
-    "77": {"A"},
-    "78": {">A"},
-    "79": {">>A"},
-    "74": {"vA"},
-    "75": {"v>A", ">vA"},
-    "76": {">>vA", "v>>A", ">v>A"},
-    "71": {"vvA"},
-    "72": {"v>vA", ">vvA", "vv>A"},
-    "73": {"vv>>A", ">v>vA", ">>vvA", "v>>vA", ">vv>A", "v>v>A"},
-    "70": {"vv>vA", "v>vvA", ">vvvA"},
-    "7A": {
-        "v>>vvA",
-        "v>vv>A",
-        "vv>>vA",
-        ">vvv>A",
-        ">v>vvA",
-        "v>v>vA",
-        "vv>v>A",
-        ">>vvvA",
-        ">vv>vA",
-    },
-    "87": {"<A"},
-    "88": {"A"},
-    "89": {">A"},
-    "84": {"v<A", "<vA"},
-    "85": {"vA"},
-    "86": {"v>A", ">vA"},
-    "81": {"vv<A", "<vvA", "v<vA"},
-    "82": {"vvA"},
-    "83": {"v>vA", ">vvA", "vv>A"},
-    "80": {"vvvA"},
-    "8A": {"vvv>A", "v>vvA", "vv>vA", ">vvvA"},
-    "97": {"<<A"},
-    "98": {"<A"},
-    "99": {"A"},
-    "94": {"<<vA", "<v<A", "v<<A"},
-    "95": {"v<A", "<vA"},
-    "96": {"vA"},
-    "91": {"v<v<A", "<v<vA", "vv<<A", "<<vvA", "<vv<A", "v<<vA"},
-    "92": {"vv<A", "<vvA", "v<vA"},
-    "93": {"vvA"},
-    "90": {"<vvvA", "vvv<A", "vv<vA", "v<vvA"},
-    "9A": {"vvvA"},
-    "47": {"^A"},
-    "48": {"^>A", ">^A"},
-    "49": {">^>A", "^>>A", ">>^A"},
-    "44": {"A"},
-    "45": {">A"},
-    "46": {">>A"},
-    "41": {"vA"},
-    "42": {"v>A", ">vA"},
-    "43": {">>vA", "v>>A", ">v>A"},
-    "40": {"v>vA", ">vvA"},
-    "4A": {">v>vA", ">>vvA", "v>>vA", ">vv>A", "v>v>A"},
-    "57": {"<^A", "^<A"},
-    "58": {"^A"},
-    "59": {"^>A", ">^A"},
-    "54": {"<A"},
-    "55": {"A"},
-    "56": {">A"},
-    "51": {"v<A", "<vA"},
-    "52": {"vA"},
-    "53": {"v>A", ">vA"},
-    "50": {"vvA"},
-    "5A": {"v>vA", ">vvA", "vv>A"},
-    "67": {"^<<A", "<^<A", "<<^A"},
-    "68": {"<^A", "^<A"},
-    "69": {"^A"},
-    "64": {"<<A"},
-    "65": {"<A"},
-    "66": {"A"},
-    "61": {"<<vA", "<v<A", "v<<A"},
-    "62": {"v<A", "<vA"},
-    "63": {"vA"},
-    "60": {"vv<A", "<vvA", "v<vA"},
-    "6A": {"vvA"},
-    "17": {"^^A"},
-    "18": {"^^>A", ">^^A", "^>^A"},
-    "19": {"^^>>A", ">^>^A", ">^^>A", ">>^^A", "^>>^A", "^>^>A"},
-    "14": {"^A"},
-    "15": {"^>A", ">^A"},
-    "16": {">^>A", "^>>A", ">>^A"},
-    "11": {"A"},
-    "12": {">A"},
-    "13": {">>A"},
-    "10": {">vA"},
-    "1A": {">>vA", ">v>A"},
-    "27": {"^<^A", "<^^A", "^^<A"},
-    "28": {"^^A"},
-    "29": {"^^>A", ">^^A", "^>^A"},
-    "24": {"<^A", "^<A"},
-    "25": {"^A"},
-    "26": {"^>A", ">^A"},
-    "21": {"<A"},
-    "22": {"A"},
-    "23": {">A"},
-    "20": {"vA"},
-    "2A": {"v>A", ">vA"},
-    "37": {"<^<^A", "<^^<A", "<<^^A", "^<^<A", "^<<^A", "^^<<A"},
-    "38": {"^<^A", "<^^A", "^^<A"},
-    "39": {"^^A"},
-    "34": {"^<<A", "<^<A", "<<^A"},
-    "35": {"<^A", "^<A"},
-    "36": {"^A"},
-    "31": {"<<A"},
-    "32": {"<A"},
-    "33": {"A"},
-    "30": {"v<A", "<vA"},
-    "3A": {"vA"},
-    "07": {"^^^<A", "^<^^A", "^^<^A"},
-    "08": {"^^^A"},
-    "09": {">^^^A", "^^^>A", "^>^^A", "^^>^A"},
-    "04": {"^<^A", "^^<A"},
-    "05": {"^^A"},
-    "06": {"^^>A", ">^^A", "^>^A"},
-    "01": {"^<A"},
-    "02": {"^A"},
-    "03": {"^>A", ">^A"},
-    "00": {"A"},
-    "0A": {">A"},
-    "A7": {
-        "<^^<^A",
-        "^<^^<A",
-        "^<^<^A",
-        "^^^<<A",
-        "^^<<^A",
-        "^<<^^A",
-        "^^<^<A",
-        "<^^^<A",
-        "<^<^^A",
-    },
-    "A8": {"^^^<A", "^<^^A", "<^^^A", "^^<^A"},
-    "A9": {"^^^A"},
-    "A4": {"<^<^A", "<^^<A", "^<^<A", "^<<^A", "^^<<A"},
-    "A5": {"^<^A", "<^^A", "^^<A"},
-    "A6": {"^^A"},
-    "A1": {"^<<A", "<^<A"},
-    "A2": {"<^A", "^<A"},
-    "A3": {"^A"},
-    "A0": {"<A"},
-    "AA": {"A"},
-}
-
-OPT_ROBOT_TO_KEYPAD = {
-    "77": {"A"},
-    "78": {">A"},
-    "79": {">>A"},
-    "74": {"vA"},
-    "75": {"v>A", ">vA"},
-    "76": {">>vA", "v>>A", ">v>A"},
-    "71": {"vvA"},
-    "72": {">vvA", "vv>A"},
-    "73": {"vv>>A", ">>vvA"},
-    "70": {">vvvA"},
-    "7A": {">>vvvA"},
-    "87": {"<A"},
-    "88": {"A"},
-    "89": {">A"},
-    "84": {"v<A", "<vA"},
-    "85": {"vA"},
-    "86": {"v>A", ">vA"},
-    "81": {"vv<A", "<vvA"},
-    "82": {"vvA"},
-    "83": {">vvA", "vv>A"},
-    "80": {"vvvA"},
-    "8A": {"vvv>A", ">vvvA"},
-    "97": {"<<A"},
-    "98": {"<A"},
-    "99": {"A"},
-    "94": {"<<vA", "v<<A"},
-    "95": {"v<A", "<vA"},
-    "96": {"vA"},
-    "91": {"vv<<A", "<<vvA"},
-    "92": {"vv<A", "<vvA"},
-    "93": {"vvA"},
-    "90": {"<vvvA", "vvv<A"},
-    "9A": {"vvvA"},
-    "47": {"^A"},
-    "48": {"^>A", ">^A"},
-    "49": {"^>>A", ">>^A"},
-    "44": {"A"},
-    "45": {">A"},
-    "46": {">>A"},
-    "41": {"vA"},
-    "42": {"v>A", ">vA"},
-    "43": {">>vA", "v>>A"},
-    "40": {">vvA"},
-    "4A": {">>vvA"},
-    "57": {"<^A", "^<A"},
-    "58": {"^A"},
-    "59": {"^>A", ">^A"},
-    "54": {"<A"},
-    "55": {"A"},
-    "56": {">A"},
-    "51": {"v<A", "<vA"},
-    "52": {"vA"},
-    "53": {"v>A", ">vA"},
-    "50": {"vvA"},
-    "5A": {">vvA", "vv>A"},
-    "67": {"^<<A", "<<^A"},
-    "68": {"<^A", "^<A"},
-    "69": {"^A"},
-    "64": {"<<A"},
-    "65": {"<A"},
-    "66": {"A"},
-    "61": {"<<vA", "v<<A"},
-    "62": {"v<A", "<vA"},
-    "63": {"vA"},
-    "60": {"vv<A", "<vvA"},
-    "6A": {"vvA"},
-    "17": {"^^A"},
-    "18": {"^^>A", ">^^A"},
-    "19": {"^^>>A", ">>^^A"},
-    "14": {"^A"},
-    "15": {"^>A", ">^A"},
-    "16": {"^>>A", ">>^A"},
-    "11": {"A"},
-    "12": {">A"},
-    "13": {">>A"},
-    "10": {">vA"},
-    "1A": {">>vA"},
-    "27": {"<^^A", "^^<A"},
-    "28": {"^^A"},
-    "29": {"^^>A", ">^^A"},
-    "24": {"<^A", "^<A"},
-    "25": {"^A"},
-    "26": {"^>A", ">^A"},
-    "21": {"<A"},
-    "22": {"A"},
-    "23": {">A"},
-    "20": {"vA"},
-    "2A": {"v>A", ">vA"},
-    "37": {"<<^^A", "^^<<A"},
-    "38": {"<^^A", "^^<A"},
-    "39": {"^^A"},
-    "34": {"^<<A", "<<^A"},
-    "35": {"<^A", "^<A"},
-    "36": {"^A"},
-    "31": {"<<A"},
-    "32": {"<A"},
-    "33": {"A"},
-    "30": {"v<A", "<vA"},
-    "3A": {"vA"},
-    "07": {"^^^<A"},
-    "08": {"^^^A"},
-    "09": {">^^^A", "^^^>A"},
-    "04": {"^^<A"},
-    "05": {"^^A"},
-    "06": {"^^>A", ">^^A"},
-    "01": {"^<A"},
-    "02": {"^A"},
-    "03": {"^>A", ">^A"},
-    "00": {"A"},
-    "0A": {">A"},
-    "A7": {"^^^<<A"},
-    "A8": {"^^^<A", "<^^^A"},
-    "A9": {"^^^A"},
-    "A4": {"^^<<A"},
-    "A5": {"<^^A", "^^<A"},
-    "A6": {"^^A"},
-    "A1": {
-        "^<<A",
-    },
-    "A2": {"<^A", "^<A"},
-    "A3": {"^A"},
-    "A0": {"<A"},
-    "AA": {"A"},
+    "7:7": {"A"},
+    "7:8": {">A"},
+    "7:9": {">>A"},
+    "7:4": {"vA"},
+    "7:5": {">vA", "v>A"},
+    "7:6": {">>vA", "v>>A"},
+    "7:1": {"vvA"},
+    "7:2": {">vvA", "vv>A"},
+    "7:3": {">>vvA", "vv>>A"},
+    "7:0": {">vvvA"},
+    "7:A": {">>vvvA"},
+    "8:7": {"<A"},
+    "8:8": {"A"},
+    "8:9": {">A"},
+    "8:4": {"v<A", "<vA"},
+    "8:5": {"vA"},
+    "8:6": {">vA", "v>A"},
+    "8:1": {"<vvA", "vv<A"},
+    "8:2": {"vvA"},
+    "8:3": {">vvA", "vv>A"},
+    "8:0": {"vvvA"},
+    "8:A": {">vvvA", "vvv>A"},
+    "9:7": {"<<A"},
+    "9:8": {"<A"},
+    "9:9": {"A"},
+    "9:4": {"<<vA", "v<<A"},
+    "9:5": {"v<A", "<vA"},
+    "9:6": {"vA"},
+    "9:1": {"<<vvA", "vv<<A"},
+    "9:2": {"<vvA", "vv<A"},
+    "9:3": {"vvA"},
+    "9:0": {"vvv<A", "<vvvA"},
+    "9:A": {"vvvA"},
+    "4:7": {"^A"},
+    "4:8": {"^>A", ">^A"},
+    "4:9": {">>^A", "^>>A"},
+    "4:4": {"A"},
+    "4:5": {">A"},
+    "4:6": {">>A"},
+    "4:1": {"vA"},
+    "4:2": {">vA", "v>A"},
+    "4:3": {">>vA", "v>>A"},
+    "4:0": {">vvA"},
+    "4:A": {">>vvA"},
+    "5:7": {"^<A", "<^A"},
+    "5:8": {"^A"},
+    "5:9": {"^>A", ">^A"},
+    "5:4": {"<A"},
+    "5:5": {"A"},
+    "5:6": {">A"},
+    "5:1": {"v<A", "<vA"},
+    "5:2": {"vA"},
+    "5:3": {">vA", "v>A"},
+    "5:0": {"vvA"},
+    "5:A": {">vvA", "vv>A"},
+    "6:7": {"<<^A", "^<<A"},
+    "6:8": {"^<A", "<^A"},
+    "6:9": {"^A"},
+    "6:4": {"<<A"},
+    "6:5": {"<A"},
+    "6:6": {"A"},
+    "6:1": {"<<vA", "v<<A"},
+    "6:2": {"v<A", "<vA"},
+    "6:3": {"vA"},
+    "6:0": {"<vvA", "vv<A"},
+    "6:A": {"vvA"},
+    "1:7": {"^^A"},
+    "1:8": {">^^A", "^^>A"},
+    "1:9": {">>^^A", "^^>>A"},
+    "1:4": {"^A"},
+    "1:5": {"^>A", ">^A"},
+    "1:6": {">>^A", "^>>A"},
+    "1:1": {"A"},
+    "1:2": {">A"},
+    "1:3": {">>A"},
+    "1:0": {">vA"},
+    "1:A": {">>vA"},
+    "2:7": {"<^^A", "^^<A"},
+    "2:8": {"^^A"},
+    "2:9": {">^^A", "^^>A"},
+    "2:4": {"^<A", "<^A"},
+    "2:5": {"^A"},
+    "2:6": {"^>A", ">^A"},
+    "2:1": {"<A"},
+    "2:2": {"A"},
+    "2:3": {">A"},
+    "2:0": {"vA"},
+    "2:A": {">vA", "v>A"},
+    "3:7": {"^^<<A", "<<^^A"},
+    "3:8": {"<^^A", "^^<A"},
+    "3:9": {"^^A"},
+    "3:4": {"<<^A", "^<<A"},
+    "3:5": {"^<A", "<^A"},
+    "3:6": {"^A"},
+    "3:1": {"<<A"},
+    "3:2": {"<A"},
+    "3:3": {"A"},
+    "3:0": {"v<A", "<vA"},
+    "3:A": {"vA"},
+    "0:7": {"^^^<A"},
+    "0:8": {"^^^A"},
+    "0:9": {"^^^>A", ">^^^A"},
+    "0:4": {"^^<A"},
+    "0:5": {"^^A"},
+    "0:6": {">^^A", "^^>A"},
+    "0:1": {"^<A"},
+    "0:2": {"^A"},
+    "0:3": {"^>A", ">^A"},
+    "0:0": {"A"},
+    "0:A": {">A"},
+    "A:7": {"^^^<<A"},
+    "A:8": {"<^^^A", "^^^<A"},
+    "A:9": {"^^^A"},
+    "A:4": {"^^<<A"},
+    "A:5": {"<^^A", "^^<A"},
+    "A:6": {"^^A"},
+    "A:1": {"^<<A"},
+    "A:2": {"^<A", "<^A"},
+    "A:3": {"^A"},
+    "A:0": {"<A"},
+    "A:A": {"A"},
 }
 
 ROBOT_TO_ROBOT_TRANSITIONS = {
-    "^^": {"A"},
-    "^A": {">A"},
-    "^<": {"v<A"},
-    "^v": {"vA"},
-    "^>": {">vA", "v>A"},
-    "A^": {"<A"},
-    "AA": {"A"},
-    "A<": {"v<<A", "<v<A"},
-    "Av": {"v<A", "<vA"},
-    "A>": {"vA"},
-    "<^": {">^A"},
-    "<A": {">>^A", ">^>A"},
-    "<<": {"A"},
-    "<v": {">A"},
-    "<>": {">>A"},
-    "v^": {"^A"},
-    "vA": {">^A", "^>A"},
-    "v<": {"<A"},
-    "vv": {"A"},
-    "v>": {">A"},
-    ">^": {"^<A", "<^A"},
-    ">A": {"^A"},
-    "><": {"<<A"},
-    ">v": {"<A"},
-    ">>": {"A"},
-}
-
-OPT_ROBOT_TO_ROBOT = {
-    "AA": {"A"},
-    "^^": {"A"},
-    "vv": {"A"},
-    "<<": {"A"},
-    ">>": {"A"},
-    "^A": {">A"},
-    "^<": {"v<A"},
-    "^v": {"vA"},
-    "A^": {"<A"},
-    "A<": {"v<<A"},
-    "A>": {"vA"},
-    "<^": {">^A"},
-    "<A": {">>^A"},
-    "<v": {">A"},
-    "<>": {">>A"},
-    "v^": {"^A"},
-    "v<": {"<A"},
-    "v>": {">A"},
-    ">A": {"^A"},
-    "><": {"<<A"},
-    ">v": {"<A"},
-    # "^>": {">vA", "v>A"},
-    # "Av": {"v<A", "<vA"},
-    # "vA": {">^A", "^>A"},
-    # ">^": {"^<A", "<^A"},
-    "^>": {"v>A"},
-    "Av": {"<vA"},
-    "vA": {">^A"},
-    ">^": {"<^A"},
+    "^:^": {"A"},
+    "^:A": {">A"},
+    "^:<": {"v<A"},
+    "^:v": {"vA"},
+    "^:>": {"v>A", ">vA"},
+    "A:^": {"<A"},
+    "A:A": {"A"},
+    "A:<": {"v<<A"},
+    "A:v": {"<vA", "v<A"},
+    "A:>": {"vA"},
+    "<:^": {">^A"},
+    "<:A": {">>^A"},
+    "<:<": {"A"},
+    "<:v": {">A"},
+    "<:>": {">>A"},
+    "v:^": {"^A"},
+    "v:A": {">^A", "^>A"},
+    "v:<": {"<A"},
+    "v:v": {"A"},
+    "v:>": {">A"},
+    ">:^": {"^<A", "<^A"},
+    ">:A": {"^A"},
+    ">:<": {"<<A"},
+    ">:v": {"<A"},
+    ">:>": {"A"},
 }
 
 
@@ -639,36 +481,64 @@ def test_build_transition_map():
     assert robot_to_keypad.min_transition == ROBOT_TO_KEYPAD_TRANSITIONS
 
 
-def keypad_to_robot(desired_output, opt=False):
+def options_to_tuples(possible_inputs):
+    set_of_options = {
+        "".join(instructions) for instructions in product(*possible_inputs)
+    }
+    return tuple(sorted(set_of_options))
+
+
+def keypad_to_robot(desired_output):
     possible_inputs = []
     current_key = "A"
     for next_move in desired_output:
-        routes = (
-            OPT_ROBOT_TO_KEYPAD[f"{current_key}{next_move}"]
-            if opt
-            else ROBOT_TO_KEYPAD_TRANSITIONS[f"{current_key}{next_move}"]
-        )
+        routes = ROBOT_TO_KEYPAD_TRANSITIONS[f"{current_key}:{next_move}"]
         possible_inputs.append(routes)
         current_key = next_move
-    return {"".join(instructions) for instructions in product(*possible_inputs)}
+    return options_to_tuples(possible_inputs)
 
 
 def test_keyboard_to_robot():
-    assert keypad_to_robot("029A") == {"<A^A>^^AvvvA", "<A^A^^>AvvvA", "<A^A^>^AvvvA"}
+    assert keypad_to_robot("029A") == ("<A^A>^^AvvvA", "<A^A^^>AvvvA")
 
 
-def robot_to_robot(desired_output, opt=False):
-    possible_inputs = []
-    current_key = "A"
-    for next_move in desired_output:
-        routes = (
-            OPT_ROBOT_TO_ROBOT[f"{current_key}{next_move}"]
-            if opt
-            else ROBOT_TO_ROBOT_TRANSITIONS[f"{current_key}{next_move}"]
-        )
-        possible_inputs.append(routes)
-        current_key = next_move
-    return {"".join(instructions) for instructions in product(*possible_inputs)}
+@cache
+def split_into_blocks(desired_output):
+    blocks = []
+    current_block = ""
+    for target in desired_output:
+        if target == "A":
+            blocks.append(f"{current_block}A")
+            current_block = ""
+        else:
+            current_block = f"{current_block}{target}"
+    if current_block != "":
+        blocks.append(current_block)
+    # return Counter(blocks)
+    return blocks
+
+
+def test_split_into_blocks():
+    # assert split_into_blocks("<A^A>^^AvvvA") == Counter(["<A", "^A", ">^^A", "vvvA"])
+    assert split_into_blocks("<A^A>^^AvvvA") == ["<A", "^A", ">^^A", "vvvA"]
+
+
+@cache
+def robot_to_robot(desired_output):
+    blocks = split_into_blocks(desired_output)
+    if len(blocks) == 1:
+        possible_inputs = []
+        current_key = "A"
+        for next_move in desired_output:
+            routes = ROBOT_TO_ROBOT_TRANSITIONS[f"{current_key}:{next_move}"]
+            possible_inputs.append(routes)
+            current_key = next_move
+        return options_to_tuples(possible_inputs)
+        # return tuple(sorted(
+        #         {"".join(instructions) for instructions in product(*possible_inputs)}
+        #     )
+    next_blocks = [robot_to_robot(block) for block in blocks]
+    return tuple({"".join(instructions) for instructions in product(*next_blocks)})
 
 
 def test_keyboard_to_robot_to_robot():
@@ -676,56 +546,151 @@ def test_keyboard_to_robot_to_robot():
     robot_to_keypad = keypad_to_robot("029A")
     robot_to_robot_to_keypad = set()
     for instructions in robot_to_keypad:
-        robot_to_robot_to_keypad |= robot_to_robot(instructions)
+        robot_to_robot_to_keypad |= set(robot_to_robot(instructions))
     assert one_sequence in robot_to_robot_to_keypad
-    assert {len(instructions) for instructions in robot_to_robot_to_keypad} == {28, 30}
+    assert {len(instructions) for instructions in robot_to_robot_to_keypad} == {28}
 
 
-def keyboard_to_robot_chain(desired_output, number_of_robots=1, opt=False):
-    current_instructions = keypad_to_robot(desired_output, opt)
+def keyboard_to_robot_chain(desired_output, number_of_robots=1):
+    current_instructions = keypad_to_robot(desired_output)
     for _ in range(number_of_robots - 1):
         next_level = set()
         for instructions in current_instructions:
-            next_level |= robot_to_robot(instructions, opt)
+            next_level |= set(robot_to_robot(instructions))
         min_len = min(len(instruction) for instruction in next_level)
-        current_instructions = {
+        current_instructions = tuple(
             instruction for instruction in next_level if len(instruction) == min_len
-        }
+        )
     return current_instructions
 
 
 def test_keyboard_to_robot_chain():
     one_sequence = "v<<A>>^A<A>AvA<^AA>A<vAAA>^A"
     assert one_sequence in keyboard_to_robot_chain("029A", number_of_robots=2)
-    another_sequence = (
-        "<vA<AA>>^AvAA<^A>A<v<A>>^AvA^A<vA>^A<v<A>^A>AAvA^A<v<A>A>^AAAvA<^A>A"
-    )
-    assert another_sequence in keyboard_to_robot_chain("029A", number_of_robots=3)
+    # NOTE: Filtering non-efficient paths from my TRANSITION mappings the following
+    # another_sequence doesn't get generated - so I've commented out the test
+    # another_sequence = (
+    #     "<vA<AA>>^AvAA<^A>A<v<A>>^AvA^A<vA>^A<v<A>^A>AAvA^A<v<A>A>^AAAvA<^A>A"
+    # )
+    # assert another_sequence in keyboard_to_robot_chain("029A", number_of_robots=3)
+
+
+def instructions_to_block_frequency(instruction, multiplier=1):
+    return {
+        k: v * multiplier for k, v in Counter(split_into_blocks(instruction)).items()
+    }
+
+
+def add_keypad_robot(run_frequency):
+    next_block_frequency = defaultdict(list)
+    for block, block_frequency in run_frequency.items():
+        next_instructions_list = robot_to_robot(block)
+        for next_instructions in next_instructions_list:
+            next_block_frequency[block].append(
+                instructions_to_block_frequency(next_instructions, block_frequency)
+            )
+    next_block_frequency_list = []
+    for block_frequency_tuple in product(*next_block_frequency.values()):
+        total_count = defaultdict(int)
+        for block_frequency in block_frequency_tuple:
+            for block, count in block_frequency.items():
+                total_count[block] += count
+        next_block_frequency_list.append(total_count)
+    return next_block_frequency_list
+
+
+def add_keypad_robot_to_frequency_list(run_frequency_list):
+    next_frequencies = []
+    for run_frequency in run_frequency_list:
+        next_frequencies.extend(add_keypad_robot(run_frequency))
+    return next_frequencies
 
 
 def score_keyboard_to_robot_chain(desired_output, number_of_robots=1):
-    instructions = keyboard_to_robot_chain(desired_output, number_of_robots, opt=True)
-    min_length = min(len(instruction) for instruction in instructions)
-    return int(desired_output[:-1]) * min_length
+    instruction_block_options = []
+    for keypad_option in keypad_to_robot(desired_output):
+        instruction_block_options.append(Counter(split_into_blocks(keypad_option)))
+
+    # FIRST PASS
+    # possible_scores = []
+    # for keypad_option in keypad_options:
+    #     instruction_blocks = Counter(split_into_blocks(keypad_option))
+    #     for _ in range(2, number_of_robots + 1):
+    #         next_instruction_blocks = Counter()
+    #         for block, count in instruction_blocks.items():
+    #             next_move_options = robot_to_robot(block)
+    #             if len(next_move_options) > 1:
+    #                 for next_move in next_move_options:
+    #                     next_move_blocks = Counter(split_into_blocks(next_move))
+    #                     pass  # TODO: Identify the "best" next_move_blocks
+    #             next_move_blocks = Counter(split_into_blocks(next_move_options[0]))
+    #             for instruction, instruction_count in next_move_blocks.items():
+    #                 next_instruction_blocks[instruction] += count * instruction_count
+    #         instruction_blocks = next_instruction_blocks
+    #     possible_scores.append(
+    #         int(desired_output[:-1])
+    #         * sum(len(k) * v for (k, v) in instruction_blocks.items())
+    #     )
+    # return min(possible_scores)
+
+    # NEXT ATTEMPT
+    for _ in range(2, number_of_robots + 1):
+        instruction_block_options = add_keypad_robot_to_frequency_list(
+            instruction_block_options
+        )
+
+    min_option = None
+    for instruction_block in instruction_block_options:
+        current_sum = sum(len(k) * v for (k, v) in instruction_block.items())
+        if min_option is None or current_sum < min_option:
+            min_option = current_sum
+    return min_option
+    # return int(desired_output[:-1]) * min_option
 
 
 def test_scores():
-    assert score_keyboard_to_robot_chain("029A", number_of_robots=3) == 68 * 29
-    assert score_keyboard_to_robot_chain("980A", number_of_robots=3) == 60 * 980
-    assert score_keyboard_to_robot_chain("179A", number_of_robots=3) == 68 * 179
-    assert score_keyboard_to_robot_chain("456A", number_of_robots=3) == 64 * 456
-    assert score_keyboard_to_robot_chain("379A", number_of_robots=3) == 64 * 379
+    assert (
+        score_keyboard_to_robot_chain("029A", number_of_robots=3) == 68
+    )  # 68 * 29 = 1972
+    assert (
+        score_keyboard_to_robot_chain("980A", number_of_robots=3) == 60
+    )  # 60 * 980 = 58800
+    assert (
+        score_keyboard_to_robot_chain("179A", number_of_robots=3) == 68
+    )  # 68 * 179 = 12172
+    assert (
+        score_keyboard_to_robot_chain("456A", number_of_robots=3) == 64
+    )  # 64 * 456 = 29184
+    assert (
+        score_keyboard_to_robot_chain("379A", number_of_robots=3) == 64
+    )  # 64 * 379 = 24256
 
 
 def test_my_scores_pt1():
     assert (
-        sum(score_keyboard_to_robot_chain(code, number_of_robots=3) for code in CODES)
-        == 137870
+        sum(
+            score_keyboard_to_robot_chain(code, number_of_robots=3) * int(code[:-1])
+            for code in CODES
+        )
+        == 137_870
     )
 
 
 def test_my_scores_pt2():
     assert (
-        sum(score_keyboard_to_robot_chain(code, number_of_robots=26) for code in CODES)
-        == 137870
+        sum(
+            score_keyboard_to_robot_chain(code, number_of_robots=26) * int(code[:-1])
+            for code in CODES
+        )
+        == 900900_1386299471622162292811
     )
+    # Initial answer of 630_001_796_303_072 was too high, but I think I had an extra robot in there.
+    # After fixing that got 521_349_728_026_862 which was still too high, but the code also resulted
+    # in a part 1 answer that was too high.
+    #
+    # After fixing misc stuff so part 1 was now correct got 193_606_477_851_200 which was still too high...
+    #
+    # Overall this part 2 was quite a mess - finally rewrote to use frequency blocks which I probably
+    # should refactor to be more clean or native to speed up?
+    #
+    # But finally got
