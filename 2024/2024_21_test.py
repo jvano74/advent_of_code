@@ -187,6 +187,9 @@ class Puzzle:
     cause the robot in front of the door to type each code. What is the sum of
     the complexities of the five codes on your list?
 
+    Your puzzle answer was 170279148659464.
+
+    Both parts of this puzzle are complete! They provide two gold stars: **
 
     """
 
@@ -606,46 +609,34 @@ def add_keypad_robot_to_frequency_list(run_frequency_list):
     return next_frequencies
 
 
-def score_keyboard_to_robot_chain(desired_output, number_of_robots=1):
-    instruction_block_options = []
-    for keypad_option in keypad_to_robot(desired_output):
-        instruction_block_options.append(Counter(split_into_blocks(keypad_option)))
+ROBOT_TO_ROBOT_LENGTH = {
+    key: len(list(value)[0]) for key, value in ROBOT_TO_ROBOT_TRANSITIONS.items()
+}
 
-    # FIRST PASS
-    # possible_scores = []
-    # for keypad_option in keypad_options:
-    #     instruction_blocks = Counter(split_into_blocks(keypad_option))
-    #     for _ in range(2, number_of_robots + 1):
-    #         next_instruction_blocks = Counter()
-    #         for block, count in instruction_blocks.items():
-    #             next_move_options = robot_to_robot(block)
-    #             if len(next_move_options) > 1:
-    #                 for next_move in next_move_options:
-    #                     next_move_blocks = Counter(split_into_blocks(next_move))
-    #                     pass  # TODO: Identify the "best" next_move_blocks
-    #             next_move_blocks = Counter(split_into_blocks(next_move_options[0]))
-    #             for instruction, instruction_count in next_move_blocks.items():
-    #                 next_instruction_blocks[instruction] += count * instruction_count
-    #         instruction_blocks = next_instruction_blocks
-    #     possible_scores.append(
-    #         int(desired_output[:-1])
-    #         * sum(len(k) * v for (k, v) in instruction_blocks.items())
-    #     )
-    # return min(possible_scores)
 
-    # NEXT ATTEMPT
-    for _ in range(2, number_of_robots + 1):
-        instruction_block_options = add_keypad_robot_to_frequency_list(
-            instruction_block_options
+@cache
+def robot_to_robot_length(desired_output, depth=1):
+    if depth == 1:
+        return sum(
+            ROBOT_TO_ROBOT_LENGTH[f"{x}:{y}"]
+            for x, y in zip("A" + desired_output, desired_output)
         )
+    total = 0
+    for a, b in zip("A" + desired_output, desired_output):
+        total += min(
+            robot_to_robot_length(sub_seq, depth - 1)
+            for sub_seq in ROBOT_TO_ROBOT_TRANSITIONS[f"{a}:{b}"]
+        )
+    return total
 
+
+def score_keyboard_to_robot_chain(desired_output, number_of_robots=1):
     min_option = None
-    for instruction_block in instruction_block_options:
-        current_sum = sum(len(k) * v for (k, v) in instruction_block.items())
-        if min_option is None or current_sum < min_option:
-            min_option = current_sum
+    for option in keypad_to_robot(desired_output):
+        option_length = robot_to_robot_length(option, number_of_robots - 1)
+        if min_option is None or option_length < min_option:
+            min_option = option_length
     return min_option
-    # return int(desired_output[:-1]) * min_option
 
 
 def test_scores():
@@ -682,7 +673,7 @@ def test_my_scores_pt2():
             score_keyboard_to_robot_chain(code, number_of_robots=26) * int(code[:-1])
             for code in CODES
         )
-        == 900900_1386299471622162292811
+        == 170_279_148_659_464
     )
     # Initial answer of 630_001_796_303_072 was too high, but I think I had an extra robot in there.
     # After fixing that got 521_349_728_026_862 which was still too high, but the code also resulted
