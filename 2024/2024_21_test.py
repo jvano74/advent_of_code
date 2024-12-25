@@ -578,37 +578,6 @@ def test_keyboard_to_robot_chain():
     # assert another_sequence in keyboard_to_robot_chain("029A", number_of_robots=3)
 
 
-def instructions_to_block_frequency(instruction, multiplier=1):
-    return {
-        k: v * multiplier for k, v in Counter(split_into_blocks(instruction)).items()
-    }
-
-
-def add_keypad_robot(run_frequency):
-    next_block_frequency = defaultdict(list)
-    for block, block_frequency in run_frequency.items():
-        next_instructions_list = robot_to_robot(block)
-        for next_instructions in next_instructions_list:
-            next_block_frequency[block].append(
-                instructions_to_block_frequency(next_instructions, block_frequency)
-            )
-    next_block_frequency_list = []
-    for block_frequency_tuple in product(*next_block_frequency.values()):
-        total_count = defaultdict(int)
-        for block_frequency in block_frequency_tuple:
-            for block, count in block_frequency.items():
-                total_count[block] += count
-        next_block_frequency_list.append(total_count)
-    return next_block_frequency_list
-
-
-def add_keypad_robot_to_frequency_list(run_frequency_list):
-    next_frequencies = []
-    for run_frequency in run_frequency_list:
-        next_frequencies.extend(add_keypad_robot(run_frequency))
-    return next_frequencies
-
-
 ROBOT_TO_ROBOT_LENGTH = {
     key: len(list(value)[0]) for key, value in ROBOT_TO_ROBOT_TRANSITIONS.items()
 }
@@ -684,4 +653,5 @@ def test_my_scores_pt2():
     # Overall this part 2 was quite a mess - finally rewrote to use frequency blocks which I probably
     # should refactor to be more clean or native to speed up?
     #
-    # But finally got
+    # But finally watching other solutions realized needed to get to a depth first optimization and
+    # also that I could look at this as pairwise minimizing .
