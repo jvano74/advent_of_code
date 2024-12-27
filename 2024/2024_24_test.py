@@ -1,8 +1,4 @@
 from pathlib import Path
-from queue import PriorityQueue
-from itertools import product
-from typing import List, Tuple, NamedTuple
-from functools import cache
 from collections import defaultdict
 
 
@@ -271,6 +267,10 @@ class Puzzle:
     addition; what do you get if you sort the names of the eight wires involved
     in a swap and then join those names with commas?
 
+    Your puzzle answer was btb,cmv,mwp,rdg,rmj,z17,z23,z30.
+
+    Both parts of this puzzle are complete! They provide two gold stars: **
+
     """
 
 
@@ -381,10 +381,19 @@ class FruitMonitor:
         }
 
         self.logic = {}
+        self.first_layer = defaultdict(dict)
+        self.errors = defaultdict(lambda: defaultdict(dict))
+        self.swaps = set()
+
         for raw_ln in raw_gates.split("\n"):
             label, out_wire = raw_ln.split(" -> ")
             a, gate, b = label.split(" ")
             self.logic[out_wire] = gate, a, b
+            if {a[0], b[0]} == {"x", "y"}:
+                if a[1:] != b[1:]:
+                    self.errors["CROSSED-INPUTS"][out_wire][gate] = (a, b)
+                else:
+                    self.first_layer[gate][int(a[1:])] = out_wire
 
     def find_output(self):
         yet_to_calculate = set(self.logic.keys())
@@ -411,64 +420,182 @@ class FruitMonitor:
             if wire[0] == "z"
         )
 
-    def order_output(self):
-        x_bits = sorted(bit for bit in self.input_wires.keys() if bit[0] == "x")
-        y_bits = sorted(bit for bit in self.input_wires.keys() if bit[0] == "y")
-        z_bits = sorted(bit for bit in self.logic.keys() if bit[0] == "z")
-        used_bits = set()
-        ordered_bits = {}
-        error_bits = {}
-        for z_bit in z_bits:
-            ordered_bits[z_bit] = set()
-            error_bits[z_bit] = set()
-            test_bits = {z_bit}
-            while test_bits:
-                test_bit = test_bits.pop()
-                if test_bit[0] in ("x", "y"):
-                    if int(test_bit[1:]) > int(z_bit[1:]):
-                        error_bits[z_bit].add(test_bit)
-                    else:
-                        ordered_bits[z_bit].add(test_bit)
-                elif test_bit in used_bits:
-                    error_bits[z_bit].add(test_bit)
-                elif test_bit in ordered_bits[z_bit]:
-                    pass
-                elif test_bit in self.logic:
-                    ordered_bits[z_bit].add(test_bit)
-                    gate, a, b = self.logic[test_bit]
-                    test_bits.add(a)
-                    test_bits.add(b)
+    def pp(self, wire, depth=0):
+        if wire[0] in "xy":
+            return "  " * depth + wire
+        op, x, y = self.logic[wire]
+        return (
+            "  " * depth
+            + op
+            + f" ({wire})\n"
+            + self.pp(x, depth + 1)
+            + "\n"
+            + self.pp(y, depth + 1)
+        )
 
-        return ordered_bits, error_bits
+    def verify_recarry(self, wire, bit):
+        if (
+            bit in self.first_layer["RECARRY"]
+            and wire == self.first_layer["RECARRY"][bit]
+        ):
+            return True, None
+        if bit in self.errors["RECARRY"] and wire in self.errors["RECARRY"][bit]:
+            return False, self.errors["RECARRY"][bit][wire]
 
+        print(f"verify_recarry {wire=} {bit=}")
+        op, x, y = self.logic[wire]
+        and_bit = self.first_layer["AND"][bit]
+        if op != "AND":
+            self.errors["RECARRY"][bit][wire] = f"{wire=} op not AND swap {and_bit=}"
+            return False, self.errors["RECARRY"][bit][wire]
+        xor_bit = self.first_layer["XOR"][bit]
+        if x == xor_bit:
+            y_carry, y_swap = self.verify_carry(y, bit)
+            if y_carry:
+                self.first_layer["RECARRY"][bit] = wire
+                return True, None
+            self.errors["RECARRY"][bit][
+                wire
+            ] = f"{wire=} not recarry - {y} not carry {y_swap=}"
+            return False, self.errors["RECARRY"][bit][wire]
+        if y == xor_bit:
+            x_carry, x_swap = self.verify_carry(x, bit)
+            if x_carry:
+                self.first_layer["RECARRY"][bit] = wire
+                return True, None
+            self.errors["RECARRY"][bit][
+                wire
+            ] = f"{wire=} not recarry - {x} not carry {x_swap=}"
+            return False, self.errors["RECARRY"][bit][wire]
+        y_carry, y_swap = self.verify_carry(y, bit)
+        if y_carry:
+            self.errors["RECARRY"][bit][wire] = f"{wire=} not recarry - {y} not carry"
+            return False, f"swap {x=} and {xor_bit=}"
+        x_carry, x_swap = self.verify_carry(x, bit)
+        if x_carry:
+            self.errors["RECARRY"][bit][wire] = f"swap {y=} and {xor_bit=}"
+            return False, self.errors["RECARRY"][bit][wire]
+        self.errors["RECARRY"][bit][
+            wire
+        ] = f"Unsure of what to swap {x_swap=}, {y_swap=}"
+        return False, self.errors["RECARRY"][bit][wire]
 
-def test_order_output():
-    sample = FruitMonitor(SWAP_SAMPLE)
-    assert sample.order_output() == (
-        {
-            "z00": {"z00"},
-            "z01": {"z01"},
-            "z02": {"z02", "y01", "x01"},
-            "z03": {"y03", "x03", "z03"},
-            "z04": {"x04", "y04", "z04"},
-            "z05": {"y00", "z05", "x00"},
-        },
-        {
-            "z00": {"x05", "y05"},
-            "z01": {"x02", "y02"},
-            "z02": set(),
-            "z03": set(),
-            "z04": set(),
-            "z05": set(),
-        },
-    )
-    assert False
+    def verify_carry(self, wire, bit):
+        if bit in self.first_layer["CARRY"] and wire == self.first_layer["CARRY"][bit]:
+            return True, None
+        if bit in self.errors["CARRY"] and wire in self.errors["CARRY"][bit]:
+            return False, self.errors["CARRY"][bit][wire]
+        print(f"verify_carry {wire=} {bit=}")
+        and_bit = self.first_layer["AND"][bit - 1]
+        if wire not in self.logic:
+            swap = set()
+            if bit == 1:
+                swap.add(and_bit)
+            else:
+                for test_wire, (test_op, a, b) in self.logic.items():
+                    if test_op != "OR":
+                        continue
+                    if and_bit not in {a, b}:
+                        continue
+                    swap.add(test_wire)
+            self.errors["CARRY"][bit][wire] = f"{wire} not carry try {swap}"
+            return False, self.errors["CARRY"][bit][wire]
+        op, x, y = self.logic[wire]
+        if bit == 1:
+            if op != "AND":
+                self.errors["CARRY"][bit][wire] = f"{bit=} and {wire=} op not AND"
+                return False, self.errors["CARRY"][bit][wire]
+            if {x, y} != {f"x00", "y00"}:
+                self.errors["CARRY"][bit][wire] = f"{bit=} and {x}, {y} != x00, y00"
+                return False, self.errors["CARRY"][bit][wire]
+            self.first_layer["CARRY"][bit] = wire
+            return True, None
+        # or_bit = self.first_layer["OR"][bit]
+        if op != "OR":
+            self.errors["CARRY"][bit][wire] = f"{wire=} op not AND swap ???"
+            return False, self.errors["CARRY"][bit][wire]
+        if x == and_bit:
+            y_recarry, y_swap = self.verify_recarry(y, bit - 1)
+            if y_recarry:
+                self.first_layer["CARRY"][bit] = wire
+                return True, None
+            return False, y_swap
+        if y == and_bit:
+            x_recarry, x_swap = self.verify_recarry(x, bit - 1)
+            if x_recarry:
+                self.first_layer["CARRY"][bit] = wire
+                return True, None
+            self.errors["CARRY"][bit][wire] = x_swap
+            return False, self.errors["CARRY"][bit][wire]
+        y_recarry, y_swap = self.verify_recarry(y, bit - 1)
+        if y_recarry:
+            self.errors["CARRY"][bit][
+                wire
+            ] = f"checking {wire=} is carry {y=} is valid recarry but {x=} not {and_bit=}"
+            return False, self.errors["CARRY"][bit][wire]
+        x_recarry, x_swap = self.verify_recarry(x, bit - 1)
+        if x_recarry:
+            self.errors["CARRY"][bit][wire] = f"swap {y=} and {and_bit=}"
+            return False, self.errors["CARRY"][bit][wire]
+        self.errors["CARRY"][bit][
+            wire
+        ] = f"Unsure of swap for {wire=} {bit=} carry {x=}, {y=}"
+        return False, self.errors["CARRY"][bit][wire]
 
+    def verify_z(self, wire, bit):
+        print(f"verify_z {wire=} {bit=}")
+        op, x, y = self.logic[wire]
+        if bit == 0:
+            if op == "XOR" and {x, y} == {"x00", "y00"}:
+                return True, None
+            return False, f"{op} {x}, {y} != XOR x00, y00"
+        xor_bit = self.first_layer["XOR"][bit]
+        if op != "XOR":
+            swap = set()
+            # carry_bit = self.first_layer["CARRY"]
+            for test_wire, (test_op, a, b) in self.logic.items():
+                if test_op != "XOR":
+                    continue
+                if xor_bit not in {a, b}:
+                    continue
+                swap.add(test_wire)
+            return (
+                False,
+                f"{wire=} not XOR, {swap=}?",
+            )
+        xor_bit = self.first_layer["XOR"][bit]
+        if x == xor_bit:
+            return self.verify_carry(y, bit)
+        if y == xor_bit:
+            return self.verify_carry(x, bit)
+        x_carry, x_swap = self.verify_carry(x, bit)
+        if x_carry:
+            return False, f"swap {y=} and {xor_bit=}"
+        y_carry, y_swap = self.verify_carry(y, bit)
+        if y_carry:
+            return False, f"swap {x=} and {xor_bit=}"
+        return False, f"Unsure of what to swap {x_swap=} {y_swap=}"
 
-def test_my_order_output():
-    sample = FruitMonitor(RAW_INPUT)
-    rdered_bits, error_bits = sample.order_output()
-    assert False
+    def verify(self):
+        bit = 0
+        while bit < 45:
+            z_valid, swaps = self.verify_z(f"z{bit:02}", bit)
+            if z_valid:
+                bit += 1
+                continue
+            print(f"failed verify_z on z{bit:02}, {swaps}")
+            return False
+        return True
+
+    def swap(self, a, b):
+        self.swaps.add(a)
+        self.swaps.add(b)
+        self.logic[a], self.logic[b] = self.logic[b], self.logic[a]
+        for gate in self.first_layer.keys():
+            for bit in self.first_layer[gate].keys():
+                if self.first_layer[gate][bit] in {a, b}:
+                    current = self.first_layer[gate][bit]
+                    self.first_layer[gate][bit] = a if current == b else b
 
 
 def test_fruit_monitor():
@@ -485,3 +612,22 @@ def test_my_fruit_monitor():
     my_monitor = FruitMonitor(RAW_INPUT)
     out_value = my_monitor.find_output()
     assert out_value == 55920211035878
+
+
+def test_my_order_output():
+    mon = FruitMonitor(RAW_INPUT)
+    # swaps
+    # z17
+    mon.swap("z17", "cmv")
+    # z23
+    mon.swap("z23", "rmj")
+    # print(mon.pp("z23"))
+    # z30
+    mon.swap("z30", "rdg")
+    # print(mon.pp("z30"))
+    # z38
+    mon.swap("mwp", "btb")
+    # print(mon.pp("z31"))
+
+    assert mon.verify()
+    assert ",".join(sorted(mon.swaps)) == "btb,cmv,mwp,rdg,rmj,z17,z23,z30"
