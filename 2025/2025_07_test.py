@@ -1,7 +1,6 @@
 from pathlib import Path
 from typing import List
 from collections import defaultdict
-from math import prod
 
 
 class Puzzle:
