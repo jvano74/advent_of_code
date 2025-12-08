@@ -1,6 +1,5 @@
 from pathlib import Path
 from typing import List, NamedTuple
-from collections import defaultdict
 
 
 class Puzzle:
