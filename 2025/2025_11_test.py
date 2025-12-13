@@ -1,7 +1,7 @@
 from pathlib import Path
 from typing import List
+from functools import cache
 from heapq import heappush, heappop
-from collections import defaultdict
 
 
 class Puzzle:
@@ -116,6 +116,9 @@ class Puzzle:
     Find all of the paths that lead from svr to out. How many of those paths
     visit both dac and fft?
 
+    Your puzzle answer was 388893655378800.
+
+    Both parts of this puzzle are complete! They provide two gold stars: **
     """
 
 
@@ -161,6 +164,14 @@ class Reactor:
             name, connections = raw_line.split(": ")
             self.routes[name] = set(connections.split(" "))
 
+    @cache
+    def route_count(self, start="you", end="out"):
+        if start == end:
+            return 1
+        if start not in self.routes:
+            return 0
+        return sum(self.route_count(start=pt, end=end) for pt in self.routes[start])
+
     def find_routes(self, start="you", end="out"):
         paths = []
         boundary = [(0, start, [start])]
@@ -183,6 +194,7 @@ class Reactor:
 def test_reactor():
     sample_reactor = Reactor(SAMPLE)
     assert len(sample_reactor.find_routes()) == 5
+    assert sample_reactor.route_count() == 5
 
     sample_reactor = Reactor(SAMPLE2)
 
@@ -191,12 +203,12 @@ def test_reactor():
     assert len(paths_of_interest) == 2
 
     # Alternative
-    svr_to_dac = len(sample_reactor.find_routes(start="svr", end="dac"))
-    svr_to_fft = len(sample_reactor.find_routes(start="svr", end="fft"))
-    dac_to_fft = len(sample_reactor.find_routes(start="dac", end="fft"))
-    fft_to_dac = len(sample_reactor.find_routes(start="fft", end="dac"))
-    dac_to_out = len(sample_reactor.find_routes(start="dac", end="out"))
-    fft_to_out = len(sample_reactor.find_routes(start="fft", end="out"))
+    svr_to_dac = sample_reactor.route_count(start="svr", end="dac")
+    svr_to_fft = sample_reactor.route_count(start="svr", end="fft")
+    dac_to_fft = sample_reactor.route_count(start="dac", end="fft")
+    fft_to_dac = sample_reactor.route_count(start="fft", end="dac")
+    dac_to_out = sample_reactor.route_count(start="dac", end="out")
+    fft_to_out = sample_reactor.route_count(start="fft", end="out")
 
     assert svr_to_dac == 2
     assert dac_to_fft == 0
@@ -207,7 +219,7 @@ def test_reactor():
     assert dac_to_out == 2
 
     my_reactor = Reactor(RAW_INPUT)
-    assert len(my_reactor.find_routes()) == 699
+    assert my_reactor.route_count() == 699
 
     # TOO SLOW
     # all_paths = my_reactor.find_routes(start="svr")
@@ -215,19 +227,19 @@ def test_reactor():
     # assert len(paths_of_interest) == 2
 
     # Alternative
-    dac_to_fft = len(my_reactor.find_routes(start="dac", end="fft"))
+    dac_to_fft = my_reactor.route_count(start="dac", end="fft")
     assert dac_to_fft == 0
-    # Do we can ignore going from dac_to_fft...
-    # svr_to_dac = len(my_reactor.find_routes(start="svr", end="dac"))
-    # assert svr_to_dac == -1
-    # fft_to_out = len(my_reactor.find_routes(start="fft", end="out"))
-    # assert fft_to_out == -1
-
-    # STILL SLOW
-    # fft_to_dac = len(my_reactor.find_routes(start="fft", end="dac"))
-    # assert fft_to_dac == -1
-    # svr_to_fft = len(my_reactor.find_routes(start="svr", end="fft"))
-    # assert svr_to_fft == -1
-
-    # dac_to_out = len(my_reactor.find_routes(start="dac", end="out"))
-    # assert dac_to_out == -1
+    svr_to_dac = my_reactor.route_count(start="svr", end="dac")
+    assert svr_to_dac == 3041933305555
+    fft_to_out = my_reactor.route_count(start="fft", end="out")
+    assert fft_to_out == 1517071963739
+    fft_to_dac = my_reactor.route_count(start="fft", end="dac")
+    assert fft_to_dac == 17109136
+    svr_to_fft = my_reactor.route_count(start="svr", end="fft")
+    assert svr_to_fft == 4275
+    dac_to_out = my_reactor.route_count(start="dac", end="out")
+    assert dac_to_out == 5317
+    total_routes = (
+        svr_to_dac * dac_to_fft * fft_to_out + svr_to_fft * fft_to_dac * dac_to_out
+    )
+    assert total_routes == 388893655378800
