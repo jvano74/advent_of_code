@@ -211,19 +211,273 @@ class Pt(NamedTuple):
         return (abs(self.x - other.x) + 1) * (abs(self.y - other.y) + 1)
 
 
+class Ln(NamedTuple):
+    a: Pt
+    b: Pt
+    o: Pt
+    v: Pt
+    back_v: Pt
+    v_unit: Pt
+    v_len: int
+
+    @classmethod
+    def raw(cls, o, next, prev):
+        v = next - o
+        back_v = prev - o
+        if v.x > 0:
+            return cls(a=o, b=next, o=o, v=v, back_v=back_v, v_unit=Pt(1, 0), v_len=v.x)
+        if v.x < 0:
+            return cls(
+                a=o, b=next, o=o, v=v, back_v=back_v, v_unit=Pt(-1, 0), v_len=-v.x
+            )
+        if v.y > 0:
+            return cls(a=o, b=next, o=o, v=v, back_v=back_v, v_unit=Pt(0, 1), v_len=v.y)
+        if v.y < 0:
+            return cls(
+                a=o, b=next, o=o, v=v, back_v=back_v, v_unit=Pt(0, -1), v_len=-v.y
+            )
+
+    def min(self):
+        return Pt(min(self.a.x, self.b.x), min(self.a.y, self.b.y))
+
+    def max(self):
+        return Pt(max(self.a.x, self.b.x), max(self.a.y, self.b.y))
+
+    def is_horizontal(self):
+        return self.a.y == self.b.y
+
+    def is_vertical(self):
+        return self.a.x == self.b.x
+
+
+class Box(NamedTuple):
+    upper_left: Pt
+    lower_right: Pt
+
+    @classmethod
+    def raw(cls, a, b):
+        return cls(
+            upper_left=Pt(min(a.x, b.x), min(a.y, b.y)),
+            lower_right=Pt(max(a.x, b.x), max(a.y, b.y)),
+        )
+
+    def upper_right(self) -> Pt:
+        return Pt(self.lower_right.x, self.upper_left.y)
+
+    def lower_left(self) -> Pt:
+        return Pt(self.upper_left.x, self.lower_right.y)
+
+    def area(self) -> int:
+        return self.lower_right.area(self.upper_left)
+
+    def boundary(self) -> List[Ln]:
+        return [
+            Ln(a=self.upper_left, b=self.upper_right()),
+            Ln(a=self.upper_right(), b=self.lower_right),
+            Ln(a=self.lower_right, b=self.lower_left()),
+            Ln(a=self.lower_left(), b=self.upper_left),
+        ]
+
+
 def clean_raw(raw_points: List[str]) -> List[Pt]:
     return [Pt.raw(p) for p in raw_points]
 
 
-def max_rectangle(points: List[Pt]) -> int:
-    max_area = 0
-    while points:
-        a = points.pop()
-        for b in points:
-            max_area = max(max_area, a.area(b))
-    return max_area
+SAMPLE = clean_raw(RAW_SAMPLE)
+MY_INPUT = clean_raw(RAW_INPUT)
+
+
+class Theater:
+    def __init__(
+        self,
+        points: List[Pt],
+    ):
+        self.points = points
+        self.outline = {}
+        length = len(points)
+        max_x, max_y = -1, -1
+        min_x, min_y = 1_000_000_000, 1_000_000_000
+
+        for i, pt in enumerate(points):
+            min_x, max_x = min(min_x, pt.x), max(max_x, pt.x)
+            min_y, max_y = min(min_y, pt.y), max(max_y, pt.y)
+            prev_pt = self.points[(i - 1) % length]
+            next_pt = self.points[(i + 1) % length]
+            self.outline[pt] = Ln.raw(pt, next_pt, prev_pt)
+        self.min = Pt(min_x, min_y)
+        self.max = Pt(max_x, max_y)
+
+    def print(self, r_min, r_max, marked_points):
+        boundary_pts = set()
+        for pt in self.points:
+            v_unit = self.outline[pt].v_unit
+            step = pt
+            for _ in range(1, self.outline[pt].v_len):
+                step += v_unit
+                if (r_min.x <= step.x <= r_max.x) and (r_min.y <= step.y <= r_max.y):
+                    boundary_pts.add(step)
+
+        out_array = []
+        for y in range(r_min.y, r_max.y + 1):
+            out_line = ""
+            for x in range(r_min.x, r_max.x + 1):
+                pt = Pt(x, y)
+                if pt in marked_points:
+                    out_line += marked_points[pt]
+                elif pt in self.points:
+                    out_line += "#"
+                elif pt in boundary_pts:
+                    out_line += "x"
+                else:
+                    out_line += "."
+            out_array.append(out_line)
+        return "\n".join(out_array)
+
+    def is_intersected(self, a: Pt, b: Pt, new_area) -> bool:
+        if new_area in (
+            24,
+            1393287318,
+        ):
+            _foo = self.outline[a]
+            _bar = self.outline[b]
+            display = self.print(
+                Pt(min(a.x, b.x) - 5, min(a.y, b.y) - 5),
+                Pt(max(a.x, b.x) + 5, max(a.y, b.y) + 5),
+                {a: "A", b: "B"},
+            )
+            print(display)
+            # debugging
+
+        # box = Box.raw(a,b)
+
+        min_x, max_x = min(a.x, b.x), max(a.x, b.x)
+        min_y, max_y = min(a.y, b.y), max(a.y, b.y)
+
+        if min_x == max_x or min_y == max_y:
+            return False
+
+        # This @ on the  | These @s on the
+        # boundary is OK | boundary are not
+        # .............. | ..............
+        # .......#XXX#.. | .......#XXX#..
+        # .......XXXXX.. | .......XXXXX..
+        # ..1OOOO@O2XX.. | ..1OOOORO2XX..
+        # ..OOOOOOOOXX.. | ..OOOOOOOOXX..
+        # ..4OOOOOO3XX.. | ..@OOOOOO@XX..
+        # .........XXX.. | ..?......?XX..
+        # .........#X#.. | ..4??????3X#..
+        # .............. | ..............
+
+        on_square_boundary = []
+        for ln in self.outline.values():
+            if ln.v.x == 0 and (min_x <= ln.o.x <= max_x):
+                left_edge = True if min_x == ln.o.x else False
+                right_edge = True if ln.o.x == max_x else False
+                ln_min_y = min(ln.o.y, ln.o.y + ln.v.y)
+                ln_max_y = max(ln.o.y, ln.o.y + ln.v.y)
+                if ln_max_y < min_y or max_y < ln_min_y:
+                    continue
+                if ln_max_y == min_y or max_y == ln_min_y:
+                    on_square_boundary.append(Pt(ln.o.x, ln_max_y))
+                    continue
+                if min_y < ln_max_y <= max_y:
+                    if left_edge:
+                        on_square_boundary.append(Pt(min_x, ln_max_y))
+                        continue
+                    if right_edge:
+                        on_square_boundary.append(Pt(max_x, ln_max_y))
+                        continue
+                    return True
+                if min_y <= ln_min_y < max_y:
+                    if left_edge:
+                        on_square_boundary.append(Pt(min_x, ln_min_y))
+                        continue
+                    if right_edge:
+                        on_square_boundary.append(Pt(max_x, ln_min_y))
+                        continue
+                    return True
+                # I think this occurs when the line goes clean through?
+                return True
+
+            if ln.v.y == 0 and (min_y <= ln.o.y <= max_y):
+                top_edge = True if min_y == ln.o.y else False
+                bottom_edge = True if ln.o.y == max_y else False
+                ln_min_x = min(ln.o.x, ln.o.x + ln.v.x)
+                ln_max_x = max(ln.o.x, ln.o.x + ln.v.x)
+                if ln_max_x < min_x or max_x < ln_min_x:
+                    continue
+                if ln_max_x == min_x or max_x == ln_min_x:
+                    on_square_boundary.append(Pt(ln_max_x, ln.o.y))
+                    continue
+                if min_x < ln_max_x <= max_x:
+                    if top_edge:
+                        on_square_boundary.append(Pt(ln_max_x, min_y))
+                        continue
+                    if bottom_edge:
+                        on_square_boundary.append(Pt(ln_max_x, max_y))
+                        continue
+                    return True
+                if min_x <= ln_min_x < max_x:
+                    if top_edge:
+                        on_square_boundary.append(Pt(ln_min_x, min_y))
+                        continue
+                    if bottom_edge:
+                        on_square_boundary.append(Pt(ln_min_x, max_y))
+                        continue
+                    return True
+                # I think this occurs when the line goes clean through?
+                return True
+
+        upper_left = Pt(min_x, min_y)
+        upper_right = Pt(max_x, min_y)
+        lower_right = Pt(max_x, max_y)
+        lower_left = Pt(min_x, max_y)
+
+        for corner in (self.outline[a], self.outline[b]):
+            if corner.o == upper_left:
+                if corner.v.x == 0 and (corner.v.y > 0 or corner.back_v.x < 0):
+                    return True
+                if corner.v.y == 0 and (corner.v.x < 0 and corner.back_v.y > 0):
+                    return True
+            if corner.o == upper_right:
+                # REVIEW
+                if corner.v.x == 0 and (corner.v.y < 0 and corner.back_v.x < 0):
+                    return True
+                if corner.v.y == 0 and (corner.v.x < 0 or corner.back_v.y < 0):
+                    return True
+            if corner.o == lower_right:
+                if corner.v.x == 0 and (corner.v.y < 0 or corner.back_v.x > 0):
+                    return True
+                if corner.v.y == 0 and (corner.v.x > 0 and corner.back_v.y < 0):
+                    return True
+            if corner.o == lower_left:
+                if corner.v.x == 0 and (corner.v.y > 0 and corner.back_v.x > 0):
+                    return True
+                if corner.v.y == 0 and (corner.v.x > 0 or corner.back_v.y > 0):
+                    return True
+        return False
+
+    def max_rectangle(self, constrained=False) -> int:
+        max_area = 0
+        points = self.points[:]
+        while points:
+            a = points.pop()
+            for b in points:
+                new_area = a.area(b)
+                if constrained and self.is_intersected(a, b, new_area):
+                    continue
+                max_area = max(max_area, new_area)
+        return max_area
 
 
 def test_max():
-    assert max_rectangle(clean_raw(RAW_SAMPLE)) == 50
-    assert max_rectangle(clean_raw(RAW_INPUT)) == 4739623064
+    sample_theater = Theater(SAMPLE)
+    assert sample_theater.max_rectangle() == 50
+    assert sample_theater.max_rectangle(constrained=True) == 24
+    my_theater = Theater(MY_INPUT)
+    assert my_theater.max_rectangle() == 4739623064
+    assert my_theater.max_rectangle(constrained=True) == 1393287318
+    # Guessed 4566128621 but this was too high, and 70757038 is too low
+    # More refinement resulted in 4621312612 which is still too high
+    # Updating the intersection detection dropped things to 1393287318
+    # but this answer is still incorrect
