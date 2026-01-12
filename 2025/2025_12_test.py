@@ -137,6 +137,31 @@ class Puzzle:
     to fit into each of them. How many of the regions can fit all of the
     presents listed?
 
+    Your puzzle answer was 550.
+
+    The first half of this puzzle is complete! It provides one gold star: *
+
+    --- Part Two ---
+    The Elves thank you profusely for the help and start rearranging the
+    oddly-shaped presents. As you look up, you notice that a lot more Elves have
+    arrived here at the Christmas tree farm.
+
+    In fact, many of these new arrivals look familiar: they're the Elves you
+    helped while decorating the North Pole base. Right on schedule, each group
+    seems to have brought a star to put atop one of the Christmas trees!
+
+    Before any of them can find a ladder, a particularly large Christmas tree
+    suddenly flashes brightly when a large star magically appears above it! As
+    your eyes readjust, you think you notice a portly man with a white beard
+    disappear into the crowd.
+
+    You go look for a ladder; only 23 stars to go.
+
+    If you like, you can Decorate the North Pole Again.
+
+    Both parts of this puzzle are complete! They provide two gold stars: **
+
+    At this point, all that is left is for you to admire your Advent calendar.
     """
 
 
@@ -183,36 +208,43 @@ RAW_SAMPLE = """
 class Farm:
 
     def __init__(self, raw_input):
+        # reg expressions to parse raw_input
         grid_pattern = r"(\d+):\n(([.#]+\n)+)\n"
+        region_pattern = r"(\d+)x(\d+): ((\d+ ?)+)\n"
+
         raw_grids = re.finditer(grid_pattern, raw_input)
         self.shapes = {int(g.group(1)): g.group(2)[:-1].split("\n") for g in raw_grids}
 
+        raw_regions = re.finditer(region_pattern, raw_input)
+        self.regions = []
+        self.sorted_regions = []
+
+        for r in raw_regions:
+            (x, y) = (int(r.group(1)), int(r.group(2)))
+            gifts = [int(d) for d in r.group(3).split(" ")]
+            self.regions.append(((x, y), gifts))
+            self.sorted_regions.append(((min(x, y), max(x, y)), gifts))
+
+        self.sorted_regions.sort()
+
+        # now some calculations
         self.shape_areas = {
             id: sum(ln.count("#") for ln in region)
             for id, region in self.shapes.items()
         }
 
-        region_pattern = r"(\d+)x(\d+): ((\d+ ?)+)\n"
-        raw_regions = re.finditer(region_pattern, raw_input)
-        self.regions = [
-            (
-                (int(r.group(1)), int(r.group(2))),
-                [int(d) for d in r.group(3).split(" ")],
-            )
-            for r in raw_regions
-        ]
-
         self.region_classification = defaultdict(list)
-        for region_dim, gift_count in self.regions:
-            grid_count = (region_dim[0] // 3) * (region_dim[0] // 3)
+        for region_dim, gift_count in self.sorted_regions:
             total_gifts = sum(gift_count)
-
-            region_area = region_dim[0] * region_dim[0]
             gift_area = sum(
                 number_gifts * self.shape_areas[id]
                 for id, number_gifts in enumerate(gift_count)
             )
 
+            grid_count = (region_dim[0] // 3) * (region_dim[1] // 3)
+            region_area = region_dim[0] * region_dim[1]
+
+            # first deal with edge cases that totally rule in or out a region
             if region_area < gift_area:
                 self.region_classification["invalid"].append(
                     (
@@ -235,6 +267,26 @@ class Farm:
                     )
                 )
                 continue
+
+            # for my input gifts 2,4,5 fit into a perfect 3x6 rectangle
+            block_245 = min(gift_count[2], gift_count[4], gift_count[5])
+            new_gift_count = [
+                t - block_245 if p in (2, 4, 5) else t for p, t in enumerate(gift_count)
+            ]
+            compact_total = sum(new_gift_count) + 2 * block_245
+            if compact_total <= grid_count:
+                self.region_classification["valid_compact"].append(
+                    (
+                        region_dim,
+                        gift_count,
+                        region_area,
+                        gift_area,
+                        region_area - gift_area,
+                    )
+                )
+                continue
+
+            # the remaining cases are ambiguous
             if total_gifts * 9 <= region_area:
                 self.region_classification["likely_valid"].append(
                     (
@@ -274,7 +326,7 @@ class Farm:
         return valid
 
 
-def test_farm():
+def test_sample_farm():
     sample_farm = Farm(RAW_SAMPLE)
     assert sample_farm.shapes == {
         0: ["###", "##.", "##."],
@@ -298,21 +350,44 @@ def test_farm():
         ((12, 5), [1, 0, 1, 0, 3, 2]),
     ]
 
-    assert sample_farm.region_count() == {"unknown": 1, "valid": 2}
+    assert sample_farm.region_count() == {
+        "unknown": 2,
+        "likely_valid": 1,
+    }
 
+
+def test_my_farm():
     my_farm = Farm(RAW_INPUT)
     assert my_farm.regions[0] == ((40, 41), [44, 53, 34, 42, 33, 43])
     assert my_farm.regions[-1] == ((42, 47), [51, 54, 60, 48, 42, 48])
-    assert my_farm.region_count() == {
-        "invalid": 245,
-        "unknown": 411,
-        "likely_valid": 33,
-        "valid": 311,
+    my_farm_count = my_farm.region_count()
+    assert my_farm_count == {
+        "invalid": 450,
+        "valid": 550,
     }
-    # if we go with saying we can likely get all unknown to work
-    assert my_farm.guess_valid_region_count(cutoff=-1) == 311 + 33 + 411 == 755
-    # but guess of 755 is too high - so some of the unknown are probably not possible
-    # 344 = 311 (valid) + 33 (likely_valid) to low
+
+    # WELL I MESSED THIS UP
+    # I had a bug calculating the area, used length * length
+    # rather than length * width and as such not all regions
+    # fell into invalid or valid states and I had to try a lot
+    # of additional logic to try to resolve incorrect cases
+
+    # With the previous incorrect stuff here are the notes I had:
+
+    # if we go with saying we can get all unknown to work
+    # 1000 - 245 = 755, doesn't work 755 is too high
+    # so some of the unknown are not possible
+
+    # if we consider "likely_valid" arrangements as those
+    # where we simply consider each present to have an area of 9
+    # and check that area fits (not considering grid spacing) we get
+    # 344 = 311 (valid) + 33 (likely_valid) which is still to low
+
+    # looking at our geometry a bit more, we can pack some gifts together
+    # and guarantee a fit
+    # assert 311 + 171 == 482
+
+    # assert my_farm.guess_valid_region_count(cutoff=-1) == 311 + 33 + 411 == 755
     # looking - a natural cutoff seems to be having 100 extra spaces,
     # which gives 685 valid, but this answer is incorrect (don't know too low or high)
-    assert my_farm.guess_valid_region_count(cutoff=100) == 685
+    # assert my_farm.guess_valid_region_count(cutoff=100) == 685
